@@ -1,0 +1,330 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["knowledge"]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model article_bookmarks {
+  article_id String    @db.Uuid
+  user_id    String    @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  articles   articles  @relation(fields: [article_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([article_id, user_id])
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model article_likes {
+  article_id String    @db.Uuid
+  user_id    String    @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  articles   articles  @relation(fields: [article_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([article_id, user_id])
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model article_tags {
+  article_id  String    @db.Uuid
+  tag_id      String    @db.Uuid
+  attached_at DateTime? @default(now()) @db.Timestamp(6)
+  articles    articles  @relation(fields: [article_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tags        tags      @relation(fields: [tag_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([article_id, tag_id])
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model article_views {
+  article_id String    @db.Uuid
+  user_id    String    @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  articles   articles  @relation(fields: [article_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([article_id, user_id])
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model articles {
+  id                         String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  user_id                    String?             @db.Uuid
+  title                      String?             @db.VarChar(255)
+  raw_content                String?
+  render_content             String?
+  summary                    String?
+  created_at                 DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime?           @default(now()) @db.Timestamp(6)
+  status                     String?             @db.VarChar(10)
+  is_published               Boolean?            @default(false)
+  like_count                 Int?                @default(0)
+  view_count                 Int?                @default(0)
+  bookmark_count             Int?                @default(0)
+  comment_count              Int?                @default(0)
+  last_published_raw_content String?
+  article_bookmarks          article_bookmarks[]
+  article_likes              article_likes[]
+  article_tags               article_tags[]
+  article_views              article_views[]
+  users                      users?              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  comments                   comments[]
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model comment_likes {
+  comment_id String    @db.Uuid
+  user_id    String    @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  comments   comments  @relation(fields: [comment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([comment_id, user_id])
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model comments {
+  id                String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  article_id        String?         @db.Uuid
+  user_id           String?         @db.Uuid
+  body              String?
+  parent_comment_id String?         @db.Uuid
+  like_count        Int?            @default(0)
+  created_at        DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?       @default(now()) @db.Timestamp(6)
+  is_deleted        Boolean?        @default(false)
+  comment_likes     comment_likes[]
+  articles          articles?       @relation(fields: [article_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  comments          comments?       @relation("commentsTocomments", fields: [parent_comment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_comments    comments[]      @relation("commentsTocomments")
+  users             users?          @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model identity_providers {
+  id                 String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  provider_name      String              @db.VarChar(50)
+  display_name       String              @db.VarChar(50)
+  provider_type      String              @db.VarChar(20)
+  description        String?
+  logo_url           String?
+  created_at         DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?           @default(now()) @db.Timestamp(6)
+  idp_configurations idp_configurations?
+  user_identities    user_identities[]
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model idp_configurations {
+  provider_id        String             @id @db.Uuid
+  config             Json               @default("{}")
+  button_color       String?            @db.VarChar(20)
+  text_color         String?            @db.VarChar(20)
+  is_active          Boolean?           @default(false)
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
+  last_tested_at     DateTime?          @db.Timestamp(6)
+  created_by         String?            @db.Uuid
+  identity_providers identity_providers @relation(fields: [provider_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model local_accounts {
+  id            String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  user_id       String?   @db.Uuid
+  email         String?   @db.VarChar(255)
+  password_hash String?
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+  updated_at    DateTime? @default(now()) @db.Timestamp(6)
+  is_verified   Boolean?  @default(false)
+  users         users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model roles {
+  id           String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  name         String?      @unique @db.VarChar(50)
+  display_name String?      @db.VarChar(50)
+  description  String?
+  created_at   DateTime?    @default(now()) @db.Timestamp(6)
+  updated_at   DateTime?    @default(now()) @db.Timestamp(6)
+  user_roles   user_roles[]
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model tags {
+  id           String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  name         String?        @db.VarChar(50)
+  slug         String?        @db.VarChar(50)
+  description  String?
+  created_at   DateTime?      @default(now()) @db.Timestamp(6)
+  article_tags article_tags[]
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model upload_images {
+  id            String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  user_id       String    @db.Uuid
+  category      String    @db.VarChar(20)
+  original_name String
+  mime_type     String?   @db.VarChar(100)
+  size_bytes    Int?
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+  users         users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_avatars {
+  id           String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  user_id      String    @db.Uuid
+  service_name String    @db.VarChar(50)
+  avatar_url   String
+  source_url   String?
+  is_selected  Boolean?  @default(false)
+  updated_at   DateTime? @default(now()) @db.Timestamp(6)
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_follows {
+  follower_id                           String    @db.Uuid
+  followee_id                           String    @db.Uuid
+  followed_at                           DateTime? @default(now()) @db.Timestamp(6)
+  users_user_follows_followee_idTousers users     @relation("user_follows_followee_idTousers", fields: [followee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_user_follows_follower_idTousers users     @relation("user_follows_follower_idTousers", fields: [follower_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([follower_id, followee_id])
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_identities {
+  id                 String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  user_id            String             @db.Uuid
+  provider_id        String             @db.Uuid
+  provider_uid       String             @db.VarChar(255)
+  email              String?            @db.VarChar(255)
+  token_data         Json?              @default("{}")
+  linked_at          DateTime?          @default(now()) @db.Timestamp(6)
+  last_login_at      DateTime?          @db.Timestamp(6)
+  identity_providers identity_providers @relation(fields: [provider_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users              users              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_notifications {
+  id           String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  user_id      String?   @db.Uuid
+  type         String?   @db.VarChar(50)
+  title        String?
+  message      String?
+  reference_id String?   @db.Uuid
+  is_read      Boolean?  @default(false)
+  created_at   DateTime? @default(now()) @db.Timestamp(6)
+  users        users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_roles {
+  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  user_id     String?   @db.Uuid
+  role_id     String?   @db.Uuid
+  assigned_at DateTime? @default(now()) @db.Timestamp(6)
+  assigned_by String?   @db.Uuid
+  roles       roles?    @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users       users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_security {
+  user_id        String   @id @db.Uuid
+  totp_secret    String?
+  is_2fa_enabled Boolean? @default(false)
+  users          users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_settings {
+  user_id           String    @id @db.Uuid
+  language          String?   @default("ja") @db.VarChar(10)
+  theme             String?   @default("light") @db.VarChar(20)
+  notify_on_like    Boolean?  @default(true)
+  notify_on_comment Boolean?  @default(true)
+  notify_on_follow  Boolean?  @default(true)
+  notify_via_email  Boolean?  @default(false)
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  updated_at        DateTime? @default(now()) @db.Timestamp(6)
+  users             users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  id                                           String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  username                                     String?              @unique @db.VarChar(50)
+  display_name                                 String?              @db.VarChar(100)
+  email                                        String?              @db.VarChar(255)
+  avatar_url                                   String?
+  bio                                          String?
+  created_at                                   DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at                                   DateTime?            @default(now()) @db.Timestamp(6)
+  is_active                                    Boolean?             @default(true)
+  last_login_at                                DateTime?            @db.Timestamp(6)
+  created_by                                   String?              @db.Uuid
+  article_bookmarks                            article_bookmarks[]
+  article_likes                                article_likes[]
+  article_views                                article_views[]
+  articles                                     articles[]
+  comment_likes                                comment_likes[]
+  comments                                     comments[]
+  local_accounts                               local_accounts[]
+  upload_images                                upload_images[]
+  user_avatars                                 user_avatars[]
+  user_follows_user_follows_followee_idTousers user_follows[]       @relation("user_follows_followee_idTousers")
+  user_follows_user_follows_follower_idTousers user_follows[]       @relation("user_follows_follower_idTousers")
+  user_identities                              user_identities[]
+  user_notifications                           user_notifications[]
+  user_roles                                   user_roles[]
+  user_security                                user_security?
+  user_settings                                user_settings?
+
+  @@schema("knowledge")
+}
