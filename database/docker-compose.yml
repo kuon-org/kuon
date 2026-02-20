@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:18
+    container_name: ${APP}-postgres
+    environment:
+      # superuserのユーザー名
+      POSTGRES_USER: ${POSTGRES_USER}
+      # sueruserのパスワード
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # データベース名
+      POSTGRES_DB: ${POSTGRES_DB}
+      # option
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+      # migration用のユーザ環境変数
+      PRJ_DB_NAME: ${PRJ_DB_NAME}
+      # タイムゾーン
+      TZ: "Asia/Tokyo"
+    volumes:
+      - db-data:/var/lib/postgresql
+      - ./migrations/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    ports:
+      - "25432:5432"
+#    command: -p ${DB_PORT}
+    networks:
+      - container-link
+
+networks:
+  default:
+    external: true
+    name: bridge
+  # コンテナ間通信用のネットワークセグメント
+  container-link:
+    name: ${CONTAINER_NETWORK}
+
+volumes:
+  db-data:
+    name: ${DB_DATA_VOLUME}
+    driver: local
+
+
