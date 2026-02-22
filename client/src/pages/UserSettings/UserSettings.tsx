@@ -26,6 +26,7 @@ export const UserSettings = () => {
                     display: "flex",
                     flexDirection: "column",
                     p: 2,
+                    mx: "auto"
                 }}
             >
                 <Typography variant="subtitle1" mb={2}>
