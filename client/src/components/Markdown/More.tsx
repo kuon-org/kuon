@@ -7,6 +7,7 @@ import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { StyledListHeader } from "../common/StyledListHeader";
+import { useArticles } from "../../hooks/useArticles";
 
 interface MoreProps {
     username: string
@@ -16,12 +17,23 @@ interface MoreProps {
 
 export const More = ({ username, articleId, isOwned }: MoreProps) => {
     const navigate = useNavigate()
-
+    const { deleteArticle } = useArticles();
     const handleEdit = () => {
         navigate({
             to: articleEditRoute.to,
             params: { articleId },
         })
+    }
+
+    const handleDelete = () => {
+        if (window.confirm(`「この記事をゴミ箱へ移動します。`)) {
+            deleteArticle(articleId);
+
+            navigate({
+                to: "/"
+            })
+        }
+
     }
     if (!isOwned) return (
         <MoreHButton>
@@ -85,7 +97,7 @@ export const More = ({ username, articleId, isOwned }: MoreProps) => {
             </MenuItem>
             <StyledListHeader>記事の削除</StyledListHeader>
             <MenuItem
-                onClick={() => console.log('削除')}
+                onClick={handleDelete}
             >
                 <DeleteIcon />削除する
             </MenuItem>

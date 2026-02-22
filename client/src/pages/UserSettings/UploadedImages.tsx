@@ -65,10 +65,8 @@ export const UploadedImages = () => {
                 const src = `/uploads/${img.id}.${ext}`;
 
                 return (
-                    <>
-
+                    <Box key={img.id}>
                         <Box
-                            key={img.id}
                             sx={{
                                 display: "flex",
                                 alignItems: "center",
@@ -110,7 +108,7 @@ export const UploadedImages = () => {
                         </Box>
 
                         <Divider />
-                    </>
+                    </Box>
                 );
             })}
         </Paper>

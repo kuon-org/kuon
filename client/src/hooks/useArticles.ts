@@ -7,6 +7,7 @@ interface Tag {
     id: string;
     name: string;
     slug: string;
+    avatar_url: string;
 }
 
 interface ArticleTag {
@@ -35,13 +36,16 @@ export interface Article {
     render_content: string;
     like_count: number;
     created_at: string;
+    updated_at: string;
     summary: string;
     is_published: boolean;
+    is_private: boolean;
     users: {
         username: string;
         display_name: string;
         avatar_url: string;
     }
+    article_tags: ArticleTag[]
 }
 
 export interface UserArticles {
@@ -55,6 +59,7 @@ export interface UserArticles {
     updated_at: string;
     status: string;
     is_published: boolean;
+    is_private: boolean;
     like_count: number;
     article_tags: ArticleTag[]
 
@@ -88,6 +93,8 @@ export interface CreateArticleData {
     content: string;
     summary: string;
     isPublished: boolean;
+    isPrivate: boolean;
+    tagIds: string[]; // 追加
 }
 
 export interface EditArticleData {
@@ -95,6 +102,8 @@ export interface EditArticleData {
     content: string;
     summary: string;
     isPublished: boolean;
+    isPrivate: boolean;
+    tagIds: string[]; // 追加
 }
 
 export const useArticles = (articleId?: string) => {
@@ -108,6 +117,7 @@ export const useArticles = (articleId?: string) => {
         onSuccess: () => {
             alert("記事を作成しました！");
             queryClient.invalidateQueries({ queryKey: ["articles"] });
+            queryClient.invalidateQueries({ queryKey: ["UserArticles"]});
             navigate({ to: "/" });
         },
         onError: (err: any) => {
@@ -124,6 +134,7 @@ export const useArticles = (articleId?: string) => {
             alert("記事を更新しました！");
             queryClient.invalidateQueries({ queryKey: ["articles"] });
             queryClient.invalidateQueries({ queryKey: ["article", articleId] });
+            queryClient.invalidateQueries({ queryKey: ["UserArticles"]})
             navigate({ to: "/" });
         },
         onError: (err: any) => {
@@ -250,6 +261,65 @@ export const useArticles = (articleId?: string) => {
         },
     });
 
+    const rollbackMutation = useMutation({
+        mutationFn: async (id: string) => {
+            const res = await apiClient.post(`/articles/${id}/rollback`);
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
+            queryClient.invalidateQueries({ queryKey: ["article", articleId] });
+            alert("下書きを破棄して公開済みの状態に戻しました");
+        },
+    });
+    const deleteArticleMutation = useMutation({
+        mutationFn: async (id: string) => {
+            const res = await apiClient.delete(`/articles/${id}`);
+            return res.data;
+        },
+        onSuccess: (_data, id) => {
+            // 🚀 公開一覧、マイ記事一覧、ゴミ箱一覧をすべて更新
+            queryClient.invalidateQueries({ queryKey: ["articles"] });
+            queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
+            queryClient.invalidateQueries({ queryKey: ["TrashArticles"] });
+            // 詳細表示中に削除した場合のために詳細も無効化
+            queryClient.invalidateQueries({ queryKey: ["article", id] });
+            alert("記事を削除しました");
+        },
+        onError: (err: any) => {
+            alert(err.response?.data?.message ?? "削除に失敗しました");
+        }
+    });
+
+    const trashArticlesQuery = useQuery({
+        queryKey: ["TrashArticles"],
+        queryFn: async () => {
+            const res = await apiClient.get<UserArticles[]>("/articles/trash/list");
+            return res.data;
+        }
+    });
+
+    // 復元 mutation
+    const restoreMutation = useMutation({
+        mutationFn: async (id: string) => apiClient.post(`/articles/${id}/restore`),
+        onSuccess: (_data, id) => {
+            queryClient.invalidateQueries({ queryKey: ["articles"] });
+            queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
+            queryClient.invalidateQueries({ queryKey: ["TrashArticles"] });
+            queryClient.invalidateQueries({ queryKey: ["article", id] });
+            alert("記事を復元しました");
+        }
+    });
+
+    // 物理削除 mutation
+    const hardDeleteMutation = useMutation({
+        mutationFn: async (id: string) => apiClient.delete(`/articles/${id}/hard`),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["TrashArticles"] });
+            alert("記事を完全に削除しました");
+        }
+    });
+
     return {
         // 記事関連
         createArticle: createArticleMutation.mutate,
@@ -284,5 +354,15 @@ export const useArticles = (articleId?: string) => {
         refetchIsLiked: articleIsLikedQuery.refetch,
 
         uploadImage: uploadImageMutation.mutateAsync,
+
+        rollbackArticle: rollbackMutation.mutate,
+        isRollingBack: rollbackMutation.isPending,
+        deleteArticle: deleteArticleMutation.mutate,
+        isDeleting: deleteArticleMutation.isPending,
+
+        trashArticles: trashArticlesQuery.data,
+        trash_isLoading: trashArticlesQuery.isLoading,
+        restoreArticle: restoreMutation.mutate,
+        hardDeleteArticle: hardDeleteMutation.mutate,
     };
 };

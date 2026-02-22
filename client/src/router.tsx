@@ -37,6 +37,11 @@ import { Account } from './pages/UserSettings/Account'
 import { PublicProfile } from './pages/UserSettings/PublicProfile'
 import { Footer } from './components/layouts/Footer/Footer'
 import { AvatarUpload } from './pages/UserSettings/AvatarUpload'
+import { AdminIndex } from './pages/Admin'
+import { Security } from './pages/Admin/Security'
+import { UserManagement } from './pages/Admin/UserManagement'
+import { TagProfile } from './pages/Tags/TagProfile'
+import { Trash } from './pages/Trash/Trash'
 
 interface MyRouterContext {
   user: { id: string; username: string } | null
@@ -99,10 +104,36 @@ const plainLayoutRoute = createRoute({
   getParentRoute: () => baseRootRoute,
   id: 'layout-plain',
   component: () => (
-    <Box sx={{ p: 3 }}>
+    <Box>
       <Outlet />
     </Box>
   ),
+})
+
+
+export const adminRoute = createRoute({
+  getParentRoute: () => plainLayoutRoute,
+  path: "admin",
+  component: AdminIndex
+})
+
+export const adminTopRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/",
+  component: () => <></>,
+
+})
+
+export const adminSecurityRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "security",
+  component: Security
+})
+
+export const adminUserManagementRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "users",
+  component: UserManagement
 })
 
 /* ------------------------------
@@ -183,8 +214,12 @@ export const articleLikerRoute = createRoute({
   component: ArticleLiker
 })
 
-
-export const dratsRoute = createRoute({
+const trashRoute = createRoute({
+  getParentRoute: () => layoutWithTopRoute,
+  path: 'trash',
+  component: Trash
+})
+export const draftsRoute = createRoute({
   getParentRoute: () => layoutWithTopRoute,
   path: 'drafts',
   component: Drafts
@@ -257,6 +292,12 @@ const tagsRoute = createRoute({
   ),
 })
 
+export const tagProfileRoute = createRoute({
+  getParentRoute: () => layoutWithTopRoute,
+  path: "tags/$slug",
+  component: TagProfile,
+})
+
 // 🔐 ログイン / 登録（完全に素）
 const loginRoute = createRoute({
   getParentRoute: () => plainLayoutRoute,
@@ -280,7 +321,18 @@ const registerRoute = createRoute({
    6️⃣ ルートツリー構築
    ------------------------------ */
 const routeTree = baseRootRoute.addChildren([
-
+  plainLayoutRoute.addChildren([
+    loginRoute,
+    login2faRoute,
+    registerRoute,
+    articleCreateRoute,
+    articleEditRoute,
+    adminRoute.addChildren([
+      adminTopRoute,
+      adminSecurityRoute,
+      adminUserManagementRoute
+    ])
+  ]),
   layoutWithTopRoute.addChildren([
     sidebarLayoutRoute.addChildren([
       indexRoute,
@@ -289,15 +341,17 @@ const routeTree = baseRootRoute.addChildren([
 
     ]),
     tagsRoute,
+    tagProfileRoute,
     articleRoute.addChildren([
       articleIndexRoute,
       articleLikerRoute,
     ]),
     userSettingsRoute.addChildren([accountSettingRoute, accountCustomImageRoute, publicProfileRoute, user2faSettingRoute, uploadedImagesRoute]),
-    dratsRoute,
+    draftsRoute,
+    trashRoute,
     userRoute.addChildren([userProfileIndexRoute, userFollowerRoute, userFollowingRoute])
   ]),
-  plainLayoutRoute.addChildren([loginRoute, login2faRoute, registerRoute, articleCreateRoute, articleEditRoute,]),
+
 ])
 
 /* ------------------------------

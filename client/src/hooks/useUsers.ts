@@ -27,7 +27,7 @@ export const useUserQuery = (username?: string) => {
         queryKey: ["following", userQuery.data?.id],
         queryFn: async () => {
             const res = await apiClient.get(`/users/${userQuery.data!.id}/follow`);
-            return res.data.map((f: any) => f.users_user_follows_followee_idTousers);
+            return res.data;
         }
     })
 
@@ -35,7 +35,7 @@ export const useUserQuery = (username?: string) => {
         queryKey: ["follower", userQuery.data?.id],
         queryFn: async () => {
             const res = await apiClient.get(`/users/${userQuery.data!.id}/follower`);
-            return res.data.map((f: any) => f.users_user_follows_follower_idTousers);
+            return res.data;
         }
     })
 
