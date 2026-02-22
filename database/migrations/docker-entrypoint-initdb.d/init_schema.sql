@@ -54,7 +54,7 @@ COMMENT ON COLUMN local_accounts.is_verified IS 'メール確認済みフラグ'
 -- identity_providers
 CREATE TABLE IF NOT EXISTS identity_providers (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
-    provider_name VARCHAR(50) NOT NULL,      -- 内部識別名（例: google, github）
+    provider_name VARCHAR(50) NOT NULL UNIQUE,      -- 内部識別名（例: google, github）
     display_name VARCHAR(50) NOT NULL,       -- UI表示名
     provider_type VARCHAR(20) NOT NULL,      -- 認証方式 (OIDC, SAML, LDAP, OAuth)
     description TEXT,
