@@ -1,148 +1,157 @@
-import * as articlesRepo from '../repositories/articlesRepository.js';
+import { ArticlesRepository } from "../repositories/articlesRepository.js";
 
-export const getPublishedArticleList = async () => {
-  return await articlesRepo.findAllPublishedArticles();
-}
+export class ArticlesService {
+  constructor(private articlesRepo: ArticlesRepository) { }
 
-export const getArticle = async (articleId: string) => {
-  const article = await articlesRepo.findArticleById(articleId);
-  if (!article) throw new Error("ArticleNotFound");
-  return article;
-};
-
-export const getAllArticlesByUserId = async (userId: string) => {
-  return await articlesRepo.findAllArticlesByUserId(userId);
-}
-
-export const getPublishedArticlesByUserId = async (userId: string) => {
-  const allArticles = await articlesRepo.findAllArticlesByUserId(userId);
-  // サービス層で公開記事だけを抽出
-  return allArticles.filter(article => article.is_published === true);
-};
-
-export const getDraftArticlesByUserId = async (userId: string) => {
-  const allArticles = await articlesRepo.findAllArticlesByUserId(userId);
-  // 下書き状態のみ抽出
-  return allArticles.filter(article => article.is_published === false);
-};
-
-export const getArticleLikeUserWithCount = async (articleId: string) => {
-  const likeRecords = await articlesRepo.getArticleLikeUserByArticleId(articleId);
-  const likeUsers = likeRecords.map((record) => {
-    const user = record.users;
-    return {
-      id: user.id,
-      username: user.username,
-      display_name: user.display_name,
-      email: user.email,
-      avatar_url: user.avatar_url,
-      bio: user.bio,
-      is_active: user.is_active,
-      last_login_at: user.last_login_at,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-      created_by: user.created_by,
-    };
-  });
-  return {
-    like_users: likeUsers,
-    like_count: likeUsers.length,
-  };
-}
-
-export const getIsOwned = async (articleId: string, userId: string) => {
-  return await articlesRepo.isOwned(articleId, userId);
-}
-
-export const getIsLiked = async (articleId: string, userId: string) => {
-  const is_like = await articlesRepo.isLiked(articleId, userId);
-  if (!is_like) return false;
-  return true;
-}
-
-export const toggleLike = async (articleId: string, userId: string) => {
-  const existing = await articlesRepo.isLiked(articleId, userId);
-  if (existing) {
-    await articlesRepo.removeLike(articleId, userId);
-    return { isLike: false, message: 'いいねを解除しました' };
-  } else {
-    await articlesRepo.addLike(articleId, userId);
-    return { isLike: true, message: 'いいねしました' };
+  async getPublishedArticleList() {
+    return await this.articlesRepo.findAllPublishedArticles();
   }
-};
 
+  async getArticle(articleId: string, currentUserId?: string) {
+    const article = await this.articlesRepo.findArticleById(articleId);
+    if (!article || article.is_deleted) throw new Error("ArticleNotFound");
 
-/**
- * 記事を新規作成する
- */
-export const createArticle = async (userId: string, payload: {
-  title: string;
-  content: string;
-  summary?: string;
-  isPublished?: boolean;
-}) => {
-  // 例: タイトルのバリデーション（空文字チェックなど）
-  if (!payload.title) throw new Error("TitleRequired");
+    // 1. 本人チェック（所有者なら問答無用で全データを返す）
+    if (currentUserId && article.user_id === currentUserId) {
+      return article;
+    }
 
-  // MarkdownからHTMLへの変換処理などをここで行う（render_contentの生成）
-  // const rendered = transformMarkdownToHtml(payload.content);
+    // 2. 本人以外（ゲスト含む）への制限
+    // 非公開設定(is_private)なら拒否
+    if (article.is_private) {
+      throw new Error("Forbidden");
+    }
 
-  return articlesRepo.createArticles({
-    user_id: userId,
-    title: payload.title,
-    raw_content: payload.content,
-    render_content: payload.content, // 今後変更の予定あり
-    last_published_raw_content: payload.isPublished
-      ? payload.content
-      : undefined,
-    summary: payload.summary || payload.content.substring(0, 100), // 要約がなければ先頭100文字
-    status: payload.isPublished ? "public" : "draft",
-    is_published: payload.isPublished ?? false,
-  });
-};
+    // 限定公開(is_published: false)であっても、ここ（URL直接叩き）に来ているなら
+    // is_privateさえfalseなら閲覧を許可する
+    return article;
+  }
 
-/**
- * 記事を更新する
- */
-export const updateArticle = async (articleId: string, userId: string, payload: {
-  title?: string;
-  content?: string;
-  isPublished?: boolean;
-}) => {
-  // 1. 記事の存在確認と権限チェック
-  const existing = await articlesRepo.findArticleById(articleId);
-  if (!existing) throw new Error("ArticleNotFound");
+  async getAllArticlesByUserId(userId: string) {
+    return await this.articlesRepo.findAllArticlesByUserId(userId);
+  }
 
-  // 作成者本人かどうかのチェック（重要！）
-  // ※リポジトリ層のfindArticleByIdでuser_idも取得するようにしておく必要があります
-  if (existing.user_id !== userId) throw new Error("Forbidden");
+  async getArticleLikeUserWithCount(articleId: string) {
+    const likeRecords = await this.articlesRepo.getArticleLikeUserByArticleId(articleId);
+    const likeUsers = likeRecords.map((record: any) => record.users);
+    return {
+      like_users: likeUsers,
+      like_count: likeUsers.length,
+    };
+  }
 
-  const updateData: any = { ...payload };
+  async getIsOwned(articleId: string, userId: string) {
+    return await this.articlesRepo.isOwned(articleId, userId);
+  }
 
-  if (payload.content) {
-    updateData.raw_content = payload.content;
-    if (payload.isPublished) {
-      // 公開時に render_content と last_published_raw_content を更新
-      updateData.render_content = payload.content;
-      updateData.last_published_raw_content = payload.content;
+  async getIsLiked(articleId: string, userId: string) {
+    const isLike = await this.articlesRepo.isLiked(articleId, userId);
+    return !!isLike;
+  }
+
+  async toggleLike(articleId: string, userId: string) {
+    const existing = await this.articlesRepo.isLiked(articleId, userId);
+    if (existing) {
+      await this.articlesRepo.removeLike(articleId, userId);
+      return { isLike: false, message: "いいねを解除しました" };
+    } else {
+      await this.articlesRepo.addLike(articleId, userId);
+      return { isLike: true, message: "いいねしました" };
     }
   }
-  // Prisma にないフィールドは削除
-  delete updateData.content;
 
-  if (payload.isPublished !== undefined) {
-    updateData.status = payload.isPublished ? "public" : "draft";
-    updateData.is_published = payload.isPublished;
+  async createArticle(userId: string, payload: any) {
+    if (!payload.title) throw new Error("TitleRequired");
+
+    const { tagIds, raw_content, status, is_published, is_private, summary } = payload;
+
+    // 🚀 新規作成時は、status: 'public' なら「即時公開」、'draft' なら「下書き」として扱う
+    const isPublicMode = status === 'public';
+
+    return this.articlesRepo.createArticles({
+      user_id: userId,
+      title: payload.title,
+      raw_content: raw_content,
+      // 公開モードなら現在の内容を反映、下書きなら空文字 or 初期値
+      render_content: isPublicMode ? raw_content : "",
+      last_published_raw_content: isPublicMode ? raw_content : undefined,
+      summary: summary || raw_content?.substring(0, 100),
+      // 🚀 ルール通り：status は下書きがあるかどうか
+      status: isPublicMode ? "public" : "draft",
+      // 🚀 公開設定フラグをそのまま保存
+      is_published: is_published ?? false,
+      is_private: is_private ?? false,
+    }, tagIds);
   }
 
-  delete updateData.isPublished;
+  async updateArticle(articleId: string, userId: string, payload: any) {
+    const existing = await this.articlesRepo.findArticleById(articleId);
+    if (!existing) throw new Error("ArticleNotFound");
+    if (existing.user_id !== userId) throw new Error("Forbidden");
 
-  return articlesRepo.updateArticles(articleId, updateData);
-};
+    const { tagIds, raw_content, status, is_published, is_private, ...otherData } = payload;
 
-// SPAのため必要なし。
-// 補助的な関数（ライブラリなどを使用）
-// const transformMarkdownToHtml = (markdown: string) => {
-//     // ここで markdown-it や marked などを使って変換
-//     return `<div>${markdown}</div>`;
-// };
+    const updateData: any = { ...otherData };
+
+    // 🚀 「保存して公開（更新）」ボタンが押された場合
+    if (status === 'public') {
+      updateData.raw_content = raw_content;
+      updateData.render_content = raw_content;       // 公開内容を同期
+      updateData.last_published_raw_content = raw_content; // 差分比較用のバックアップを更新
+      updateData.status = "public";                  // 下書きなし状態へ
+      updateData.is_published = is_published;        // 最新の公開設定を反映
+      updateData.is_private = is_private;            // 最新の非公開設定を反映
+    }
+    // 🚀 「下書き保存」ボタンが押された場合
+    else if (status === 'draft') {
+      updateData.raw_content = raw_content;
+      updateData.status = "draft";                   // 下書きあり状態へ
+
+      // 💡 重要：下書き保存時は、現在の「公開されている状態」を変えない
+      updateData.is_published = existing.is_published;
+      updateData.is_private = existing.is_private;
+      // render_content と last_published_raw_content は既存を維持（差分を作るため）
+    }
+
+    return this.articlesRepo.updateArticles(articleId, updateData, tagIds);
+  }
+
+  async rollbackDraft(articleId: string, userId: string) {
+    const existing = await this.articlesRepo.findArticleById(articleId);
+    if (!existing || existing.user_id !== userId) throw new Error("Unauthorized or Not Found");
+    if (!existing.last_published_raw_content) throw new Error("No published version to rollback to");
+
+    const rollbackData = {
+      raw_content: existing.last_published_raw_content, // 公開時の内容で上書き
+      status: "public", // ステータスを公開に戻す
+      // render_content は既に last_published_raw_content と一致しているはず
+    };
+
+    return this.articlesRepo.updateArticles(articleId, rollbackData);
+  }
+  async deleteArticle(articleId: string, userId: string) {
+    const existing = await this.articlesRepo.findArticleById(articleId);
+    if (!existing || existing.user_id !== userId) {
+      throw new Error("Unauthorized or Not Found");
+    }
+    return await this.articlesRepo.softDeleteArticle(articleId);
+  }
+
+  async getTrashArticles(userId: string) {
+    return await this.articlesRepo.findDeletedArticlesByUserId(userId);
+  }
+
+  // 復元
+  async restoreArticle(articleId: string, userId: string) {
+    const existing = await this.articlesRepo.findArticleById(articleId);
+    if (!existing || existing.user_id !== userId) throw new Error("Unauthorized");
+    return await this.articlesRepo.restoreArticle(articleId);
+  }
+
+  // 物理削除
+  async hardDeleteArticle(articleId: string, userId: string) {
+    const existing = await this.articlesRepo.findArticleById(articleId);
+    if (!existing || existing.user_id !== userId) throw new Error("Unauthorized");
+    return await this.articlesRepo.hardDeleteArticle(articleId);
+  }
+}

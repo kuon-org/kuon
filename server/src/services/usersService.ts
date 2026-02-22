@@ -1,204 +1,162 @@
-import * as usersRepo from '../repositories/usersRepository.js';
-import { users, local_accounts } from '@prisma/client';
-import { TOTP } from "@otplib/totp";
-import { NodeCryptoPlugin } from "@otplib/plugin-crypto-node";
-import { ScureBase32Plugin } from "@otplib/plugin-base32-scure";
 import argon2 from 'argon2';
-export const getAllUsers = async (): Promise<users[]> => {
-  return usersRepo.findAllUsers();
-};
+import { UsersRepository } from '../repositories/usersRepository.js';
+import ScureBase32Plugin from '@otplib/plugin-base32-scure';
+import NodeCryptoPlugin from '@otplib/plugin-crypto-node';
+import { TOTP } from '@otplib/totp'
+export class UsersService {
+  constructor(private usersRepo: UsersRepository) { }
 
-export const getUserById = async (userId: string) => {
-  const user = await usersRepo.findUserById(userId);
-  if (!user) throw new Error("UserNotFound");
-  return user;
-}
-
-export const getUserByUsername = async (username: string) => {
-  const user = await usersRepo.findUserByUsername(username);
-  if (!user) throw new Error("UserNotFound");
-  return user;
-}
-
-/**
- * 新規ユーザ登録（ローカルアカウント含む）
- */
-export const registerUser = async (
-  username: string,
-  email: string,
-  password: string,
-  displayName?: string
-): Promise<{ user: users; account: local_accounts }> => {
-
-  const existingUser = await usersRepo.findUserByUsername(username);
-  if (existingUser) throw new Error('UsernameAlreadyExists');
-
-  const existingAccount = await usersRepo.findLocalAccountByEmail(email);
-  if (existingAccount) throw new Error('EmailAlreadyRegistered');
-
-  return usersRepo.createLocalAccount(username, email, password, displayName);
-};
-
-/**
- * ログイン（パスワード検証）
- */
-/**
- * ログイン（メールまたはユーザーネーム対応）
- */
-export const loginUser = async (
-  identifier: string,
-  password: string
-): Promise<users> => {
-  // identifier がメールかユーザーネームかを判定
-  const isEmail = identifier.includes('@');
-  console.log(isEmail)
-  // local_accounts を取得（メール or ユーザーネーム）
-  const account = isEmail
-    ? await usersRepo.findLocalAccountByEmail(identifier)
-    : await usersRepo.findLocalAccountByUsername(identifier);
-  console.log(account)
-  if (!account || !account.user_id || !account.password_hash) {
-    throw new Error('AccountNotFound');
+  async getAllUsers() {
+    return await this.usersRepo.findAllUsers();
   }
 
-  // パスワード検証
-  const isValid = await argon2.verify(account.password_hash, password);
-  if (!isValid) {
-    throw new Error('InvalidCredentials');
+  async getUserById(userId: string) {
+    const user = await this.usersRepo.findUserById(userId);
+    if (!user) throw new Error("UserNotFound");
+    return user;
   }
 
-  // ユーザー情報を取得
-  const user = await usersRepo.findUserById(account.user_id);
-  if (!user) {
-    throw new Error('UserNotFound');
+  async getUserByUsername(username: string) {
+    const user = await this.usersRepo.findUserByUsername(username);
+    if (!user) throw new Error("UserNotFound");
+    return user;
   }
 
-  return user;
-};
+  async registerUser(username: string, email: string, password: string, displayName?: string) {
+    // バリデーション
+    const existing = await this.usersRepo.isUsernameExisting(username);
+    if (existing) throw new Error("UsernameAlreadyExists");
 
+    // Repository側のトランザクションメソッドを呼び出し
+    return await this.usersRepo.createLocalAccount(username, email, password, displayName);
+  }
 
-export const updateUserInfo = async (userId: string, displayName: string, bio: string) => {
-  const account = await usersRepo.findLocalAccountByUserId(userId);
-  if (!account) throw new Error("LocalAccountNotFound");
+  async loginUser(emailOrUsername: string, password: string) {
+    let account = await this.usersRepo.findLocalAccountByEmail(emailOrUsername);
+    if (!account) {
+      account = await this.usersRepo.findLocalAccountByUsername(emailOrUsername);
+    }
+    if (!account || !account.password_hash) throw new Error('InvalidCredentials');
+    if (!account.user_id) throw new Error('UserNotFound');
+    const isValid = await argon2.verify(account.password_hash, password);
+    if (!isValid) throw new Error('InvalidCredentials');
 
-  // usernameが渡されたときだけユニークチェック
+    const user = await this.usersRepo.findUserById(account.user_id);
+    if (!user) throw new Error('UserNotFound');
+    return user;
+  }
 
+  async changePassword(userId: string, currentPass: string, newPass: string) {
+    const account = await this.usersRepo.findLocalAccountByUserId(userId);
+    if (!account || !account.password_hash) throw new Error("AccountNotFound");
 
-  const data: Record<string, any> = {};
-  if (displayName !== undefined) data.display_name = displayName;
-  if (bio !== undefined) data.bio = bio;
+    const isValid = await argon2.verify(account.password_hash, currentPass);
+    if (!isValid) throw new Error("InvalidCurrentPassword");
 
-  return await usersRepo.updateUser(userId, data);
-}
+    return await this.usersRepo.updatePassword(userId, newPass);
+  }
 
-export const updateUsername = async (userId: string, username: string) => {
-  const account = await usersRepo.findLocalAccountByUserId(userId);
-  if (!account) throw new Error("LocalAccountNotFound");
-  if (username) {
-    const existingUser = await usersRepo.isUsernameExisting(username);
-    if (existingUser && existingUser.id !== userId) {
-      throw new Error("UsernameAlreadyTaken");
+  async toggleFollow(followerId: string, followeeId: string) {
+    const existing = await this.usersRepo.isFollowing(followerId, followeeId);
+    if (existing) {
+      await this.usersRepo.unFollowUser(followerId, followeeId);
+      return { isFollow: false };
+    } else {
+      await this.usersRepo.followUser(followerId, followeeId);
+      return { isFollow: true };
     }
   }
-  return await usersRepo.updateUser(userId, { username });
-}
 
-export const verifyLogin2FA = async (email: string, token: string) => {
-  const account = await usersRepo.findLocalAccountByEmail(email);
-  if (!account || !account.user_id) throw new Error("UserNotFound");
-
-  const security = await usersRepo.findUserSecurity(account.user_id);
-  if (!security || !security.totp_secret) throw new Error("2FA設定が見つかりません");
-
-  const totp = new TOTP({
-    crypto: new NodeCryptoPlugin(),
-    base32: new ScureBase32Plugin(),
-  });
-
-  // 🔍 デバッグ（残してもOK）
-  console.log("---- 2FA Debug ----");
-  console.log("Email:", email);
-  console.log("Token (入力):", token);
-  console.log("Secret (DB):", security.totp_secret);
-
-  const result = await totp.verify(token, { secret: security.totp_secret });
-  console.log("Result (verifyLogin2FA):", result);
-  console.log("-------------------");
-
-  // ✅ 修正箇所：result.valid を見る！
-  if (!result.valid) {
-    throw new Error("認証コードが正しくありません");
+  async getIsFollowing(followerId: string, followeeId: string) {
+    const isFollow = await this.usersRepo.isFollowing(followerId, followeeId);
+    return { isFollow };
   }
-  const user = await usersRepo.findUserById(account.user_id);
-  if (!user) throw new Error("UserNotFound");
-  return user;
-};
 
-
-/**
- * パスワード更新
- */
-export const changePassword = async (
-  userId: string,
-  newPassword: string
-): Promise<local_accounts> => {
-  return usersRepo.updatePassword(userId, newPassword);
-};
-
-export const toggleFollow = async (followerId: string, followeeId: string) => {
-  const exiting = await usersRepo.isFollowing(followerId, followeeId);
-  if (exiting) {
-    await usersRepo.unFollowUser(followerId, followeeId);
-    return { isFollow: false, message: "フォロー解除しました。" }
-  } else {
-    await usersRepo.followUser(followerId, followeeId);
-    return { isFollow: true, message: "フォローしました！" }
+  async getFollowers(userId: string) {
+    const records = await this.usersRepo.getFollowers(userId);
+    return records.map(r => r.users_user_follows_follower_idTousers);
   }
-}
 
-export const isFollowing = async (followerId: string, followeeId: string) => {
-  const exiting = await usersRepo.isFollowing(followerId, followeeId);
-  return { isFollow: exiting };
-}
+  async getFollowings(userId: string) {
+    const records = await this.usersRepo.getFollowings(userId);
+    return records.map(r => r.users_user_follows_followee_idTousers);
+  }
 
-export const getFollowers = async (userId: string) => {
-  return await usersRepo.getFollowers(userId);
-}
+  async get2FASettingValue(userId: string) {
+    const user = await this.usersRepo.findUserById(userId);
+    const security = await this.usersRepo.findUserSecurity(userId);
+    if (!user || !security) throw new Error("2FA設定が見つかりません");
+    return { email: user.email, totp_secret: security.totp_secret };
+  }
 
-export const getFollowings = async (userId: string) => {
-  return await usersRepo.getFollowings(userId);
-}
+  async getIs2FAEnabled(userId: string) {
+    const security = await this.usersRepo.findUserSecurity(userId);
+    return security?.is_2fa_enabled;
+  }
 
-export const get2FASettingValue = async (userId: string) => {
-  const user = await usersRepo.findUserById(userId);
-  if (!user) throw new Error("UserNotFound");
+  async saveTemp2FASecret(userId: string, secret: string) {
+    return await this.usersRepo.update2FASetting(userId, secret);
+  }
+  async verifyLogin2FA(email: string, token: string) {
+    const account = await this.usersRepo.findLocalAccountByEmail(email);
+    if (!account || !account.user_id) throw new Error("UserNotFound");
 
-  const security = await usersRepo.findUserSecurity(userId);
-  if (!security) throw new Error("2FA設定が見つかりません");
-  return { email: user.email, totp_secret: security.totp_secret };
-}
+    const security = await this.usersRepo.findUserSecurity(account.user_id);
+    if (!security || !security.totp_secret) throw new Error("2FA設定が見つかりません");
 
+    const totp = new TOTP({
+      crypto: new NodeCryptoPlugin(),
+      base32: new ScureBase32Plugin(),
+    });
 
-export const getIs2FAEnabled = async (userId: string) => {
-  const security = await usersRepo.findUserSecurity(userId);
-  return security?.is_2fa_enabled;
-}
-export const saveTemp2FASecret = async (userId: string, secret: string) => {
-  return await usersRepo.update2FASetting(userId, secret);
-}
+    // 🔍 デバッグ（残してもOK）
+    console.log("---- 2FA Debug ----");
+    console.log("Email:", email);
+    console.log("Token (入力):", token);
+    console.log("Secret (DB):", security.totp_secret);
 
-export const save2FASecret = async (userId: string, secret: string) => {
-  return await usersRepo.update2FASetting(userId, secret, true);
-}
+    const result = await totp.verify(token, { secret: security.totp_secret });
+    console.log("Result (verifyLogin2FA):", result);
+    console.log("-------------------");
 
-export const getUserRole = async (userId: string) => {
-  return await usersRepo.getUserRole(userId);
-}
+    // ✅ 修正箇所：result.valid を見る！
+    if (!result.valid) {
+      throw new Error("認証コードが正しくありません");
+    }
+    const user = await this.usersRepo.findUserById(account.user_id);
+    if (!user) throw new Error("UserNotFound");
+    return user;
+  };
 
-export const getUserIdentities = async (userId: string) => {
-  return await usersRepo.getUserIdentities(userId);
-}
+  async updateLastLogin(userId: string) {
+    return await this.usersRepo.updateLastLogin(userId);
+  }
+  async save2FASecret(userId: string, secret: string) {
+    return await this.usersRepo.update2FASetting(userId, secret, true);
+  }
 
-export const upsertAvatar = async (userId: string,  avatarUrl: string) => {
-  return await usersRepo.upsertLocalAvatar(userId, avatarUrl);
+  async delete2FASettings(userId: string) {
+    return await this.usersRepo.delete2FASetting(userId);
+  }
+
+  async getUserRole(userId: string) {
+    const role = await this.usersRepo.getUserRole(userId);
+    return role?.roles?.name;
+  }
+
+  async updateUserInfo(userId: string, displayName: string, bio: string) {
+    return await this.usersRepo.updateUser(userId, { display_name: displayName, bio, updated_at: new Date() });
+  }
+
+  async updateUsername(userId: string, username: string) {
+    return await this.usersRepo.updateUser(userId, { username, updated_at: new Date() });
+  }
+
+  async getUserIdentities(userId: string) {
+    return await this.usersRepo.getUserIdentities(userId);
+  }
+
+  async updateLocalAvatar(userId: string, pathname: string) {
+    return await this.usersRepo.upsertLocalAvatar(userId, pathname);
+  }
 }
