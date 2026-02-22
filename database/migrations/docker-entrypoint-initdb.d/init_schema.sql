@@ -166,6 +166,8 @@ CREATE TABLE IF NOT EXISTS articles (
     updated_at TIMESTAMP DEFAULT NOW(),
     status VARCHAR(10),
     is_published BOOLEAN DEFAULT FALSE,
+    is_private BOOLEAN DEFAULT FALSE,
+    is_deleted BOOLEAN DEFAULT FALSE,
     like_count INT DEFAULT 0,
     view_count INT DEFAULT 0,
     bookmark_count INT DEFAULT 0,
@@ -184,6 +186,8 @@ COMMENT ON COLUMN articles.created_at IS '作成日時';
 COMMENT ON COLUMN articles.updated_at IS '更新日時';
 COMMENT ON COLUMN articles.status IS 'ステータス';
 COMMENT ON COLUMN articles.is_published IS '公開フラグ';
+COMMENT ON COLUMN articles.is_private IS '非公開フラグ';
+COMMENT ON COLUMN articles.is_deleted IS '論理削除フラグ';
 COMMENT ON COLUMN articles.like_count IS 'いいね数';
 COMMENT ON COLUMN articles.view_count IS '閲覧数';
 COMMENT ON COLUMN articles.bookmark_count IS 'ブックマーク数';
@@ -193,7 +197,8 @@ COMMENT ON COLUMN articles.comment_count IS 'コメント数';
 CREATE TABLE IF NOT EXISTS tags (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
     name VARCHAR(50),
-    slug VARCHAR(50),
+    slug VARCHAR(50) UNIQUE,
+    avatar_url TEXT,
     description TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -202,6 +207,7 @@ COMMENT ON TABLE tags IS 'タグ';
 COMMENT ON COLUMN tags.id IS 'タグID';
 COMMENT ON COLUMN tags.name IS 'タグ名';
 COMMENT ON COLUMN tags.slug IS 'スラッグ';
+COMMENT ON COLUMN tags.avatar_url IS 'タグアイコン';
 COMMENT ON COLUMN tags.description IS '説明';
 COMMENT ON COLUMN tags.created_at IS '作成日時';
 
@@ -402,9 +408,9 @@ CREATE TABLE IF NOT EXISTS knowledge.user_avatars (
 );
 
 -- 1ユーザーにつき is_selected = true は1つだけという制約
-CREATE UNIQUE INDEX IF NOT EXISTS idx_user_avatars_selected_one 
-ON knowledge.user_avatars (user_id) 
-WHERE (is_selected = TRUE);
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_user_avatars_selected_one 
+-- ON knowledge.user_avatars (user_id) 
+-- WHERE (is_selected = TRUE);
 
 COMMENT ON TABLE knowledge.user_avatars IS 'ユーザーのアバター画像管理';
 COMMENT ON COLUMN knowledge.user_avatars.id IS 'アバターID';
@@ -413,6 +419,48 @@ COMMENT ON COLUMN knowledge.user_avatars.service_name IS '取得元サービス�
 COMMENT ON COLUMN knowledge.user_avatars.avatar_url IS 'サーバー内のローカル保存パス';
 COMMENT ON COLUMN knowledge.user_avatars.source_url IS '外部サービスのオリジナルURL';
 COMMENT ON COLUMN knowledge.user_avatars.is_selected IS '現在選択中フラグ';
+
+-- webhook_settings
+CREATE TABLE IF NOT EXISTS knowledge.webhook_settings (
+    id uuid NOT NULL DEFAULT uuidv7(),
+    name VARCHAR(50) NOT NULL,                         -- 管理名（例: Discord通知）
+    provider VARCHAR(30) NOT NULL,                     -- Webhook種別 (discord, slack, teams, custom)
+    url TEXT NOT NULL,                                 -- Webhook URL
+    headers JSONB DEFAULT '{}'::jsonb,                 -- 任意の追加HTTPヘッダー
+    payload_template JSONB DEFAULT '{}'::jsonb,        -- カスタムWebhook用テンプレート
+    is_active BOOLEAN DEFAULT false,                   -- 有効フラグ
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT webhook_settings_pkey PRIMARY KEY (id),
+    CONSTRAINT webhook_settings_name_unique UNIQUE (name)
+);
+
+COMMENT ON TABLE knowledge.webhook_settings IS 'Webhook通知設定';
+COMMENT ON COLUMN knowledge.webhook_settings.id IS 'Webhook設定ID';
+COMMENT ON COLUMN knowledge.webhook_settings.name IS '管理名';
+COMMENT ON COLUMN knowledge.webhook_settings.provider IS 'Webhook種別 (discord, slack, teams, custom)';
+COMMENT ON COLUMN knowledge.webhook_settings.url IS 'Webhook送信先URL';
+COMMENT ON COLUMN knowledge.webhook_settings.headers IS '追加HTTPヘッダー（カスタムWebhook用）';
+COMMENT ON COLUMN knowledge.webhook_settings.payload_template IS '送信ペイロードテンプレート';
+COMMENT ON COLUMN knowledge.webhook_settings.is_active IS '有効化フラグ';
+COMMENT ON COLUMN knowledge.webhook_settings.created_at IS '作成日時';
+COMMENT ON COLUMN knowledge.webhook_settings.updated_at IS '更新日時';
+
+-- tag_follows
+CREATE TABLE IF NOT EXISTS knowledge.tag_follows (
+    user_id UUID REFERENCES users(id),
+    tag_id UUID REFERENCES tags(id),
+    followed_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (user_id, tag_id)
+);
+
+COMMENT ON TABLE knowledge.tag_follows IS 'ユーザのフォローしているタグ';
+COMMENT ON COLUMN knowledge.tag_follows.user_id IS 'フォローしたユーザ';
+COMMENT ON COLUMN knowledge.tag_follows.tag_id IS 'フォローされたタグ';
+COMMENT ON COLUMN knowledge.tag_follows.followed_at IS 'フォロー日時';
+
+
+
 
 -- ---------------------------------
 -- 記事の like, view, bookmark, comment 更新関数
