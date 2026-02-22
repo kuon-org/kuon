@@ -3,10 +3,12 @@ import { useAuthQuery } from "../../../hooks/useAuth";
 import { NavButton } from "../../common/NavButton";
 import EditIcon from "@mui/icons-material/Edit";
 import { UserIcon } from "./UserIcon";
-
+import SettingsIcon from "@mui/icons-material/Settings";
+import { Link } from "@tanstack/react-router";
+import { adminRoute } from "../../../router";
 const TopBar = () => {
   const { user } = useAuthQuery();
-
+  const isAdmin = user?.role === "admin" ? true : false;
 
   return (
     <AppBar position="static" color="primary" sx={{ height: "56px" }}>
@@ -43,7 +45,17 @@ const TopBar = () => {
             gap: 2,
           }}
         >
-
+          {isAdmin && (
+            <>
+            <Link
+              to={adminRoute.to}
+              style={{ textDecoration: "none", color: "inherit"}}
+            >
+              <SettingsIcon />
+            </Link>
+             
+            </>
+          )}
           {user ? (
             <>
               <UserIcon />
@@ -68,6 +80,7 @@ const TopBar = () => {
             </>
 
           )}
+          
         </Box>
       </Toolbar>
     </AppBar>

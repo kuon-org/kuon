@@ -9,6 +9,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { useNavigate } from "@tanstack/react-router";
 import { ThemeSelect } from "../../common/ThemeSelect";
 import ContrastIcon from '@mui/icons-material/Contrast';
+import DeleteIcon from '@mui/icons-material/Delete';
 import styled from "@emotion/styled";
 
 const StyledListHeader = styled(Box)({
@@ -57,6 +58,11 @@ export const UserIcon = () => {
         navigate({ to: "/settings" });
         handleCloseMenu();
     }
+
+    const handleTrash = () => {
+        navigate({ to: "/trash" });
+        handleCloseMenu();
+    }
     return (
         <>
             <IconButton onClick={handleOpenMenu} sx={{ p: 0 }}>
@@ -88,7 +94,7 @@ export const UserIcon = () => {
                 }}
             >
                 {!showThemeSelect ? (
-                    <>
+                    <Box>
                         <MenuItem onClick={handleMyPage}>
                             <PersonIcon sx={{ mr: 1 }} />マイページ
                         </MenuItem>
@@ -101,7 +107,9 @@ export const UserIcon = () => {
                         <MenuItem onClick={handleDrafts}>
                             <EditNoteIcon sx={{ mr: 1 }} />下書き一覧
                         </MenuItem>
-
+                        <MenuItem onClick={handleTrash}>
+                            <DeleteIcon sx={{ mr: 1 }} />ゴミ箱
+                        </MenuItem>
                         <Divider />
                         <MenuItem onClick={handleSettings}>
                             <SettingsIcon sx={{ mr: 1 }} />設定
@@ -109,16 +117,16 @@ export const UserIcon = () => {
                         <MenuItem onClick={handleLogout}>
                             <LogoutIcon sx={{ mr: 1 }} />{logout_isPending ? "ログアウト中..." : "ログアウト"}
                         </MenuItem>
-                    </>
+                    </Box>
                 ) : (
-                    <>
+                    <Box>
                         <StyledListHeader onClick={() => setShowThemeSelect(false)}>
                             <NavigateBeforeIcon />ユーザーメニューへ戻る
                         </StyledListHeader>
                         <MenuItem>
                             <ThemeSelect label="テーマ" fullWidth />
                         </MenuItem>
-                    </>
+                    </Box>
                 )}
             </Menu>
         </>

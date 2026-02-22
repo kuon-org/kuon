@@ -9,6 +9,7 @@ import { LikeButton } from "../../components/Like/LikeButton";
 import { Link } from "@tanstack/react-router";
 import { More } from "../../components/Markdown/More";
 import { BottomBar } from "../../components/layouts/BottomBar/BottomBar";
+import { CommentJump } from "../../components/Article/Comment/CommentJump";
 
 export const ArticleLayout = () => {
     const { articleId } = articleRoute.useParams();
@@ -83,7 +84,7 @@ export const ArticleLayout = () => {
                 {isLoading ? (
                     <Typography variant="body2">読み込み中...</Typography>
                 ) : (
-                    article && <TocList content={article.render_content} />
+                    article && <><CommentJump articleId={articleId}/><TocList content={article.render_content} /></>
                 )}
             </RightSection>
             <BottomBar>

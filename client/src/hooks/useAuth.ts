@@ -159,6 +159,17 @@ export const useAuthQuery = () => {
     },
   });
 
+  const delete2FA = useMutation({
+    mutationFn: async () => {
+      const { data } = await apiClient.delete('/users/settings/delete2fa');
+      return data;
+    },
+    onSuccess: async () => {
+      // ログイン情報を再取得
+      await queryClient.invalidateQueries({ queryKey: ['authUser'] });
+    },
+  })
+
   const getUploadedImagesQuery = useQuery({
     queryKey: ["uploaded_images"],
     queryFn: async () => {
@@ -276,6 +287,8 @@ export const useAuthQuery = () => {
     setup2FA_isPending: setup2FA.isPending,
     setupVerify2FA: setupVerify2FA.mutate,
     setupVerify2FA_isPending: setupVerify2FA.isPending,
+    delete2FA: delete2FA.mutate,
+    delete2FA_isPending: delete2FA.isPending,
     loginVerify2FA: loginVerify2FA.mutate,
     loginVerify2FA_isPending: loginVerify2FA.isPending,
     uploadedImages: getUploadedImagesQuery.data,

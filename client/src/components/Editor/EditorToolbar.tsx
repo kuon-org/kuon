@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Box, IconButton, Tooltip, Divider, Menu, MenuItem, ListItemText, Typography } from '@mui/material';
+import { useState } from 'react';
+import { Box, IconButton, Tooltip, Divider, Menu, MenuItem, ListItemText, Typography, useMediaQuery, useTheme } from '@mui/material';
 import {
     FormatSize, FormatBold, FormatItalic, FormatUnderlined, StrikethroughS,
     FormatListBulleted, FormatListNumbered, FormatQuote, HorizontalRule,
     Code, IntegrationInstructions, TableChart, Image, Link, Delete, Undo, Redo,
-    Sync, SyncDisabled
+    Sync, SyncDisabled,
+    VerticalSplit, ViewHeadline, Visibility, Fullscreen, FullscreenExit
 } from '@mui/icons-material';
 
 interface EditorToolbarProps {
@@ -12,21 +13,21 @@ interface EditorToolbarProps {
     isSync: boolean;
     onSyncToggle: () => void;
     onImageClick: () => void;
+    viewMode: 'split' | 'editor' | 'preview';
+    setViewMode: (mode: 'split' | 'editor' | 'preview') => void;
+    isFullscreen: boolean;
+    onFullscreenToggle: () => void;
 }
 
-export const EditorToolbar = ({ onAction, isSync, onSyncToggle, onImageClick }: EditorToolbarProps) => {
+export const EditorToolbar = ({
+    onAction, isSync, onSyncToggle, onImageClick,
+    viewMode, setViewMode, isFullscreen, onFullscreenToggle
+}: EditorToolbarProps) => {
     const [headingAnchor, setHeadingAnchor] = useState<null | HTMLElement>(null);
-
+    const theme = useTheme();
+    const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
     const handleHeadingAction = (level: number) => {
         onAction(`h${level}`);
-        setHeadingAnchor(null);
-    };
-    const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
-        setHeadingAnchor(event.currentTarget);
-    };
-
-    // マウスが離れた時（メニューの外に出た時）
-    const handleMouseLeave = () => {
         setHeadingAnchor(null);
     };
 
@@ -52,43 +53,38 @@ export const EditorToolbar = ({ onAction, isSync, onSyncToggle, onImageClick }: 
         { icon: <Redo />, type: 'redo', label: 'やり直し' },
     ];
 
+    // アクティブなボタン（水色）のスタイル
+    const activeStyle = {
+        color: '#00bfff', // 水色
+        bgcolor: 'rgba(0, 191, 255, 0.08)',
+        '&:hover': { bgcolor: 'rgba(0, 191, 255, 0.15)' }
+    };
+
+    // 通常のボタン（グレー）のスタイル
+    const normalStyle = {
+        color: 'rgba(0,0,0,0.54)',
+        '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+    };
+
     return (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', p: 0.5, borderBottom: '1px solid', borderColor: 'divider', bgcolor: '#f9f9f9' }}>
-            {/* 見出しメニュー */}
-            <Box onMouseLeave={handleMouseLeave}>
+            <Box onMouseLeave={() => setHeadingAnchor(null)}>
                 <Tooltip title="見出し" arrow>
-                    <IconButton
-                        size="small"
-                        onMouseEnter={handleMouseEnter}
-                        sx={{ color: headingAnchor ? 'primary.main' : 'rgba(0,0,0,0.6)' }}
-                    >
+                    <IconButton size="small" onMouseEnter={(e) => setHeadingAnchor(e.currentTarget)} sx={normalStyle}>
                         <FormatSize />
                     </IconButton>
                 </Tooltip>
-
                 <Menu
                     anchorEl={headingAnchor}
                     open={Boolean(headingAnchor)}
-                    onClose={handleMouseLeave}
-                    // メニュー自体にマウスが乗っている間は閉じないようにする
-                    MenuListProps={{ onMouseEnter: () => setHeadingAnchor(headingAnchor), onMouseLeave: handleMouseLeave }}
-                    // ホバーで出す際の表示位置の微調整
+                    onClose={() => setHeadingAnchor(null)}
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                     transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                    // 背景のクリック不可（ホバーを邪魔しないため）
-                    slotProps={{
-                        paper: {
-                            sx: { pointerEvents: 'auto' }
-                        }
-                    }}
-                    sx={{ pointerEvents: 'none' }}
                 >
                     {[1, 2, 3, 4, 5, 6].map((l) => (
                         <MenuItem key={l} onClick={() => handleHeadingAction(l)}>
                             <ListItemText>見出し {l}</ListItemText>
-                            <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
-                                {'#'.repeat(l)}
-                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>{'#'.repeat(l)}</Typography>
                         </MenuItem>
                     ))}
                 </Menu>
@@ -101,7 +97,7 @@ export const EditorToolbar = ({ onAction, isSync, onSyncToggle, onImageClick }: 
                     <Divider key={`div-${i}`} orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
                 ) : (
                     <Tooltip key={btn.type} title={btn.label} arrow>
-                        <IconButton sx={{ color: 'rgba(0,0,0,0.6)' }} size="small" onClick={() => btn.type === 'image' ? onImageClick() : onAction(btn.type as string)}>
+                        <IconButton sx={normalStyle} size="small" onClick={() => btn.type === 'image' ? onImageClick() : onAction(btn.type as string)}>
                             {btn.icon}
                         </IconButton>
                     </Tooltip>
@@ -110,8 +106,41 @@ export const EditorToolbar = ({ onAction, isSync, onSyncToggle, onImageClick }: 
 
             <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
 
+            {/* 表示モード：ここを個別にスタイル判定 */}
+            {!isSmall && (
+                <>
+                    <Tooltip title="エディタのみ" arrow>
+                        <IconButton size="small" onClick={() => setViewMode('editor')} sx={viewMode === 'editor' ? activeStyle : normalStyle}>
+                            <ViewHeadline />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="分割表示" arrow>
+                        <IconButton size="small" onClick={() => setViewMode('split')} sx={viewMode === 'split' ? activeStyle : normalStyle}>
+                            <VerticalSplit />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="プレビューのみ" arrow>
+                        <IconButton size="small" onClick={() => setViewMode('preview')} sx={viewMode === 'preview' ? activeStyle : normalStyle}>
+                            <Visibility />
+                        </IconButton>
+                    </Tooltip>
+                </>
+            )}
+
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
+
+            {/* 全画面 */}
+            <Tooltip title={isFullscreen ? "全画面解除" : "全画面表示"} arrow>
+                <IconButton size="small" onClick={onFullscreenToggle} sx={isFullscreen ? activeStyle : normalStyle}>
+                    {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
+                </IconButton>
+            </Tooltip>
+
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
+
+            {/* スクロール同期 */}
             <Tooltip title={isSync ? "スクロール同期ON" : "スクロール同期OFF"} arrow>
-                <IconButton size="small" onClick={onSyncToggle} sx={{ color: isSync ? "primary" : "default" }}>
+                <IconButton size="small" onClick={onSyncToggle} sx={isSync ? activeStyle : normalStyle}>
                     {isSync ? <Sync /> : <SyncDisabled />}
                 </IconButton>
             </Tooltip>

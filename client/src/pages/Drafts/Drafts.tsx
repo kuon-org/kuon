@@ -8,7 +8,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 export const Drafts = () => {
     const [showUnpublishedOnly, setShowUnpublishedOnly] = useState(false);
     const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
-    const { userArticles, userArticles_isLoading } = useArticles();
+    const { userArticles, userArticles_isLoading, rollbackArticle, deleteArticle } = useArticles();
     const navigate = useNavigate();
     const theme = useTheme();
     const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
@@ -20,6 +20,17 @@ export const Drafts = () => {
 
     // 選択された記事
     const selectedArticle = filteredDrafts.find(a => a.id === selectedArticleId);
+    const handleRollback = (id: string, title: string) => {
+        if (window.confirm(`「${title}」の編集内容を破棄して、公開中の状態に戻しますか？`)) {
+            rollbackArticle(id);
+        }
+    };
+
+    const handleDelete = (id: string, title: string) => {
+        if (window.confirm(`「${title}」を完全に削除しますか？ゴミ箱へ移動します。`)) {
+            deleteArticle(id);
+        }
+    };
 
     return (
         <Container
@@ -61,52 +72,66 @@ export const Drafts = () => {
                             <ListItemText primary="読み込み中..." />
                         </ListItem>
                     ) : (
-                        filteredDrafts.map(a => (
-                            <ListItemButton
-                                key={a.id}
-                                divider
-                                selected={a.id === selectedArticleId}
-                                onClick={() => {
-                                    if (isSmall) {
-                                        navigate({ to: "/drafts/$articleId/edit", params: { articleId: a.id } });
-                                    } else {
-                                        setSelectedArticleId(a.id);
-                                    }
-                                }}
-                                sx={{ flexDirection: "column", alignItems: "flex-start", py: 1.5 }}
-                            >
-                                <Box sx={{ display: "flex", gap: 1, width: "100%", mb: 0.5 }}>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {a.is_published && "公開済み"}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        最終更新: {new Date(a.updated_at).toLocaleDateString()}
-                                    </Typography>
+                        filteredDrafts.map(a => {
+                            const hasDraftDiff = a.is_published && a.status === 'draft';
+                            return (
 
-                                </Box>
-                                <ListItemText
-                                    primary={a.title}
-                                    secondary={a.raw_content.substring(0, 50) + (a.raw_content.length > 50 ? "..." : "")}
-                                />
-                                <Box sx={{ display: "flex", gap: 1, width: "100%", mb: 0.5 }}>
-                                    <Link
-                                        to="/drafts/$articleId/edit"
-                                        params={{
-                                            articleId: a.id
-                                        }}
-                                    >
-                                        <Button variant="outlined" onClick={(e) => e.stopPropagation()}>
-                                            編集する
+                                <ListItemButton
+                                    key={a.id}
+                                    divider
+                                    selected={a.id === selectedArticleId}
+                                    onClick={() => {
+                                        if (isSmall) {
+                                            navigate({ to: "/drafts/$articleId/edit", params: { articleId: a.id } });
+                                        } else {
+                                            setSelectedArticleId(a.id);
+                                        }
+                                    }}
+                                    sx={{ flexDirection: "column", alignItems: "flex-start", py: 1.5 }}
+                                >
+                                    <Box sx={{ display: "flex", gap: 1, width: "100%", mb: 0.5 }}>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {a.is_published && "公開済み"}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            最終更新: {new Date(a.updated_at).toLocaleDateString()}
+                                        </Typography>
+
+                                    </Box>
+                                    <ListItemText
+                                        primary={a.title}
+                                        secondary={a.raw_content.substring(0, 50) + (a.raw_content.length > 50 ? "..." : "")}
+                                    />
+                                    <Box sx={{ display: "flex", gap: 1, width: "100%", mb: 0.5 }}>
+                                        <Link
+                                            to="/drafts/$articleId/edit"
+                                            params={{
+                                                articleId: a.id
+                                            }}
+                                        >
+                                            <Button variant="outlined" onClick={(e) => e.stopPropagation()}>
+                                                編集する
+                                            </Button>
+                                        </Link>
+                                        {hasDraftDiff && (
+                                            <Button
+                                                variant="outlined"
+                                                color="error"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRollback(a.id, a.title);
+                                                }}
+                                            >
+                                                下書きを削除する
+                                            </Button>
+                                        )}
+                                        <Button variant="outlined" color="error" size="small" onClick={(e) => { e.stopPropagation(); handleDelete(a.id, a.title); }}>
+                                            削除
                                         </Button>
-                                    </Link>
-                                    <>
-                                        <Button variant="outlined" color="error" onClick={(e) => { e.stopPropagation(); }}>
-                                            下書きを削除する
-                                        </Button>
-                                    </>
-                                </Box>
-                            </ListItemButton>
-                        ))
+                                    </Box>
+                                </ListItemButton>
+                            )
+                        })
                     )}
                     {(!userArticles_isLoading && filteredDrafts.length === 0) && (
                         <ListItem>

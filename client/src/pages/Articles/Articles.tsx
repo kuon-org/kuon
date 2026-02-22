@@ -4,10 +4,9 @@ import type { Article } from "../../hooks/useArticles";
 import Markdown from "../../components/Markdown";
 import { Link } from "@tanstack/react-router";
 import { BottomUserCard } from "../../components/Article/BottomUserCard";
-const mockTag = "Test";
-const mockTag2 = "Test2";
+import { Comment } from "../../components/Article/Comment/Comment";
 
-const mockTags = [mockTag, mockTag2]
+import { TagChip } from "../../components/common/TagChip";
 
 interface ArticlesProps {
   article?: Article;
@@ -39,7 +38,7 @@ const Articles = ({
           p: 3,
           backgroundColor: 'background.paper',
           scrollBehavior: 'smooth',
-          width: { xs: "100vw", sm: "100vw" }, 
+          width: { xs: "100vw", sm: "100vw" },
           maxWidth: { md: "450px", lg: "750px", xl: "1200px" }
         }}
       >
@@ -115,31 +114,54 @@ const Articles = ({
 
         <Box sx={{ display: "flex", flexDirection: "column", mt: 2, mb: 2 }}>
           <Typography variant="h4">{article.title}</Typography>
-          <Box mt={1} mb={1} display="flex" gap={1} flexWrap="wrap">
-            {mockTags.map((m) => (
-              <Chip
-                key={m}
-                label={m}
-                size="small"
-                color="default"
-              />
+          <Box px={4} mt={1} mb={1} display="flex" gap={1} flexWrap="wrap">
+            {article.article_tags.map((tagItem) => (
+              <TagChip key={tagItem.tags.id} tag={tagItem.tags} />
             ))}
           </Box>
-          <Typography variant="subtitle1" color="text.secondary">
-            投稿日 {new Date(article.created_at).toLocaleDateString()}
-          </Typography>
+          <Typography variant="subtitle1" sx={{ fontSize: "0.75rem" }}>♡  {article.like_count}</Typography>
+          <Box sx={{ display: "flex", gap: 1, verticalAlign: "center" }}>
+            {article.updated_at && article.updated_at !== article.created_at && (
+              <Typography variant="subtitle1" color="text.secondary">
+                最終更新日 {new Date(article.updated_at).toLocaleDateString()}
+              </Typography>
+            )}
+            <Typography variant="subtitle1" color="text.secondary">
+              投稿日 {new Date(article.created_at).toLocaleDateString()}
+            </Typography>
+          </Box>
+
         </Box>
 
         <Markdown text={article.render_content} />
 
       </Paper>
-      <Paper sx={{ mt: 2}}>
+      <Paper
+        sx={{
+          mt: 2,
+          backgroundColor: 'background.paper',
+          scrollBehavior: 'smooth',
+          width: { xs: "100vw", sm: "100vw" },
+          maxWidth: { md: "450px", lg: "750px", xl: "1200px" }
+        }}
+      >
         <BottomUserCard
           image_src=""
           username={article.users.username}
           display_name={article.users.display_name}
         />
       </Paper>
+      <Paper
+        sx={{
+          mt: 2,
+          backgroundColor: 'background.paper',
+          scrollBehavior: 'smooth',
+          width: { xs: "100vw", sm: "100vw" },
+          maxWidth: { md: "450px", lg: "750px", xl: "1200px" }
+        }}
+      >
+        <Comment articleId={article.id} />
+      </Paper >
 
     </>
   );
