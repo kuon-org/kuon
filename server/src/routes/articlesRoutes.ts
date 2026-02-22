@@ -1,20 +1,21 @@
 import { Router } from "express";
-import {
-  createArticle,
-  getArticle,
-  getArticleIsOwned,
-  getArticleLikeUserByArticleId,
-  getArticleMarkdown,
-  getArticles,
-  getArticlesByUserId,
-  getIsLiked,
-  toggleLike,
-  updateArticle,
-  uploadArticleImage,
-} from "../controllers/articlesController.js";
-import { authenticateToken } from "../middlewares/auth.js";
-
+import { authenticateToken, optionalAuth } from "../middlewares/auth.js";
+import { ArticlesRepository } from "../repositories/articlesRepository.js";
+import { UploadImagesRepository } from "../repositories/uploadImagesRepository.js";
+import { ArticlesService } from "../services/articlesService.js";
+import { UploadImagesService } from "../services/uploadImagesService.js";
+import { ArticlesController } from "../controllers/articlesController.js";
 const articlesRouter = Router();
+
+// 1. インスタンス化 (Dependency Injection)
+const articlesRepo = new ArticlesRepository();
+const uploadImagesRepo = new UploadImagesRepository();
+
+const articlesService = new ArticlesService(articlesRepo);
+const uploadImagesService = new UploadImagesService(uploadImagesRepo);
+
+const articlesCtrl = new ArticlesController(articlesService, uploadImagesService);
+
 
 /**
  * @openapi
@@ -33,7 +34,7 @@ const articlesRouter = Router();
  *               items:
  *                 $ref: '#/components/schemas/Article'
  */
-articlesRouter.get("/articles", getArticles);
+articlesRouter.get("/articles", articlesCtrl.getArticles);
 
 /**
  * @openapi
@@ -52,7 +53,7 @@ articlesRouter.get("/articles", getArticles);
  *              items:
  *                $ref: '#/components/schemas/Articles'
  */
-articlesRouter.get("/articles/me", authenticateToken, getArticlesByUserId);
+articlesRouter.get("/articles/me", authenticateToken, articlesCtrl.getArticlesByUserId);
 
 
 
@@ -77,7 +78,7 @@ articlesRouter.get("/articles/me", authenticateToken, getArticlesByUserId);
  *             schema:
  *               type: string
  */
-articlesRouter.get("/articles/:articleId.md", getArticleMarkdown);
+articlesRouter.get("/articles/:articleId.md", optionalAuth, articlesCtrl.getArticleMarkdown);
 
 /**
  * @openapi
@@ -102,7 +103,7 @@ articlesRouter.get("/articles/:articleId.md", getArticleMarkdown);
  *       '404':
  *         description: 見つかりません
  */
-articlesRouter.get("/articles/:articleId", getArticle);
+articlesRouter.get("/articles/:articleId", optionalAuth, articlesCtrl.getArticle);
 
 /**
  * @openapi
@@ -133,7 +134,7 @@ articlesRouter.get("/articles/:articleId", getArticle);
 articlesRouter.get(
   "/articles/:articleId/isowned",
   authenticateToken,
-  getArticleIsOwned
+  articlesCtrl.getArticleIsOwned
 );
 
 /**
@@ -158,7 +159,7 @@ articlesRouter.get(
 articlesRouter.post(
   "/articles/:articleId/like",
   authenticateToken,
-  toggleLike
+  articlesCtrl.toggleLike
 );
 
 /**
@@ -191,7 +192,7 @@ articlesRouter.post(
  */
 articlesRouter.get(
   "/articles/:articleId/likes",
-  getArticleLikeUserByArticleId
+  articlesCtrl.getArticleLikeUserByArticleId
 );
 
 /**
@@ -220,7 +221,7 @@ articlesRouter.get(
  *                 liked:
  *                   type: boolean
  */
-articlesRouter.get("/articles/:articleId/islike", authenticateToken, getIsLiked);
+articlesRouter.get("/articles/:articleId/islike", authenticateToken, articlesCtrl.getIsLiked);
 
 /**
  * @openapi
@@ -254,7 +255,7 @@ articlesRouter.get("/articles/:articleId/islike", authenticateToken, getIsLiked)
  *             schema:
  *               $ref: '#/components/schemas/Article'
  */
-articlesRouter.post("/articles/create", authenticateToken, createArticle);
+articlesRouter.post("/articles/create", authenticateToken, articlesCtrl.createArticle);
 
 /**
  * @openapi
@@ -289,7 +290,44 @@ articlesRouter.post("/articles/create", authenticateToken, createArticle);
  *       '200':
  *         description: 更新成功
  */
-articlesRouter.put("/articles/:articleId/edit", authenticateToken, updateArticle);
+articlesRouter.put("/articles/:articleId/edit", authenticateToken, articlesCtrl.updateArticle);
+
+/**
+ * @opanapi
+ * /api/articles/:articleId/rollback:
+ *   post:
+ *     summary: 下書き破棄
+ *     tags: [Articles]
+ *     security:
+ *       - CookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: articleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: 破棄成功
+ */
+articlesRouter.post("/articles/:articleId/rollback", authenticateToken, articlesCtrl.rollBackDraft)
+
+/**
+ * @openapi
+ * /api/articles/:articleId:
+ *   delete:
+ *     summary: 記事の論理削除
+ *     tags: [Articles]
+ *     security:
+ *       - CookieAuth: []
+ */
+articlesRouter.delete("/articles/:articleId", authenticateToken, articlesCtrl.deleteArticle);
+
+articlesRouter.get("/articles/trash/list", authenticateToken, articlesCtrl.getDeletedArticlesByUserId);
+
+articlesRouter.post("/articles/:articleId/restore", authenticateToken, articlesCtrl.restoreArticle);
+
+articlesRouter.delete("/articles/:articleId/harddelete", authenticateToken, articlesCtrl.hardDeleteArticle);
 
 /**
  * @openapi
@@ -307,6 +345,6 @@ articlesRouter.put("/articles/:articleId/edit", authenticateToken, updateArticle
  *       '200':
  *         description: 画像URL        
  */
-articlesRouter.post("/articles/upload", authenticateToken, uploadArticleImage);
+articlesRouter.post("/articles/upload", authenticateToken, articlesCtrl.uploadArticleImage);
 
 export default articlesRouter;

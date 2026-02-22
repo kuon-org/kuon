@@ -1,29 +1,23 @@
 import { Router } from "express";
-import {
-  getUsers,
-  getUserById,
-  getUserByUsername,
-  registerUser,
-  loginUser,
-  changePassword,
-  getMe,
-  logoutUser,
-  toggleFollow,
-  isFollowing,
-  getFollowings,
-  getFollowers,
-  setUp2FA,
-  verify2FA,
-  verifyLogin2FA,
-  getUploadedImages,
-  updateUserInfo,
-  updateUsername,
-  getUserIdentities,
-  uploadLocalAvatar,
-} from "../controllers/usersController.js";
 import { authenticateToken } from "../middlewares/auth.js";
+import { UsersRepository } from "../repositories/usersRepository.js";
+import { UsersService } from "../services/usersService.js";
+import { UsersController } from "../controllers/usersController.js";
+import { UploadImagesRepository } from "../repositories/uploadImagesRepository.js";
+import { UploadImagesService } from "../services/uploadImagesService.js";
 
 const usersRouter = Router();
+
+// インスタンス化
+const usersRepo = new UsersRepository();
+const usersService = new UsersService(usersRepo);
+
+// UploadImagesServiceが必要なため、こちらもインスタンス化
+const uploadImagesRepo = new UploadImagesRepository();
+const uploadImagesService = new UploadImagesService(uploadImagesRepo);
+
+const usersCtrl = new UsersController(usersService, uploadImagesService);
+
 
 /**
  * @openapi
@@ -40,7 +34,7 @@ const usersRouter = Router();
  *               type: array
  *               items: { $ref: '#/components/schemas/User' }
  */
-usersRouter.get("/users", getUsers);
+usersRouter.get("/users", usersCtrl.getUsers);
 
 /**
  * @openapi
@@ -62,7 +56,7 @@ usersRouter.get("/users", getUsers);
  *       '404':
  *         description: 見つかりません
  */
-usersRouter.get("/users/id/:userId", getUserById);
+usersRouter.get("/users/id/:userId", usersCtrl.getUserById);
 
 /**
  * @openapi
@@ -84,7 +78,7 @@ usersRouter.get("/users/id/:userId", getUserById);
  *       '404':
  *         description: 見つかりません
  */
-usersRouter.get("/users/:username", getUserByUsername);
+usersRouter.get("/users/:username", usersCtrl.getUserByUsername);
 
 /**
  * @openapi
@@ -103,7 +97,7 @@ usersRouter.get("/users/:username", getUserByUsername);
  *       '401':
  *         description: 未ログイン
  */
-usersRouter.get("/me", authenticateToken, getMe);
+usersRouter.get("/me", authenticateToken, usersCtrl.getMe);
 
 /**
  * @openapi
@@ -129,7 +123,7 @@ usersRouter.get("/me", authenticateToken, getMe);
  *       '409':
  *         description: 競合（既に存在）
  */
-usersRouter.post("/register", registerUser);
+usersRouter.post("/register", usersCtrl.registerUser);
 
 /**
  * @openapi
@@ -158,7 +152,7 @@ usersRouter.post("/register", registerUser);
  *       '401':
  *         description: 認証失敗
  */
-usersRouter.post("/login", loginUser);
+usersRouter.post("/login", usersCtrl.loginUser);
 
 /**
  * @openapi
@@ -217,7 +211,7 @@ usersRouter.post("/login", loginUser);
  *       '404':
  *         description: ユーザーまたは 2FA 設定が見つからない
  */
-usersRouter.post("/login/verify-2fa", verifyLogin2FA);
+usersRouter.post("/login/verify-2fa", usersCtrl.verifyLogin2FA);
 
 
 /**
@@ -230,7 +224,7 @@ usersRouter.post("/login/verify-2fa", verifyLogin2FA);
  *       '200':
  *         description: 成功（Cookie の削除）
  */
-usersRouter.post("/logout", logoutUser);
+usersRouter.post("/logout", usersCtrl.logoutUser);
 
 /**
  * @openapi
@@ -258,7 +252,7 @@ usersRouter.post("/logout", logoutUser);
  *       '404':
  *         description: 見つかりません
  */
-usersRouter.put("/users/:userId/password", changePassword);
+usersRouter.put("/users/:userId/password", usersCtrl.changePassword);
 
 /**
  * @openapi
@@ -274,7 +268,7 @@ usersRouter.put("/users/:userId/password", changePassword);
  *     '200':
  *       description: 更新成功
  */
-usersRouter.put("/users/update/info", authenticateToken, updateUserInfo)
+usersRouter.put("/users/update/info", authenticateToken, usersCtrl.updateUserInfo)
 
 /**
  * @openapi
@@ -290,7 +284,7 @@ usersRouter.put("/users/update/info", authenticateToken, updateUserInfo)
  *     '200':
  *       description: 更新成功
  */
-usersRouter.put("/users/update/username", authenticateToken, updateUsername)
+usersRouter.put("/users/update/username", authenticateToken, usersCtrl.updateUsername)
 
 
 
@@ -315,7 +309,7 @@ usersRouter.put("/users/update/username", authenticateToken, updateUsername)
  *       '401':
  *         description: 未ログインです
  */
-usersRouter.post("/users/follow", authenticateToken, toggleFollow)
+usersRouter.post("/users/follow", authenticateToken, usersCtrl.toggleFollow)
 
 
 /**
@@ -335,7 +329,7 @@ usersRouter.post("/users/follow", authenticateToken, toggleFollow)
  *       '401':
  *         description: 未ログインです
  */
-usersRouter.get("/users/:followeeId/isfollowing", authenticateToken, isFollowing);
+usersRouter.get("/users/:followeeId/isfollowing", authenticateToken, usersCtrl.isFollowing);
 
 /**
  * @openapi
@@ -352,7 +346,7 @@ usersRouter.get("/users/:followeeId/isfollowing", authenticateToken, isFollowing
  *       '200':
  *         description: 処理結果
  */
-usersRouter.get("/users/:userId/follower", getFollowers);
+usersRouter.get("/users/:userId/follower", usersCtrl.getFollowers);
 
 /**
  * @openapi
@@ -369,7 +363,7 @@ usersRouter.get("/users/:userId/follower", getFollowers);
  *       '200':
  *         description: 処理結果
  */
-usersRouter.get("/users/:userId/follow", getFollowings);
+usersRouter.get("/users/:userId/follow", usersCtrl.getFollowings);
 
 
 /**
@@ -382,7 +376,7 @@ usersRouter.get("/users/:userId/follow", getFollowings);
  *       '200':
  *         description: QRコードURL
  */
-usersRouter.get("/users/settings/setup2fa", authenticateToken, setUp2FA)
+usersRouter.get("/users/settings/setup2fa", authenticateToken, usersCtrl.setUp2FA)
 
 /**
  * @openapi
@@ -403,7 +397,20 @@ usersRouter.get("/users/settings/setup2fa", authenticateToken, setUp2FA)
  *       '200':
  *         description: 二段階認証有効化
  */
-usersRouter.post("/users/settings/verify2fa", authenticateToken, verify2FA)
+usersRouter.post("/users/settings/verify2fa", authenticateToken, usersCtrl.verify2FA)
+
+/**
+ * @openapi
+ * /api/users/settings/delete2fa:
+ *   delete:
+ *     summary: 2FAの削除
+ *     tags: [Users]
+ *   response: 
+ *     '200':
+ *       description: 二段階認証削除
+ */
+usersRouter.delete("/users/settings/delete2fa", authenticateToken, usersCtrl.delete2FA);
+
 
 /**
  * @openapi
@@ -415,7 +422,7 @@ usersRouter.post("/users/settings/verify2fa", authenticateToken, verify2FA)
  *       '200':
  *         description: 取得結果
  */
-usersRouter.get("/users/settings/uploaded_images", authenticateToken, getUploadedImages)
+usersRouter.get("/users/settings/uploaded_images", authenticateToken, usersCtrl.getUploadedImages)
 
 /**
  * @openapi
@@ -427,7 +434,7 @@ usersRouter.get("/users/settings/uploaded_images", authenticateToken, getUploade
  *       '200':
  *         description: 取得結果
  */
-usersRouter.get("/users/settings/idpinfo", authenticateToken, getUserIdentities)
+usersRouter.get("/users/settings/idpinfo", authenticateToken, usersCtrl.getUserIdentities)
 
 /**
  * @openapi
@@ -443,6 +450,6 @@ usersRouter.get("/users/settings/idpinfo", authenticateToken, getUserIdentities)
  *       '200':
  *         description: 画像URL
  */
-usersRouter.post("/users/settings/upload_avatar", authenticateToken, uploadLocalAvatar);
+usersRouter.post("/users/settings/upload_avatar", authenticateToken, usersCtrl.uploadLocalAvatar);
 
 export default usersRouter;

@@ -71,13 +71,14 @@ export class AuthService {
                 }
             });
         }
-
+        await this.repo.updateLastLogin(user.id);
         pkceStore.delete(state);
         return jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "24h" });
     }
 
     private parseUserInfo(data: any, mapping: any) {
-        const id = get(data, mapping.id);
+        const rawId = get(data, mapping.id);
+        const id = String(rawId);
         const rawAvatar = get(data, mapping.avatar_path);
         let remoteAvatarUrl = rawAvatar;
 
@@ -100,6 +101,7 @@ export class AuthService {
         const fullPath = path.join(this.AVATAR_DIR, fileName);
         await fs.mkdir(this.AVATAR_DIR, { recursive: true });
         await fs.writeFile(fullPath, res.data);
+        console.log("downloadAvatar")
         return `/uploads/avatars/${fileName}`;
     }
 
@@ -113,16 +115,22 @@ export class AuthService {
             client_id: config.client_id,
         });
 
+        // GitHubの場合は client_secret を body に含める
+        if (config.provider_name === "github" && config.client_secret) {
+            params.set("client_secret", config.client_secret);
+        }
+
         const headers: Record<string, string> = {
             "Content-Type": "application/x-www-form-urlencoded",
+            Accept: "application/json", // ← GitHubはこれがないとURLエンコード形式で返す
         };
 
-        // Twitter (X) の場合は Basic 認証ヘッダーを要求されることが多い
-        // config.client_secret が存在する場合、Basic認証を構成する
-        if (config.client_secret) {
+        // TwitterなどBasic認証が必要なものだけこのブロックを使う
+        if (config.provider_name !== "github" && config.client_secret) {
             const credentials = Buffer.from(`${config.client_id}:${config.client_secret}`).toString("base64");
             headers["Authorization"] = `Basic ${credentials}`;
         }
+
 
         const res = await axios.post(config.token_url, params.toString(), { headers });
         return res.data;

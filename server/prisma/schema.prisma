@@ -73,6 +73,8 @@ model articles {
   bookmark_count             Int?                @default(0)
   comment_count              Int?                @default(0)
   last_published_raw_content String?
+  is_deleted                 Boolean?            @default(false)
+  is_private                 Boolean?            @default(false)
   article_bookmarks          article_bookmarks[]
   article_likes              article_likes[]
   article_tags               article_tags[]
@@ -118,7 +120,7 @@ model comments {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model identity_providers {
   id                 String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  provider_name      String              @db.VarChar(50)
+  provider_name      String              @unique @db.VarChar(50)
   display_name       String              @db.VarChar(50)
   provider_type      String              @db.VarChar(20)
   description        String?
@@ -178,10 +180,12 @@ model roles {
 model tags {
   id           String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
   name         String?        @db.VarChar(50)
-  slug         String?        @db.VarChar(50)
+  slug         String?        @unique @db.VarChar(50)
   description  String?
   created_at   DateTime?      @default(now()) @db.Timestamp(6)
+  avatar_url   String?
   article_tags article_tags[]
+  tag_follows  tag_follows[]
 
   @@schema("knowledge")
 }
@@ -316,6 +320,7 @@ model users {
   comment_likes                                comment_likes[]
   comments                                     comments[]
   local_accounts                               local_accounts[]
+  tag_follows                                  tag_follows[]
   upload_images                                upload_images[]
   user_avatars                                 user_avatars[]
   user_follows_user_follows_followee_idTousers user_follows[]       @relation("user_follows_followee_idTousers")
@@ -326,5 +331,17 @@ model users {
   user_security                                user_security?
   user_settings                                user_settings?
 
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model tag_follows {
+  user_id     String    @db.Uuid
+  tag_id      String    @db.Uuid
+  followed_at DateTime? @default(now()) @db.Timestamp(6)
+  tags        tags      @relation(fields: [tag_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users       users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([user_id, tag_id])
   @@schema("knowledge")
 }

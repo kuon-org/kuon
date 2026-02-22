@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { AuthService } from "../services/authService.js";
 import { AuthRequest } from "../middlewares/auth.js";
 
+const BASE_URL = process.env.APP_SITE_URL ?? process.env.FRONTEND_URL
 export class AuthController {
     private service = new AuthService();
 
@@ -23,7 +24,7 @@ export class AuthController {
                 String(req.params.provider), code as string, state as string, req.user?.userId
             );
             res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "lax", maxAge: 86400000 });
-            res.redirect(process.env.FRONTEND_URL || "http://localhost:5050");
+            res.redirect(BASE_URL || "http://localhost:5050");
         } catch (err: any) {
             // 詳細をコンソールに出す
             console.error("Auth Callback Error Details:", {
