@@ -137,4 +137,11 @@ export class AuthRepository {
             }
         });
     }
+
+    async updateLastLogin(userId: string) {
+        return await prisma.users.update({
+            where: { id: userId },
+            data: { last_login_at: new Date() }
+        });
+    }
 }
