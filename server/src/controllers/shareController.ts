@@ -36,7 +36,7 @@ export class ShareController {
   <title>${ogTitle}</title>
   <script>
     // 数秒後にSPAのルートにリダイレクト
-    window.location.href = "/${article.users!.username}articles/${articleId}";
+    window.location.href = "/${article.users!.username}/articles/${articleId}";
   </script>
 </head>
 <body>
