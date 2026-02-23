@@ -19,7 +19,7 @@ interface TemplateFormProps {
     toggleActive: any;
 }
 
-export const TemplateForm = ({
+export const OAuth2TemplateForm = ({
     provider_name,
     initialData,
     isActive,
