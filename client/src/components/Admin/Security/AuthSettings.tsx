@@ -1,6 +1,7 @@
 import { Divider, Tab, Tabs, Typography, Box } from "@mui/material";
 import { useState } from "react";
 import { AuthSettingForm } from "./AuthSettingForm";
+import { OIDCManager } from "./OIDCManager";
 
 export const AuthSettings = () => {
     const [mainTab, setMainTab] = useState(0);
@@ -32,7 +33,12 @@ export const AuthSettings = () => {
                 {mainTab === 0 && <Typography>ID/Pass 設定フォーム</Typography>}
                 {mainTab === 1 && <Typography>LDAP 設定フォーム</Typography>}
                 {mainTab === 2 && <Typography>SAML 設定フォーム</Typography>}
-                {mainTab === 3 && <Typography>OIDC 設定フォーム</Typography>}
+                {mainTab === 3 && (
+                    <Box sx={{ p: 2 }}>
+                        <Typography variant="body2" sx={{ mb: 2 }}>汎用 OpenID Connect プロバイダを設定します。</Typography>
+                        <OIDCManager />
+                    </Box>
+                )}
 
                 {/* OAuth2の場合だけネストタブ */}
                 {mainTab === 4 && (
