@@ -4,6 +4,7 @@ import { AntSwitch } from "../../components/common/AntSwitch";
 import { useArticles } from "../../hooks/useArticles";
 import MarkdownRenderer from "../../components/Markdown/MarkdownRenderer";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { TagChip } from "../../components/common/TagChip";
 
 export const Drafts = () => {
     const [showUnpublishedOnly, setShowUnpublishedOnly] = useState(false);
@@ -35,20 +36,25 @@ export const Drafts = () => {
     return (
         <Container
             sx={{
-                mt: 2,
+                mt: 4,
                 display: "flex",
                 flexDirection: { xs: "column", md: "row" },
-                gap: { xs: 4, md: 12 },
+                gap: { xs: 4, md: 3 },
                 alignItems: { xs: "center", md: "flex-start" },
             }}
         >
             <Paper
                 sx={{
-                    width: { xs: "100%", sm: "360px" },
-                    maxWidth: { xs: "100%", sm: "360px" },
-                    minHeight: "400px",
+                    width: { xs: "100%", sm: "450px" },
+                    maxWidth: { xs: "100%", sm: "450px" },
+                    height: "fit-content",
+                    maxHeight: "80vh",
+                    overflowY: "hidden",
                     display: "flex",
+                    alignSelf: "flex-start",
+                    position: "sticky",
                     flexDirection: "column",
+                    top: "120px",
                     p: 2,
                 }}
             >
@@ -66,7 +72,7 @@ export const Drafts = () => {
                     label="未投稿の下書きのみ表示"
                 />
 
-                <List>
+                <List sx={{ mt: 2, overflowY: "scroll" }}>
                     {userArticles_isLoading ? (
                         <ListItem>
                             <ListItemText primary="読み込み中..." />
@@ -99,8 +105,8 @@ export const Drafts = () => {
 
                                     </Box>
                                     <ListItemText
-                                        primary={a.title}
-                                        secondary={a.raw_content.substring(0, 50) + (a.raw_content.length > 50 ? "..." : "")}
+                                        primary={a.title.trim() ? a.title : "タイトル未設定"}
+                                        secondary={a.raw_content.trim() ? a.raw_content.substring(0, 50) + (a.raw_content.length > 50 ? "..." : "") : "本文未入力"}
                                     />
                                     <Box sx={{ display: "flex", gap: 1, width: "100%", mb: 0.5 }}>
                                         <Link
@@ -146,11 +152,25 @@ export const Drafts = () => {
                 sx={{
                     mx: "auto",
                     flex: 1,
-                    p: 3,
+                    p: 2,
                     display: { xs: "none", sm: "none", md: "block" },
-                    maxWidth: { md: "450px", lg: "600px", xl: "600px" },
+                    width: { md: "450px", lg: "600px", xl: "750px" },
+                    maxWidth: { md: "450px", lg: "600px", xl: "750px" },
                 }}
             >
+                <Box sx={{ display: "flex", flexDirection: "column", mt: 2, mb: 2 }}>
+                    {selectedArticle?.title.trim() ? (
+                        <Typography variant="h4">{selectedArticle?.title}</Typography>
+                    ) : (
+                        <Typography variant="h4" color="textDisabled">タイトル未設定</Typography>
+                    )}
+                    <Box px={4} mt={1} mb={1} display="flex" gap={1} flexWrap="wrap">
+                        {selectedArticle?.article_tags.map((tagItem) => (
+                            <TagChip key={tagItem.tags.id} tag={tagItem.tags} />
+                        ))}
+                    </Box>
+
+                </Box>
                 <MarkdownRenderer text={selectedArticle?.raw_content ?? ""} />
             </Paper>
         </Container>
