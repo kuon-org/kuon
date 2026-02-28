@@ -9,18 +9,6 @@ datasource db {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model article_bookmarks {
-  article_id String    @db.Uuid
-  user_id    String    @db.Uuid
-  created_at DateTime? @default(now()) @db.Timestamp(6)
-  articles   articles  @relation(fields: [article_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([article_id, user_id])
-  @@schema("knowledge")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model article_likes {
   article_id String    @db.Uuid
   user_id    String    @db.Uuid
@@ -58,29 +46,29 @@ model article_views {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model articles {
-  id                         String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  user_id                    String?             @db.Uuid
-  title                      String?             @db.VarChar(255)
+  id                         String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  user_id                    String?         @db.Uuid
+  title                      String?         @db.VarChar(255)
   raw_content                String?
+  last_published_raw_content String?
   render_content             String?
   summary                    String?
-  created_at                 DateTime?           @default(now()) @db.Timestamp(6)
-  updated_at                 DateTime?           @default(now()) @db.Timestamp(6)
-  status                     String?             @db.VarChar(10)
-  is_published               Boolean?            @default(false)
-  like_count                 Int?                @default(0)
-  view_count                 Int?                @default(0)
-  bookmark_count             Int?                @default(0)
-  comment_count              Int?                @default(0)
-  last_published_raw_content String?
-  is_deleted                 Boolean?            @default(false)
-  is_private                 Boolean?            @default(false)
-  article_bookmarks          article_bookmarks[]
+  created_at                 DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime?       @default(now()) @db.Timestamp(6)
+  status                     String?         @db.VarChar(10)
+  is_published               Boolean?        @default(false)
+  is_private                 Boolean?        @default(false)
+  is_deleted                 Boolean?        @default(false)
+  like_count                 Int?            @default(0)
+  view_count                 Int?            @default(0)
+  stock_count                Int?            @default(0)
+  comment_count              Int?            @default(0)
   article_likes              article_likes[]
   article_tags               article_tags[]
   article_views              article_views[]
-  users                      users?              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                      users?          @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   comments                   comments[]
+  stock_items                stock_items[]
 
   @@schema("knowledge")
 }
@@ -178,14 +166,15 @@ model roles {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model tags {
-  id           String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  name         String?        @db.VarChar(50)
-  slug         String?        @unique @db.VarChar(50)
-  description  String?
-  created_at   DateTime?      @default(now()) @db.Timestamp(6)
-  avatar_url   String?
-  article_tags article_tags[]
-  tag_follows  tag_follows[]
+  id              String            @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  name            String?           @db.VarChar(50)
+  slug            String?           @unique @db.VarChar(50)
+  avatar_url      String?
+  description     String?
+  created_at      DateTime?         @default(now()) @db.Timestamp(6)
+  article_tags    article_tags[]
+  stock_list_tags stock_list_tags[]
+  tag_follows     tag_follows[]
 
   @@schema("knowledge")
 }
@@ -313,13 +302,14 @@ model users {
   is_active                                    Boolean?             @default(true)
   last_login_at                                DateTime?            @db.Timestamp(6)
   created_by                                   String?              @db.Uuid
-  article_bookmarks                            article_bookmarks[]
   article_likes                                article_likes[]
   article_views                                article_views[]
   articles                                     articles[]
   comment_likes                                comment_likes[]
   comments                                     comments[]
   local_accounts                               local_accounts[]
+  stock_list_likes                             stock_list_likes[]
+  stock_lists                                  stock_lists[]
   tag_follows                                  tag_follows[]
   upload_images                                upload_images[]
   user_avatars                                 user_avatars[]
@@ -343,5 +333,77 @@ model tag_follows {
   users       users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([user_id, tag_id])
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model stock_items {
+  id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  stock_list_id String      @db.Uuid
+  article_id    String      @db.Uuid
+  sort_order    Int?        @default(0)
+  created_at    DateTime?   @default(now()) @db.Timestamp(6)
+  articles      articles    @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  stock_lists   stock_lists @relation(fields: [stock_list_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([stock_list_id, article_id])
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model stock_lists {
+  id               String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  user_id          String             @db.Uuid
+  name             String             @db.VarChar(100)
+  description      String?
+  visibility       String?            @default("private") @db.VarChar(10)
+  created_at       DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?          @default(now()) @db.Timestamp(6)
+  is_system        Boolean?           @default(false)
+  is_default       Boolean?           @default(false)
+  stock_items      stock_items[]
+  stock_list_likes stock_list_likes[]
+  stock_list_tags  stock_list_tags[]
+  users            users              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model webhook_settings {
+  id               String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  name             String    @unique(map: "webhook_settings_name_unique") @db.VarChar(50)
+  provider         String    @db.VarChar(30)
+  url              String
+  headers          Json?     @default("{}")
+  payload_template Json?     @default("{}")
+  is_active        Boolean?  @default(false)
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model stock_list_tags {
+  stock_list_id String      @db.Uuid
+  tag_id        String      @db.Uuid
+  attached_at   DateTime?   @default(now()) @db.Timestamp(6)
+  stock_lists   stock_lists @relation(fields: [stock_list_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tags          tags        @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([stock_list_id, tag_id])
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model stock_list_likes {
+  user_id       String      @db.Uuid
+  stock_list_id String      @db.Uuid
+  created_at    DateTime?   @default(now()) @db.Timestamp(6)
+  stock_lists   stock_lists @relation(fields: [stock_list_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, stock_list_id])
   @@schema("knowledge")
 }

@@ -14,8 +14,10 @@ const uploadImagesRepo = new UploadImagesRepository();
 const articlesService = new ArticlesService(articlesRepo);
 const uploadImagesService = new UploadImagesService(uploadImagesRepo);
 
-const articlesCtrl = new ArticlesController(articlesService, uploadImagesService);
-
+const articlesCtrl = new ArticlesController(
+  articlesService,
+  uploadImagesService,
+);
 
 /**
  * @openapi
@@ -43,7 +45,7 @@ articlesRouter.get("/articles", articlesCtrl.getArticles);
  *     summary: ログインユーザの記事一覧取得
  *     tags:
  *       - Articles
- *     responses: 
+ *     responses:
  *      '200':
  *        description: 取得成功
  *        content:
@@ -53,9 +55,11 @@ articlesRouter.get("/articles", articlesCtrl.getArticles);
  *              items:
  *                $ref: '#/components/schemas/Articles'
  */
-articlesRouter.get("/articles/me", authenticateToken, articlesCtrl.getArticlesByUserId);
-
-
+articlesRouter.get(
+  "/articles/me",
+  authenticateToken,
+  articlesCtrl.getArticlesByUserId,
+);
 
 /**
  * @openapi
@@ -78,7 +82,11 @@ articlesRouter.get("/articles/me", authenticateToken, articlesCtrl.getArticlesBy
  *             schema:
  *               type: string
  */
-articlesRouter.get("/articles/:articleId.md", optionalAuth, articlesCtrl.getArticleMarkdown);
+articlesRouter.get(
+  "/articles/:articleId.md",
+  optionalAuth,
+  articlesCtrl.getArticleMarkdown,
+);
 
 /**
  * @openapi
@@ -103,7 +111,11 @@ articlesRouter.get("/articles/:articleId.md", optionalAuth, articlesCtrl.getArti
  *       '404':
  *         description: 見つかりません
  */
-articlesRouter.get("/articles/:articleId", optionalAuth, articlesCtrl.getArticle);
+articlesRouter.get(
+  "/articles/:articleId",
+  optionalAuth,
+  articlesCtrl.getArticle,
+);
 
 /**
  * @openapi
@@ -134,7 +146,7 @@ articlesRouter.get("/articles/:articleId", optionalAuth, articlesCtrl.getArticle
 articlesRouter.get(
   "/articles/:articleId/isowned",
   authenticateToken,
-  articlesCtrl.getArticleIsOwned
+  articlesCtrl.getArticleIsOwned,
 );
 
 /**
@@ -159,7 +171,7 @@ articlesRouter.get(
 articlesRouter.post(
   "/articles/:articleId/like",
   authenticateToken,
-  articlesCtrl.toggleLike
+  articlesCtrl.toggleLike,
 );
 
 /**
@@ -192,7 +204,7 @@ articlesRouter.post(
  */
 articlesRouter.get(
   "/articles/:articleId/likes",
-  articlesCtrl.getArticleLikeUserByArticleId
+  articlesCtrl.getArticleLikeUserByArticleId,
 );
 
 /**
@@ -221,7 +233,11 @@ articlesRouter.get(
  *                 liked:
  *                   type: boolean
  */
-articlesRouter.get("/articles/:articleId/islike", authenticateToken, articlesCtrl.getIsLiked);
+articlesRouter.get(
+  "/articles/:articleId/islike",
+  authenticateToken,
+  articlesCtrl.getIsLiked,
+);
 
 /**
  * @openapi
@@ -255,12 +271,16 @@ articlesRouter.get("/articles/:articleId/islike", authenticateToken, articlesCtr
  *             schema:
  *               $ref: '#/components/schemas/Article'
  */
-articlesRouter.post("/articles/create", authenticateToken, articlesCtrl.createArticle);
+articlesRouter.post(
+  "/articles/create",
+  authenticateToken,
+  articlesCtrl.createArticle,
+);
 
 /**
  * @openapi
  * /api/articles/{articleId}/edit:
- *   put:
+ *   patch:
  *     summary: 記事更新
  *     tags:
  *       - Articles
@@ -290,7 +310,11 @@ articlesRouter.post("/articles/create", authenticateToken, articlesCtrl.createAr
  *       '200':
  *         description: 更新成功
  */
-articlesRouter.put("/articles/:articleId/edit", authenticateToken, articlesCtrl.updateArticle);
+articlesRouter.patch(
+  "/articles/:articleId/edit",
+  authenticateToken,
+  articlesCtrl.updateArticle,
+);
 
 /**
  * @opanapi
@@ -310,7 +334,11 @@ articlesRouter.put("/articles/:articleId/edit", authenticateToken, articlesCtrl.
  *       '200':
  *         description: 破棄成功
  */
-articlesRouter.post("/articles/:articleId/rollback", authenticateToken, articlesCtrl.rollBackDraft)
+articlesRouter.post(
+  "/articles/:articleId/rollback",
+  authenticateToken,
+  articlesCtrl.rollBackDraft,
+);
 
 /**
  * @openapi
@@ -320,14 +348,89 @@ articlesRouter.post("/articles/:articleId/rollback", authenticateToken, articles
  *     tags: [Articles]
  *     security:
  *       - CookieAuth: []
+ *    parameters:
+ *      - in: path
+ *        name: articleId
+ *       required: true
+ *      schema:
+ *        type: string
+ *    responses:
+ *     '200':
+ *        description: 削除成功
  */
-articlesRouter.delete("/articles/:articleId", authenticateToken, articlesCtrl.deleteArticle);
+articlesRouter.delete(
+  "/articles/:articleId",
+  authenticateToken,
+  articlesCtrl.deleteArticle,
+);
 
-articlesRouter.get("/articles/trash/list", authenticateToken, articlesCtrl.getDeletedArticlesByUserId);
+/**
+ * @openapi
+ * /api/articles/trash/list:
+ *   get:
+ *     summary: ゴミ箱の記事一覧取得
+ *    tags: [Articles]
+ *    security:
+ *      - CookieAuth: []
+ *    responses:
+ *     '200':
+ *        description: 取得成功
+ */
+articlesRouter.get(
+  "/articles/trash/list",
+  authenticateToken,
+  articlesCtrl.getDeletedArticlesByUserId,
+);
 
-articlesRouter.post("/articles/:articleId/restore", authenticateToken, articlesCtrl.restoreArticle);
+/**
+ * @openapi
+ * /api/articles/{articleId}/restore:
+ *   post:
+ *    summary: 記事の復元
+ *   tags: [Articles]
+ *  security:
+ *     - CookieAuth: []
+ *  parameters:
+ *    - in: path
+ *     name: articleId
+ *    required: true
+ *    schema:
+ *      type: string
+ *    responses:
+ *      '200':
+ *        description: 復元成功
+ */
+articlesRouter.post(
+  "/articles/:articleId/restore",
+  authenticateToken,
+  articlesCtrl.restoreArticle,
+);
 
-articlesRouter.delete("/articles/:articleId/harddelete", authenticateToken, articlesCtrl.hardDeleteArticle);
+/**
+ * @openapi
+ * /api/articles/{articleId}/hard:
+ *  delete:
+ *   summary: 記事の物理削除
+ *  tags: [Articles]
+ *  security:
+ *  - CookieAuth: []
+ * parameters:
+ *
+ *  - in: path
+ *  name: articleId
+ * required: true
+ * schema:
+ *
+ *  type: string
+ *    responses:
+ *  '200':
+ *   description: 物理削除成功
+ */
+articlesRouter.delete(
+  "/articles/:articleId/hard",
+  authenticateToken,
+  articlesCtrl.hardDeleteArticle,
+);
 
 /**
  * @openapi
@@ -343,8 +446,12 @@ articlesRouter.delete("/articles/:articleId/harddelete", authenticateToken, arti
  *         multipart/form-data:
  *     responses:
  *       '200':
- *         description: 画像URL        
+ *         description: 画像URL
  */
-articlesRouter.post("/articles/upload", authenticateToken, articlesCtrl.uploadArticleImage);
+articlesRouter.post(
+  "/articles/upload",
+  authenticateToken,
+  articlesCtrl.uploadArticleImage,
+);
 
 export default articlesRouter;
