@@ -1,19 +1,35 @@
 // src/hooks/useAuth.ts
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import apiClient from '../api/client';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import apiClient from "../api/client";
 import type { AxiosError } from "axios";
-import { useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
-import authClient from '../api/authClient';
-import { accountSettingRoute } from '../router';
+import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import authClient from "../api/authClient";
+import { accountSettingRoute } from "../router";
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  display_name: string;
+  email: string;
+  avatar_url: any;
+  bio: any;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+  last_login_at: string;
+  created_by: any;
+  is_2fa_enabled: boolean;
+  role: string;
+}
 
 export interface ActiveIdp {
-  provider_name: string;   // "twitter"
-  display_name: string;    // "Twitter（X）"
-  provider_type: string;   // "OAUTH2"
-  logo_url?: string;       // アイコンURL
-  button_color?: string;   // ボタン背景色
-  text_color?: string;     // ボタン文字色
+  provider_name: string; // "twitter"
+  display_name: string; // "Twitter（X）"
+  provider_type: string; // "OAUTH2"
+  logo_url?: string; // アイコンURL
+  button_color?: string; // ボタン背景色
+  text_color?: string; // ボタン文字色
 }
 
 interface UploadedImage {
@@ -27,56 +43,54 @@ interface UploadedImage {
 }
 
 interface UserIdpinfo {
-  id: string
-  username: string
-  display_name: string
-  email: string
-  avatar_url: string
-  bio: string
-  created_at: string
-  updated_at: string
-  is_active: boolean
-  last_login_at: any
-  created_by: any
-  user_identities: UserIdentity[]
-  user_avatars: UserAvatar[]
+  id: string;
+  username: string;
+  display_name: string;
+  email: string;
+  avatar_url: string;
+  bio: string;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+  last_login_at: any;
+  created_by: any;
+  user_identities: UserIdentity[];
+  user_avatars: UserAvatar[];
 }
 
 export interface UserIdentity {
-  id: string
-  provider_id: string
-  provider_uid: string
-  linked_at: string
-  identity_providers: IdentityProviders
+  id: string;
+  provider_id: string;
+  provider_uid: string;
+  linked_at: string;
+  identity_providers: IdentityProviders;
 }
 
 export interface IdentityProviders {
-  display_name: string
-  provider_name: string
-  logo_url: string
+  display_name: string;
+  provider_name: string;
+  logo_url: string;
 }
 
 export interface UserAvatar {
-  id: string
-  service_name: string
-  avatar_url: string
-  is_selected: boolean
-  updated_at: string
+  id: string;
+  service_name: string;
+  avatar_url: string;
+  is_selected: boolean;
+  updated_at: string;
 }
 
-
 export const useAuthQuery = () => {
-
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   // ✅ 現在のログインユーザーを取得
   const authQuery = useQuery({
-    queryKey: ['authUser'],
+    queryKey: ["authUser"],
     queryFn: async () => {
       try {
-        const { data } = await apiClient.get('/me');
+        const { data } = await apiClient.get<AuthUser>("/me");
         return data; // { id, username } など
       } catch {
         return null; // 未ログインなら null
@@ -89,18 +103,18 @@ export const useAuthQuery = () => {
   // ✅ ログイン用ミューテーション
   const loginMutation = useMutation({
     mutationFn: async (value: any) => {
-      const { data } = await apiClient.post('/login', value);
+      const { data } = await apiClient.post("/login", value);
       return data;
     },
     onSuccess: async (data) => {
       if (data.requires2FA) {
         // 🔹 2FA入力ステップに切り替える
         sessionStorage.setItem("pendingEmail", data.email); // ← 後でverifyで使う
-        navigate({ to: '/login/2fa' });
+        navigate({ to: "/login/2fa" });
       } else {
-        alert('ログインしました！');
-        await queryClient.invalidateQueries({ queryKey: ['authUser'] });
-        navigate({ to: '/' });
+        alert("ログインしました！");
+        await queryClient.invalidateQueries({ queryKey: ["authUser"] });
+        navigate({ to: "/" });
       }
     },
     onError: (error: AxiosError) => {
@@ -109,26 +123,28 @@ export const useAuthQuery = () => {
   });
   const loginVerify2FA = useMutation({
     mutationFn: async ({ email, token }: { email: string; token: string }) => {
-      const { data } = await apiClient.post('/login/verify-2fa', { email, token });
+      const { data } = await apiClient.post("/login/verify-2fa", {
+        email,
+        token,
+      });
       return data; // { success: true, user }
     },
     onSuccess: async () => {
-      alert('二段階認証が完了しました！');
+      alert("二段階認証が完了しました！");
       // 認証成功後、ユーザー情報を再取得してトップへ
-      await queryClient.invalidateQueries({ queryKey: ['authUser'] });
+      await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       sessionStorage.removeItem("pendingEmail");
-      navigate({ to: '/' });
+      navigate({ to: "/" });
     },
     onError: (err: AxiosError) => {
-      alert(err.response?.data?.message || '認証コードが正しくありません');
+      alert(err.response?.data?.message || "認証コードが正しくありません");
     },
   });
-
 
   // ✅ ログアウト用ミューテーション
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiClient.post('/logout');
+      await apiClient.post("/logout");
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
@@ -138,87 +154,103 @@ export const useAuthQuery = () => {
 
   const setup2FA = useMutation({
     mutationFn: async () => {
-      const { data } = await apiClient.get('/users/settings/setup2fa');
+      const { data } = await apiClient.get("/users/settings/setup2fa");
       return data;
     },
-  })
+  });
 
   const setupVerify2FA = useMutation({
     mutationFn: async (token: string) => {
-      const { data } = await apiClient.post('/users/settings/verify2fa', { token });
+      const { data } = await apiClient.post("/users/settings/verify2fa", {
+        token,
+      });
       return data; // { success: true, message: "二段階認証を有効化しました" }
     },
     onSuccess: async (data) => {
-      alert(data.message || '二段階認証を有効化しました！');
+      alert(data.message || "二段階認証を有効化しました！");
       // ログイン情報を再取得
-      await queryClient.invalidateQueries({ queryKey: ['authUser'] });
-      navigate({ to: '/' });
+      await queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      navigate({ to: "/" });
     },
     onError: (err: AxiosError) => {
-      alert(err.response?.data?.message || '認証コードの検証に失敗しました');
+      alert(err.response?.data?.message || "認証コードの検証に失敗しました");
     },
   });
 
   const delete2FA = useMutation({
     mutationFn: async () => {
-      const { data } = await apiClient.delete('/users/settings/delete2fa');
+      const { data } = await apiClient.delete("/users/settings/delete2fa");
       return data;
     },
     onSuccess: async () => {
       // ログイン情報を再取得
-      await queryClient.invalidateQueries({ queryKey: ['authUser'] });
+      await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
-  })
+  });
 
   const getUploadedImagesQuery = useQuery({
     queryKey: ["uploaded_images"],
     queryFn: async () => {
-      const { data } = await apiClient.get<UploadedImage[]>('/users/settings/uploaded_images');
+      const { data } = await apiClient.get<UploadedImage[]>(
+        "/users/settings/uploaded_images",
+      );
       return data;
-    }
+    },
   });
 
   const updateUserInfoMutation = useMutation({
-    mutationFn: async ({ displayName, bio }: { displayName: string, bio: string }) => {
-      const { data } = await apiClient.put('/users/update/info', { displayName, bio });
-      return data
+    mutationFn: async ({
+      displayName,
+      bio,
+    }: {
+      displayName: string;
+      bio: string;
+    }) => {
+      const { data } = await apiClient.put("/users/update/info", {
+        displayName,
+        bio,
+      });
+      return data;
     },
     onSuccess: async (data) => {
-      setSuccessMessage(data.message || 'プロフィールを更新しました！');
-      await queryClient.invalidateQueries({ queryKey: ['authUser'] })
+      setSuccessMessage(data.message || "プロフィールを更新しました！");
+      await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
     onError: (error: AxiosError) => {
       setServerError(error.response?.data?.message);
     },
-  })
+  });
 
   const updateAccountMutation = useMutation({
-    mutationFn: async ({ username }: { username: string, }) => {
-      const { data } = await apiClient.put('/users/update/username', { username });
-      return data
+    mutationFn: async ({ username }: { username: string }) => {
+      const { data } = await apiClient.put("/users/update/username", {
+        username,
+      });
+      return data;
     },
     onSuccess: async (data) => {
-      setSuccessMessage(data.message || 'ユーザ名を更新しました！');
-      await queryClient.invalidateQueries({ queryKey: ['authUser'] })
+      setSuccessMessage(data.message || "ユーザ名を更新しました！");
+      await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
     onError: (error: AxiosError) => {
       setServerError(error.response?.data?.message);
     },
-  })
+  });
 
   const getActiveIdp = useQuery({
     queryKey: ["activeIdp"],
     queryFn: async () => {
       const { data } = await apiClient.get<ActiveIdp[]>("/idp/active");
-      console.log(data)
       return data;
-    }
-  })
+    },
+  });
 
   const userAvatarsQuery = useQuery({
-    queryKey: ['userAvatars'],
+    queryKey: ["userAvatars"],
     queryFn: async () => {
-      const { data } = await apiClient.get<UserIdpinfo>('/users/settings/idpinfo');
+      const { data } = await apiClient.get<UserIdpinfo>(
+        "/users/settings/idpinfo",
+      );
       // ※ APIが { user_avatars: [...] } の形式で返す場合は data.user_avatars にしてください
       return data;
     },
@@ -226,18 +258,18 @@ export const useAuthQuery = () => {
 
   const switchAvatarMutation = useMutation({
     mutationFn: async (avatarId: string) => {
-      const { data } = await authClient.post('/avatar/select', { avatarId });
+      const { data } = await authClient.post("/avatar/select", { avatarId });
       return data;
     },
     onSuccess: async () => {
       // ユーザー情報（ヘッダー等のアイコン）とアバター一覧を再取得
-      await queryClient.invalidateQueries({ queryKey: ['authUser'] });
-      await queryClient.invalidateQueries({ queryKey: ['userAvatars'] });
-      alert('アイコンを切り替えました');
+      await queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
+      alert("アイコンを切り替えました");
     },
     onError: (error: AxiosError) => {
-      alert('切り替えに失敗しました');
-    }
+      alert("切り替えに失敗しました");
+    },
   });
 
   const unlinkMutation = useMutation({
@@ -247,14 +279,15 @@ export const useAuthQuery = () => {
     },
     onSuccess: async () => {
       // ユーザー情報、アバター一覧、IDP連携情報をすべて更新
-      await queryClient.invalidateQueries({ queryKey: ['authUser'] });
-      await queryClient.invalidateQueries({ queryKey: ['userAvatars'] });
-      alert('連携を解除しました');
+      await queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
+      alert("連携を解除しました");
     },
     onError: (error: AxiosError) => {
-      const message = (error.response?.data as any)?.error || '解除に失敗しました';
+      const message =
+        (error.response?.data as any)?.error || "解除に失敗しました";
       alert(message);
-    }
+    },
   });
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -265,10 +298,10 @@ export const useAuthQuery = () => {
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['authUser'] });
-      await queryClient.invalidateQueries({ queryKey: ['userAvatars'] });
-      alert('画像をアップロードしました');
-      navigate({ to: accountSettingRoute.to })
+      await queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
+      alert("画像をアップロードしました");
+      navigate({ to: accountSettingRoute.to });
     },
     onError: (err: any) => {
       console.error(err);
@@ -309,6 +342,6 @@ export const useAuthQuery = () => {
     localAvatarUpload: uploadImageMutation.mutate,
     localAvatarUpload_isPending: uploadImageMutation.isPending,
     serverError,
-    successMessage
+    successMessage,
   };
 };

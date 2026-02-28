@@ -1,7 +1,11 @@
-import { AppBar, Box, Container, Toolbar, Typography } from "@mui/material"
-
-
+import { Box, Container, Typography } from "@mui/material"
+import { useMatchRoute } from "@tanstack/react-router";
 export const Footer = () => {
+    const matchRoute = useMatchRoute()
+    const isArticle = !!matchRoute({ to: "/$username/$articleId" })
+    // 除外したいページ（例: /drafts）
+    const isDrafts = !!matchRoute({ to: "/drafts", fuzzy: true })
+    if (isDrafts) return;
     return (
         <Box
             component="footer"
@@ -9,7 +13,7 @@ export const Footer = () => {
             sx={{
                 py: 3,
                 textAlign: 'start',
-                mb: { xs: 5, sm: 5, md: 0 }
+                mb: { xs: isArticle ? 5 : 0, sm: isArticle ? 5 : 0, md: 0 }
             }}
         >
             <Container maxWidth="lg">
