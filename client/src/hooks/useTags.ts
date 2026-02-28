@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import apiClient from '../api/client';
-
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import apiClient from "../api/client";
 
 export interface Tag {
   id: string;
@@ -31,9 +30,9 @@ export const useTagsQuery = (slug?: string) => {
 
   // 🏷 タグ一覧取得
   const tagsQuery = useQuery<Tags[]>({
-    queryKey: ['tags'],
+    queryKey: ["tags"],
     queryFn: async () => {
-      const { data } = await apiClient.get('/tags');
+      const { data } = await apiClient.get("/tags");
       return data;
     },
   });
@@ -43,23 +42,23 @@ export const useTagsQuery = (slug?: string) => {
     queryFn: async () => {
       const { data } = await apiClient.get(`/tags/${slug}`);
       return data;
-    }
-  })
+    },
+  });
 
   // ➕ タグの作成・更新 (Upsert)
   const upsertTagMutation = useMutation({
     mutationFn: async (newTag: UpsertTagData) => {
-      const res = await apiClient.post('/tags', newTag);
+      const res = await apiClient.post("/tags", newTag);
       return res.data;
     },
     onSuccess: () => {
       // タグ一覧のキャッシュを更新
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
+      queryClient.invalidateQueries({ queryKey: ["tags"] });
     },
     onError: (err: any) => {
       console.error(err);
       alert(err.response?.data?.message ?? "タグの保存に失敗しました");
-    }
+    },
   });
 
   return {

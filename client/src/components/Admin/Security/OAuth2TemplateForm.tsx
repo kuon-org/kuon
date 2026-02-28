@@ -40,16 +40,8 @@ export const OAuth2TemplateForm = ({
             client_secret: initialData.client_secret,
         },
         onSubmit: async ({ value }) => {
-            try {
-                await updateIdpConf({
-                    provider_name,
-                    client_id: value.client_id,
-                    client_secret: value.client_secret,
-                });
-                alert("更新しました");
-            } catch (err) {
-                alert("失敗しました");
-            }
+            await updateIdpConf({ provider_name, config: value });
+            alert("更新しました");
         },
     });
 
@@ -69,7 +61,7 @@ export const OAuth2TemplateForm = ({
                     label="コールバックURL"
                     value={initialData.redirect_uri}
                     fullWidth
-                    
+
                     InputProps={{
                         readOnly: true, // ここが読み取り専用
                         endAdornment: (

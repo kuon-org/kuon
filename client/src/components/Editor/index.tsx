@@ -67,10 +67,6 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
         }
     };
     const handleSave = async (mode: 'draft' | 'public') => {
-        if (!title.trim() || !text.trim()) {
-            alert("タイトルと本文は必須です");
-            return;
-        }
 
         try {
             const upsertedTags = await Promise.all(
@@ -107,7 +103,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
                         <Button
                             variant="outlined"
                             onClick={() => handleSave('draft')}
-                            disabled={isFetching || !text.trim()}
+                            disabled={isFetching}
                         >
                             下書き保存
                         </Button>

@@ -1,16 +1,17 @@
-
 // components/layouts/TopBar/TabsBar.tsx
-import { AppBar, Toolbar, Tabs, Tab } from '@mui/material';
-import { Link, useLocation } from '@tanstack/react-router';
+import { AppBar, Toolbar, Tabs, Tab } from "@mui/material";
+import { Link, useLocation } from "@tanstack/react-router";
 
 const TabsBar = () => {
   const { pathname } = useLocation();
 
-  let currentValue = '/';
-  if (pathname.startsWith('/trend')) {
-    currentValue = '/trend';
-  } else if (pathname.startsWith('/timeline')) {
-    currentValue = '/timeline';
+  let currentValue = "/";
+  if (pathname.startsWith("/trend")) {
+    currentValue = "/trend";
+  } else if (pathname.startsWith("/timeline")) {
+    currentValue = "/timeline";
+  } else if (pathname.startsWith("/stock-feed")) {
+    currentValue = "/stock-feed";
   }
   return (
     <AppBar
@@ -19,7 +20,7 @@ const TabsBar = () => {
       sx={{
         top: 0,
         zIndex: (t) => t.zIndex.appBar,
-        height: "56px"
+        height: "56px",
       }}
     >
       <Toolbar sx={{ px: { xs: 1, sm: 2 } }}>
@@ -56,6 +57,14 @@ const TabsBar = () => {
             aria-label="Timeline"
             sx={{ minHeight: 44 }}
           />
+          <Tab
+            label="ストック"
+            value="/stock-feed"
+            component={Link as any}
+            to="/stock-feed"
+            aria-label="Stocks Feed"
+            sx={{ minHeight: 44 }}
+          />
         </Tabs>
       </Toolbar>
     </AppBar>
@@ -63,4 +72,4 @@ const TabsBar = () => {
 };
 
 export default TabsBar;
-``
+``;
