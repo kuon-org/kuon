@@ -12,6 +12,7 @@ import { init } from "./repositories/initRepository.js";
 import commentsRouter from "./routes/commnetsRouter.js";
 import adminRouter from "./routes/adminRouter.js";
 import shareRouter from "./routes/shareRoutes.js";
+import stocksRoutes from "./routes/stocksRoutes.js";
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
@@ -19,17 +20,18 @@ app.use(
   cors({
     origin: "http://localhost:5050", // フロント側のURL
     credentials: true, // Cookie許可
-  })
+  }),
 );
 app.use("/api-docs", ...swaggerUiMiddleware());
-app.use('/api', usersRoutes);
-app.use('/api', articlesRouter);
-app.use('/api', tagsRouter);
-app.use('/api', idpRouter);
-app.use('/api', commentsRouter);
-app.use('/api', adminRouter);
-app.use('/', authRouter);
-app.use('/', shareRouter)
+app.use("/api", usersRoutes);
+app.use("/api", articlesRouter);
+app.use("/api", tagsRouter);
+app.use("/api", idpRouter);
+app.use("/api", commentsRouter);
+app.use("/api", adminRouter);
+app.use("/api", stocksRoutes);
+app.use("/", authRouter);
+app.use("/", shareRouter);
 app.get("/api-docs.json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);

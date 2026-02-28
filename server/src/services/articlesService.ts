@@ -1,10 +1,10 @@
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
 
 export class ArticlesService {
-  constructor(private articlesRepo: ArticlesRepository) { }
+  constructor(private articlesRepo: ArticlesRepository) {}
 
-  async getPublishedArticleList() {
-    return await this.articlesRepo.findAllPublishedArticles();
+  async getPublishedArticleList(page: number, limit: number, q?: string) {
+    return await this.articlesRepo.findAllPublishedArticles(page, limit, q);
   }
 
   async getArticle(articleId: string, currentUserId?: string) {
@@ -32,7 +32,8 @@ export class ArticlesService {
   }
 
   async getArticleLikeUserWithCount(articleId: string) {
-    const likeRecords = await this.articlesRepo.getArticleLikeUserByArticleId(articleId);
+    const likeRecords =
+      await this.articlesRepo.getArticleLikeUserByArticleId(articleId);
     const likeUsers = likeRecords.map((record: any) => record.users);
     return {
       like_users: likeUsers,
@@ -61,27 +62,29 @@ export class ArticlesService {
   }
 
   async createArticle(userId: string, payload: any) {
-    if (!payload.title) throw new Error("TitleRequired");
-
-    const { tagIds, raw_content, status, is_published, is_private, summary } = payload;
+    const { tagIds, raw_content, status, is_published, is_private, summary } =
+      payload;
 
     // 🚀 新規作成時は、status: 'public' なら「即時公開」、'draft' なら「下書き」として扱う
-    const isPublicMode = status === 'public';
+    const isPublicMode = status === "public";
 
-    return this.articlesRepo.createArticles({
-      user_id: userId,
-      title: payload.title,
-      raw_content: raw_content,
-      // 公開モードなら現在の内容を反映、下書きなら空文字 or 初期値
-      render_content: isPublicMode ? raw_content : "",
-      last_published_raw_content: isPublicMode ? raw_content : undefined,
-      summary: summary || raw_content?.substring(0, 100),
-      // 🚀 ルール通り：status は下書きがあるかどうか
-      status: isPublicMode ? "public" : "draft",
-      // 🚀 公開設定フラグをそのまま保存
-      is_published: is_published ?? false,
-      is_private: is_private ?? false,
-    }, tagIds);
+    return this.articlesRepo.createArticles(
+      {
+        user_id: userId,
+        title: payload.title,
+        raw_content: raw_content,
+        // 公開モードなら現在の内容を反映、下書きなら空文字 or 初期値
+        render_content: isPublicMode ? raw_content : "",
+        last_published_raw_content: isPublicMode ? raw_content : undefined,
+        summary: summary || raw_content?.substring(0, 100),
+        // 🚀 ルール通り：status は下書きがあるかどうか
+        status: isPublicMode ? "public" : "draft",
+        // 🚀 公開設定フラグをそのまま保存
+        is_published: is_published ?? false,
+        is_private: is_private ?? false,
+      },
+      tagIds,
+    );
   }
 
   async updateArticle(articleId: string, userId: string, payload: any) {
@@ -89,23 +92,30 @@ export class ArticlesService {
     if (!existing) throw new Error("ArticleNotFound");
     if (existing.user_id !== userId) throw new Error("Forbidden");
 
-    const { tagIds, raw_content, status, is_published, is_private, ...otherData } = payload;
+    const {
+      tagIds,
+      raw_content,
+      status,
+      is_published,
+      is_private,
+      ...otherData
+    } = payload;
 
     const updateData: any = { ...otherData };
 
     // 🚀 「保存して公開（更新）」ボタンが押された場合
-    if (status === 'public') {
+    if (status === "public") {
       updateData.raw_content = raw_content;
-      updateData.render_content = raw_content;       // 公開内容を同期
+      updateData.render_content = raw_content; // 公開内容を同期
       updateData.last_published_raw_content = raw_content; // 差分比較用のバックアップを更新
-      updateData.status = "public";                  // 下書きなし状態へ
-      updateData.is_published = is_published;        // 最新の公開設定を反映
-      updateData.is_private = is_private;            // 最新の非公開設定を反映
+      updateData.status = "public"; // 下書きなし状態へ
+      updateData.is_published = is_published; // 最新の公開設定を反映
+      updateData.is_private = is_private; // 最新の非公開設定を反映
     }
     // 🚀 「下書き保存」ボタンが押された場合
-    else if (status === 'draft') {
+    else if (status === "draft") {
       updateData.raw_content = raw_content;
-      updateData.status = "draft";                   // 下書きあり状態へ
+      updateData.status = "draft"; // 下書きあり状態へ
 
       // 💡 重要：下書き保存時は、現在の「公開されている状態」を変えない
       updateData.is_published = existing.is_published;
@@ -118,8 +128,10 @@ export class ArticlesService {
 
   async rollbackDraft(articleId: string, userId: string) {
     const existing = await this.articlesRepo.findArticleById(articleId);
-    if (!existing || existing.user_id !== userId) throw new Error("Unauthorized or Not Found");
-    if (!existing.last_published_raw_content) throw new Error("No published version to rollback to");
+    if (!existing || existing.user_id !== userId)
+      throw new Error("Unauthorized or Not Found");
+    if (!existing.last_published_raw_content)
+      throw new Error("No published version to rollback to");
 
     const rollbackData = {
       raw_content: existing.last_published_raw_content, // 公開時の内容で上書き
@@ -144,14 +156,16 @@ export class ArticlesService {
   // 復元
   async restoreArticle(articleId: string, userId: string) {
     const existing = await this.articlesRepo.findArticleById(articleId);
-    if (!existing || existing.user_id !== userId) throw new Error("Unauthorized");
+    if (!existing || existing.user_id !== userId)
+      throw new Error("Unauthorized");
     return await this.articlesRepo.restoreArticle(articleId);
   }
 
   // 物理削除
   async hardDeleteArticle(articleId: string, userId: string) {
     const existing = await this.articlesRepo.findArticleById(articleId);
-    if (!existing || existing.user_id !== userId) throw new Error("Unauthorized");
+    if (!existing || existing.user_id !== userId)
+      throw new Error("Unauthorized");
     return await this.articlesRepo.hardDeleteArticle(articleId);
   }
 }
