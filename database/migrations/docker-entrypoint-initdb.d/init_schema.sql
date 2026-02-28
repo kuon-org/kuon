@@ -4,7 +4,7 @@ SET search_path TO knowledge;
 
 -- users テーブル
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT uuid7(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     username VARCHAR(50) UNIQUE,
     display_name VARCHAR(100),
     email VARCHAR(255),
@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS articles (
     is_deleted BOOLEAN DEFAULT FALSE,
     like_count INT DEFAULT 0,
     view_count INT DEFAULT 0,
-    bookmark_count INT DEFAULT 0,
+    stock_count INT DEFAULT 0,
     comment_count INT DEFAULT 0
 );
 
@@ -190,8 +190,49 @@ COMMENT ON COLUMN articles.is_private IS '非公開フラグ';
 COMMENT ON COLUMN articles.is_deleted IS '論理削除フラグ';
 COMMENT ON COLUMN articles.like_count IS 'いいね数';
 COMMENT ON COLUMN articles.view_count IS '閲覧数';
-COMMENT ON COLUMN articles.bookmark_count IS 'ブックマーク数';
+COMMENT ON COLUMN articles.stock_count IS 'この記事が保存されているストックリストの総数';
 COMMENT ON COLUMN articles.comment_count IS 'コメント数';
+
+-- stock_lists テーブル
+CREATE TABLE IF NOT EXISTS stock_lists (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    -- 'public' (公開), 'limited' (限定公開), 'private' (非公開)
+    visibility VARCHAR(10) DEFAULT 'private', 
+    is_system BOOLEAN DEFAULT FALSE,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+COMMENT ON TABLE stock_lists IS 'ストックリスト';
+COMMENT ON COLUMN stock_lists.id IS 'リストID';
+COMMENT ON COLUMN stock_lists.user_id IS '所有ユーザID';
+COMMENT ON COLUMN stock_lists.name IS 'リスト名';
+COMMENT ON COLUMN stock_lists.description IS 'リストの説明';
+COMMENT ON COLUMN stock_lists.visibility IS '公開範囲設定';
+COMMENT ON COLUMN stock_lists.is_system IS 'アプリ側が作成';
+COMMENT ON COLUMN stock_lists.is_default IS '自動保存先フラグ';
+COMMENT ON COLUMN stock_lists.created_at IS '作成日時';
+COMMENT ON COLUMN stock_lists.updated_at IS '更新日時';
+
+
+-- stock_items テーブル (リストの中身)
+CREATE TABLE IF NOT EXISTS stock_items (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    stock_list_id UUID REFERENCES stock_lists(id) ON DELETE CASCADE NOT NULL,
+    article_id UUID REFERENCES articles(id) ON DELETE CASCADE NOT NULL,
+    sort_order INT DEFAULT 0, 
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE (stock_list_id, article_id)
+);
+
+COMMENT ON TABLE stock_items IS 'ストックリスト内の各記事';
+COMMENT ON COLUMN stock_items.stock_list_id IS '所属するリストのID';
+COMMENT ON COLUMN stock_items.article_id IS '保存された記事ID';
+COMMENT ON COLUMN stock_items.sort_order IS 'リスト内での並び順';
+COMMENT ON COLUMN stock_items.created_at IS '作成日時';
 
 -- tags
 CREATE TABLE IF NOT EXISTS tags (
@@ -210,6 +251,31 @@ COMMENT ON COLUMN tags.slug IS 'スラッグ';
 COMMENT ON COLUMN tags.avatar_url IS 'タグアイコン';
 COMMENT ON COLUMN tags.description IS '説明';
 COMMENT ON COLUMN tags.created_at IS '作成日時';
+
+-- stock_tags
+CREATE TABLE IF NOT EXISTS stock_list_tags (
+    stock_list_id UUID REFERENCES stock_lists(id) ON DELETE CASCADE,
+    tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
+    attached_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (stock_list_id, tag_id)
+);
+COMMENT ON TABLE stock_list_tags IS 'ストックリストとタグの紐づけ';
+COMMENT ON COLUMN stock_list_tags.stock_list_id IS 'ストックリストID';
+COMMENT ON COLUMN stock_list_tags.tag_id IS 'タグID';
+COMMENT ON COLUMN stock_list_tags.attached_at IS '紐づけ日時';
+
+-- stock_list_likes
+CREATE TABLE IF NOT EXISTS stock_list_likes (
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    stock_list_id UUID REFERENCES stock_lists(id) ON DELETE CASCADE,
+    created_at  TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (user_id, stock_list_id)
+);
+
+COMMENT ON TABLE stock_list_likes IS 'ストックリストへのいいね';
+COMMENT ON COLUMN stock_list_likes.user_id IS 'ユーザID';
+COMMENT ON COLUMN stock_list_likes.stock_list_id IS 'ストックリストID';
+COMMENT ON COLUMN stock_list_likes.created_at IS '作成日時';
 
 -- article_tags
 CREATE TABLE IF NOT EXISTS article_tags (
@@ -249,19 +315,6 @@ COMMENT ON TABLE article_views IS '記事閲覧履歴';
 COMMENT ON COLUMN article_views.article_id IS '記事ID';
 COMMENT ON COLUMN article_views.user_id IS 'ユーザID';
 COMMENT ON COLUMN article_views.created_at IS '作成日時';
-
--- article_bookmarks
-CREATE TABLE IF NOT EXISTS article_bookmarks (
-    article_id UUID REFERENCES articles(id),
-    user_id UUID REFERENCES users(id),
-    created_at TIMESTAMP DEFAULT NOW(),
-    PRIMARY KEY (article_id, user_id)
-);
-
-COMMENT ON TABLE article_bookmarks IS '記事ブックマーク';
-COMMENT ON COLUMN article_bookmarks.article_id IS '記事ID';
-COMMENT ON COLUMN article_bookmarks.user_id IS 'ユーザID';
-COMMENT ON COLUMN article_bookmarks.created_at IS '作成日時';
 
 -- comments
 CREATE TABLE IF NOT EXISTS comments (
@@ -463,7 +516,7 @@ COMMENT ON COLUMN knowledge.tag_follows.followed_at IS 'フォロー日時';
 
 
 -- ---------------------------------
--- 記事の like, view, bookmark, comment 更新関数
+-- 記事の各種カウント更新関数
 -- ---------------------------------
 CREATE OR REPLACE FUNCTION knowledge.update_article_counts()
 RETURNS TRIGGER AS $$
@@ -476,11 +529,11 @@ BEGIN
         END IF;
     ELSIF TG_TABLE_NAME = 'article_views' AND TG_OP = 'INSERT' THEN
         UPDATE knowledge.articles SET view_count = view_count + 1 WHERE id = NEW.article_id;
-    ELSIF TG_TABLE_NAME = 'article_bookmarks' THEN
+    ELSIF TG_TABLE_NAME = 'stock_items' THEN -- stock_items への変更を検知
         IF TG_OP = 'INSERT' THEN
-            UPDATE knowledge.articles SET bookmark_count = bookmark_count + 1 WHERE id = NEW.article_id;
+            UPDATE knowledge.articles SET stock_count = stock_count + 1 WHERE id = NEW.article_id;
         ELSIF TG_OP = 'DELETE' THEN
-            UPDATE knowledge.articles SET bookmark_count = bookmark_count - 1 WHERE id = OLD.article_id;
+            UPDATE knowledge.articles SET stock_count = stock_count - 1 WHERE id = OLD.article_id;
         END IF;
     ELSIF TG_TABLE_NAME = 'comments' THEN
         IF TG_OP = 'INSERT' THEN
@@ -526,14 +579,14 @@ AFTER INSERT ON knowledge.article_views
 FOR EACH ROW
 EXECUTE FUNCTION knowledge.update_article_counts();
 
--- 記事 bookmarks
-CREATE TRIGGER article_bookmarks_insert
-AFTER INSERT ON knowledge.article_bookmarks
+-- ストック（リストへの追加/削除）
+CREATE TRIGGER stock_items_insert
+AFTER INSERT ON knowledge.stock_items
 FOR EACH ROW
 EXECUTE FUNCTION knowledge.update_article_counts();
 
-CREATE TRIGGER article_bookmarks_delete
-AFTER DELETE ON knowledge.article_bookmarks
+CREATE TRIGGER stock_items_delete
+AFTER DELETE ON knowledge.stock_items
 FOR EACH ROW
 EXECUTE FUNCTION knowledge.update_article_counts();
 
