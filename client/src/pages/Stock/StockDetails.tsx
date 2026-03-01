@@ -78,7 +78,7 @@ export const StockDetail = () => {
           「{q}」の条件に一致する記事を表示中
         </Typography>
       )}
-      <Stack spacing={2}>
+      <Stack>
         {listDetail.stock_items.map((item) => (
           // Repositoryで整形した articles オブジェクトをそのまま渡す
           <ArticleCard key={item.id} article={item.articles} />
