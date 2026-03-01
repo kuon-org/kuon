@@ -50,17 +50,18 @@ const TopBar = () => {
         }}
       >
         {/* 左側：ロゴ */}
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 700,
-            letterSpacing: "0.1rem",
-            color: "primary.contrastText",
-          }}
-        >
-          KUON
-        </Typography>
-
+        <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              letterSpacing: "0.1rem",
+              color: "primary.contrastText",
+            }}
+          >
+            KUON
+          </Typography>
+        </Link>
         {/* 中央：検索アイコンまたは検索バー */}
         {isMobile ? (
           <IconButton

@@ -118,6 +118,7 @@ export const ArticleLayout = () => {
           likeCount={likeCount}
           mutateLike={mutateLike}
         />
+        <StockButton articleId={articleId} />
         <More
           username={article?.users.username ?? ""}
           articleId={articleId}
