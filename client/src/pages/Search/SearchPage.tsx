@@ -40,7 +40,7 @@ export const SearchPage = () => {
       </Typography>
 
       {isLoading ? (
-        <Stack spacing={2}>
+        <Stack>
           {[...Array(5)].map((_, i) => (
             <ArticlesSkeleton key={i} />
           ))}
@@ -49,7 +49,7 @@ export const SearchPage = () => {
         <>
           {data?.articles.length > 0 ? (
             <>
-              <Stack spacing={2}>
+              <Stack>
                 {data.articles.map((article: any) => (
                   <ArticleCard key={article.id} article={article} />
                 ))}

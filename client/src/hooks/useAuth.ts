@@ -274,7 +274,7 @@ export const useAuthQuery = () => {
 
   const unlinkMutation = useMutation({
     mutationFn: async (providerName: string) => {
-      const { data } = await apiClient.delete(`/auth/${providerName}/unlink`);
+      const { data } = await authClient.delete(`/${providerName}/unlink`);
       return data;
     },
     onSuccess: async () => {
