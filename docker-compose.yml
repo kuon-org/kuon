@@ -28,7 +28,7 @@ services:
       - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
       - db
-    command: ["npm", "run", "dev"]
+    command: ["npm", "run", "start"]
 
 volumes:
   db-data:

@@ -1,5 +1,5 @@
 import { users } from "@prisma/client";
-import prisma from "../prisma/client";
+import prisma from "../prisma/client.js";
 
 
 export class AdminRepository {

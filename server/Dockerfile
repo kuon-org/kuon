@@ -1,17 +1,20 @@
-# Node.js 公式イメージ
-FROM node:20-alpine
-
+FROM node:20
 WORKDIR /app
 
-# package.json と package-lock.json をコピーして依存関係インストール
-COPY package*.json ./
-RUN npm install
+ENV TZ=Asia/Tokyo
 
-# server のソースとビルド済み React をコピー
-COPY . .
+# ===== 依存関係インストール =====
+COPY app/package*.json ./
+RUN npm install --omit=dev
 
-# 3000番ポートを公開
-EXPOSE 3000
+# ===== Expressサーバファイルをコピー =====
+COPY app/ .
 
-# コンテナ起動時に Express サーバーを起動
-CMD ["npm", "run", "dev"]
+# ===== Reactビルド成果物をコピー =====
+COPY dist ../dist
+
+# ===== Prismaクライアント生成（必要に応じて） =====
+RUN npx prisma generate || true
+
+EXPOSE 9040
+CMD ["node", "index.js"]

@@ -1,6 +1,6 @@
-import { AuthRequest, isAuthenticated } from "../middlewares/auth";
+import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
 import { Request, Response } from 'express';
-import { AdminService } from "../services/adminService";
+import { AdminService } from "../services/adminService.js";
 
 export class AdminController {
     constructor(

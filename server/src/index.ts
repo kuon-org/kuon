@@ -12,6 +12,7 @@ import { init } from "./repositories/initRepository.js";
 import commentsRouter from "./routes/commnetsRouter.js";
 import adminRouter from "./routes/adminRouter.js";
 import shareRouter from "./routes/shareRoutes.js";
+import stocksRoutes from "./routes/stocksRoutes.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
@@ -33,6 +34,7 @@ app.use('/api', tagsRouter);
 app.use('/api', idpRouter);
 app.use('/api', commentsRouter);
 app.use('/api', adminRouter);
+app.use("/api", stocksRoutes);
 app.use('/', authRouter);
 app.use('/', shareRouter);
 app.get("/api-docs.json", (_req, res) => {

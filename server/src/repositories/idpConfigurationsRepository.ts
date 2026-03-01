@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import prisma from "../prisma/client";
+import prisma from "../prisma/client.js";
 
 export class IdpConfigurationRepository {
     private db: PrismaClient;
@@ -18,6 +18,15 @@ export class IdpConfigurationRepository {
             orderBy: { created_at: "asc" },
         });
     };
+
+    async getAllProviders() {
+        return this.db.identity_providers.findMany({
+            include: {
+                idp_configurations: true
+            },
+            orderBy: { created_at: "asc" }
+        })
+    }
 
     async getConfiguration(provider_name: string) {
         return this.db.identity_providers.findUnique({
@@ -101,6 +110,29 @@ export class IdpConfigurationRepository {
             return { identityProvider, config };
         });
     }
+    async deleteIdp(provider_name: string) {
+        return this.db.$transaction(async (tx) => {
+            // 1. 対象の IDP を取得して ID を特定
+            const identityProvider = await tx.identity_providers.findUnique({
+                where: { provider_name },
+            });
 
+            if (!identityProvider) {
+                throw new Error(`Identity provider "${provider_name}" が見つかりません`);
+            }
+
+            // 2. 依存している設定 (idp_configurations) を削除
+            await tx.idp_configurations.deleteMany({
+                where: { provider_id: identityProvider.id },
+            });
+
+            // 3. 親の identity_providers を削除
+            await tx.identity_providers.delete({
+                where: { id: identityProvider.id },
+            });
+
+            return { success: true, deletedProvider: provider_name };
+        });
+    }
 
 }

@@ -41,103 +41,96 @@ export class AuthService {
         if (!stored) throw new Error("Invalid state");
 
         const record = await this.repo.findProviderByName(providerName);
-        const config = record!.idp_configurations!.config as any;
+        if (!record || !record.idp_configurations) throw new Error("Provider not found");
+        const config = record.idp_configurations.config as any;
 
-        // 1. トークン & ユーザー情報取得
+        // 1. トークン取得 (結果はそのまま token_data として保存可能)
         const tokenData = await this.fetchToken(config, code, stored.verifier);
-        const rawUserInfo = await this.fetchUserInfo(config.user_info_url, tokenData.access_token);
-        console.log("Raw User Info:", JSON.stringify(rawUserInfo, null, 2)); // これを追加
 
-        // 2. マッピング
-        const { idpUser, remoteAvatarUrl } = this.parseUserInfo(rawUserInfo, config.mapping);
+        // 2. ユーザー情報の取得元を切り替え
+        let rawUserInfo: any;
+        if (record.provider_type?.toUpperCase() === "OIDC") {
+            if (!tokenData.id_token) throw new Error("id_token not found in OIDC response");
+            rawUserInfo = jwt.decode(tokenData.id_token);
+        } else {
+            const res = await axios.get(config.user_info_url, {
+                headers: { Authorization: `Bearer ${tokenData.access_token}` },
+            });
+            rawUserInfo = res.data;
+        }
 
-        // 3. ユーザー特定・作成
-        let user = await this.findOrCreateUser(record!.id, idpUser, tokenData, currentUserId);
+        // 3. マッピング
+        const idpUser = {
+            id: String(get(rawUserInfo, config.mapping.id)),
+            username: get(rawUserInfo, config.mapping.username),
+            name: get(rawUserInfo, config.mapping.display_name),
+        };
 
-        // 4. アバター処理
+        // 4. ユーザー特定/作成 (tokenDataを丸ごと渡す)
+        let user = await this.findOrCreateUser(record.id, idpUser, tokenData, currentUserId);
+        if (user.is_active === false) {
+            // pkceStoreのゴミ掃除をしてからエラーを投げる
+            pkceStore.delete(state);
+            throw new Error("このアカウントは無効化されています。管理者に問い合わせてください。");
+        }
+        // 5. アバター処理
+        const remoteAvatarUrl = this.getAvatarUrl(rawUserInfo, config.mapping);
         if (remoteAvatarUrl) {
             const localPath = await this.downloadAvatar(user.id, remoteAvatarUrl, providerName);
             await prisma.$transaction(async (tx) => {
                 const current = await tx.user_avatars.findFirst({ where: { user_id: user.id, is_selected: true } });
                 const shouldSelect = !current || !user.avatar_url;
-
                 await this.repo.upsertAvatar(tx, {
                     userId: user.id, serviceName: providerName,
                     avatarUrl: localPath, sourceUrl: remoteAvatarUrl, isSelected: shouldSelect
                 });
-
                 if (shouldSelect) {
                     user = await tx.users.update({ where: { id: user.id }, data: { avatar_url: localPath } });
                 }
             });
         }
+
         await this.repo.updateLastLogin(user.id);
         pkceStore.delete(state);
         return jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "24h" });
     }
 
-    private parseUserInfo(data: any, mapping: any) {
-        const rawId = get(data, mapping.id);
-        const id = String(rawId);
-        const rawAvatar = get(data, mapping.avatar_path);
-        let remoteAvatarUrl = rawAvatar;
+    private async fetchToken(config: any, code: string, verifier: string) {
+        const params = new URLSearchParams();
+        params.set("grant_type", "authorization_code");
+        params.set("code", code);
+        params.set("redirect_uri", config.redirect_uri);
+        params.set("client_id", config.client_id);
+        params.set("client_secret", config.client_secret);
+        params.set("code_verifier", verifier);
 
+        const res = await axios.post(config.token_url, params.toString(), {
+            headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+        });
+        return res.data; // access_token, refresh_token, id_token, expires_in 等が含まれる
+    }
+
+    private getAvatarUrl(raw: any, mapping: any): string | null {
+        let url = get(raw, mapping.avatar_path);
+        if (!url) return null;
         if (mapping.avatar_template) {
-            remoteAvatarUrl = mapping.avatar_template.replace("{id}", id).replace("{avatar}", rawAvatar);
-        } else if (mapping.avatar_replace && remoteAvatarUrl) {
-            remoteAvatarUrl = remoteAvatarUrl.replace(mapping.avatar_replace.from, mapping.avatar_replace.to);
+            const id = get(raw, mapping.id);
+            url = mapping.avatar_template.replace("{id}", id).replace("{avatar}", url);
         }
-
-        return {
-            idpUser: { id, username: get(data, mapping.username), name: get(data, mapping.display_name) },
-            remoteAvatarUrl
-        };
+        if (mapping.avatar_replace) {
+            url = url.replace(mapping.avatar_replace.from, mapping.avatar_replace.to);
+        }
+        return url;
     }
 
     private async downloadAvatar(userId: string, url: string, provider: string) {
-        const res = await axios.get(url, { responseType: 'arraybuffer' });
-        const ext = path.extname(new URL(url).pathname) || '.png';
+        const res = await axios.get(url, { responseType: "arraybuffer" });
+        const ext = path.extname(new URL(url).pathname) || ".png";
         const fileName = `${userId}_${provider}${ext}`;
-        const fullPath = path.join(this.AVATAR_DIR, fileName);
+        const filePath = path.join(this.AVATAR_DIR, fileName);
         await fs.mkdir(this.AVATAR_DIR, { recursive: true });
-        await fs.writeFile(fullPath, res.data);
-        console.log("downloadAvatar")
+        await fs.writeFile(filePath, res.data);
         return `/uploads/avatars/${fileName}`;
-    }
-
-
-    private async fetchToken(config: any, code: string, verifier: string) {
-        const params = new URLSearchParams({
-            grant_type: "authorization_code",
-            code,
-            redirect_uri: config.redirect_uri,
-            code_verifier: verifier,
-            client_id: config.client_id,
-        });
-
-        // GitHubの場合は client_secret を body に含める
-        if (config.provider_name === "github" && config.client_secret) {
-            params.set("client_secret", config.client_secret);
-        }
-
-        const headers: Record<string, string> = {
-            "Content-Type": "application/x-www-form-urlencoded",
-            Accept: "application/json", // ← GitHubはこれがないとURLエンコード形式で返す
-        };
-
-        // TwitterなどBasic認証が必要なものだけこのブロックを使う
-        if (config.provider_name !== "github" && config.client_secret) {
-            const credentials = Buffer.from(`${config.client_id}:${config.client_secret}`).toString("base64");
-            headers["Authorization"] = `Basic ${credentials}`;
-        }
-
-
-        const res = await axios.post(config.token_url, params.toString(), { headers });
-        return res.data;
-    }
-    private async fetchUserInfo(url: string, token: string) {
-        const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
-        return res.data;
     }
 
     private async findOrCreateUser(providerId: string, idpUser: any, tokenData: any, currentUserId?: string) {
@@ -145,13 +138,11 @@ export class AuthService {
         if (identity) return this.repo.findUserById(identity.user_id).then(u => u!);
 
         if (currentUserId) {
-            await prisma.user_identities.create({
-                data: { user_id: currentUserId, provider_id: providerId, provider_uid: idpUser.id, token_data: tokenData }
-            });
+            await this.repo.linkIdentity(currentUserId, providerId, idpUser.id, tokenData);
             return this.repo.findUserById(currentUserId).then(u => u!);
         }
 
-        const baseUsername = idpUser.username || idpUser.id;
+        let baseUsername = idpUser.username || `user_${Math.random().toString(36).slice(2, 7)}`;
         let username = baseUsername;
         let count = 1;
         while (await this.repo.findUserByUsername(username)) {
@@ -169,29 +160,14 @@ export class AuthService {
     }
 
     async unlinkService(userId: string, providerName: string) {
-        // 1. ファイルの削除（拡張子が不明な場合が多いので、特定して消す）
-        // userId_providerName.* に一致するファイルを掃除
-        try {
-            // セキュリティ：最後の連携手段を解除しようとしていないかチェック
-            const identityCount = await prisma.user_identities.count({
-                where: { user_id: userId }
-            });
+        const identityCount = await prisma.user_identities.count({ where: { user_id: userId } });
+        if (identityCount <= 1) throw new Error("最後の連携手段を解除することはできません。");
 
-            if (identityCount <= 1) {
-                throw new Error("最後の連携手段を解除することはできません。他のログイン手段を追加してください。")
-            }
-            const files = await fs.readdir(this.AVATAR_DIR);
-            const targetFiles = files.filter(f => f.startsWith(`${userId}_${providerName}`));
-
-            for (const file of targetFiles) {
-                await fs.unlink(path.join(this.AVATAR_DIR, file));
-            }
-        } catch (err) {
-            console.error("File deletion failed:", err);
-            // ファイル削除失敗でトランザクション全体を止めるかは要検討
+        const files = await fs.readdir(this.AVATAR_DIR).catch(() => []);
+        const targetFiles = files.filter(f => f.startsWith(`${userId}_${providerName}`));
+        for (const file of targetFiles) {
+            await fs.unlink(path.join(this.AVATAR_DIR, file)).catch(() => { });
         }
-
-        // 2. DBレコードの削除
         return this.repo.deleteIdentityAndAvatar(userId, providerName);
     }
 }

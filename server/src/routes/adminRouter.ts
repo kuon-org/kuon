@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { UsersRepository } from "../repositories/usersRepository";
-import { AdminService } from "../services/adminService";
-import { AdminController } from "../controllers/adminController";
-import { authenticateToken } from "../middlewares/auth";
-import { AdminRepository } from "../repositories/adminRepository";
+import { UsersRepository } from "../repositories/usersRepository.js";
+import { AdminService } from "../services/adminService.js";
+import { AdminController } from "../controllers/adminController.js";
+import { authenticateToken } from "../middlewares/auth.js";
+import { AdminRepository } from "../repositories/adminRepository.js";
 
 
 

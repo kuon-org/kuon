@@ -4,7 +4,9 @@
   "main": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "npx tsx watch src/index.ts"
+    "dev": "npx tsx watch src/index.ts",
+    "build": "tsc --pretty",
+    "start": "node app/index.js"
   },
   "keywords": [],
   "author": "",
