@@ -14,8 +14,10 @@ import * as prettierPluginMarkdown from "prettier/plugins/markdown";
 import * as prettierPluginEstree from "prettier/plugins/estree";
 import { useKey } from "../../hooks/useKey";
 import { useArticles } from "../../hooks/useArticles";
-import FastEditor, { type FastEditorRef } from "./FastEditor";
-// import FastEditor, { type FastEditorRef } from "./FastEditorWithDrawio_Experimental";
+// import FastEditor, { type FastEditorRef } from "./FastEditor";
+import FastEditor, {
+  type FastEditorRef,
+} from "./FastEditorWithDrawio_Experimental";
 import { EditorToolbar } from "./EditorToolbar";
 import { DrawioEditor } from "./DrawioEditor";
 
