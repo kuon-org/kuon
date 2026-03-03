@@ -3,7 +3,7 @@ import apiClient from "../api/client";
 import { useNotify } from "./useNotify";
 
 export const useUserQuery = (username?: string) => {
-  const { success, error, notify } = useNotify();
+  const { error, notify } = useNotify();
   const queryClient = useQueryClient();
   // ユーザ情報を取得
   const userQuery = useQuery({

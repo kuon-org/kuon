@@ -1,14 +1,5 @@
 // components/MarkdownEditor/DrawioEditor.tsx
-import {
-  Dialog,
-  DialogContent,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  Button,
-} from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+import { Dialog, DialogContent } from "@mui/material";
 import { useCallback, useEffect, useRef } from "react";
 
 interface DrawioEditorProps {
