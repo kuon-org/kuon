@@ -6,6 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import authClient from "../api/authClient";
 import { accountSettingRoute } from "../router";
+import { useNotify } from "./useNotify";
 
 export interface AuthUser {
   id: string;
@@ -83,6 +84,7 @@ export interface UserAvatar {
 export const useAuthQuery = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { error, success, notify } = useNotify();
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   // ✅ 現在のログインユーザーを取得
@@ -112,7 +114,7 @@ export const useAuthQuery = () => {
         sessionStorage.setItem("pendingEmail", data.email); // ← 後でverifyで使う
         navigate({ to: "/login/2fa" });
       } else {
-        alert("ログインしました！");
+        notify("ログインしました！");
         await queryClient.invalidateQueries({ queryKey: ["authUser"] });
         navigate({ to: "/" });
       }
@@ -130,14 +132,14 @@ export const useAuthQuery = () => {
       return data; // { success: true, user }
     },
     onSuccess: async () => {
-      alert("二段階認証が完了しました！");
+      success("二段階認証が完了しました！");
       // 認証成功後、ユーザー情報を再取得してトップへ
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       sessionStorage.removeItem("pendingEmail");
       navigate({ to: "/" });
     },
     onError: (err: AxiosError) => {
-      alert(err.response?.data?.message || "認証コードが正しくありません");
+      error(err.response?.data?.message || "認証コードが正しくありません");
     },
   });
 
@@ -148,6 +150,7 @@ export const useAuthQuery = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
+      success("ログアウトしました");
       navigate({ to: "/" });
     },
   });
@@ -167,13 +170,13 @@ export const useAuthQuery = () => {
       return data; // { success: true, message: "二段階認証を有効化しました" }
     },
     onSuccess: async (data) => {
-      alert(data.message || "二段階認証を有効化しました！");
+      success(data.message || "二段階認証を有効化しました！");
       // ログイン情報を再取得
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       navigate({ to: "/" });
     },
     onError: (err: AxiosError) => {
-      alert(err.response?.data?.message || "認証コードの検証に失敗しました");
+      error(err.response?.data?.message || "認証コードの検証に失敗しました");
     },
   });
 
@@ -265,10 +268,10 @@ export const useAuthQuery = () => {
       // ユーザー情報（ヘッダー等のアイコン）とアバター一覧を再取得
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
-      alert("アイコンを切り替えました");
+      success("アイコンを切り替えました");
     },
-    onError: (error: AxiosError) => {
-      alert("切り替えに失敗しました");
+    onError: () => {
+      error("切り替えに失敗しました");
     },
   });
 
@@ -281,12 +284,12 @@ export const useAuthQuery = () => {
       // ユーザー情報、アバター一覧、IDP連携情報をすべて更新
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
-      alert("連携を解除しました");
+      success("連携を解除しました");
     },
-    onError: (error: AxiosError) => {
+    onError: (err: AxiosError) => {
       const message =
-        (error.response?.data as any)?.error || "解除に失敗しました";
-      alert(message);
+        (err.response?.data as any)?.error || "解除に失敗しました";
+      error(message);
     },
   });
   const uploadImageMutation = useMutation({
@@ -300,12 +303,12 @@ export const useAuthQuery = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
-      alert("画像をアップロードしました");
+      success("画像をアップロードしました。ページリロードで反映されます。");
       navigate({ to: accountSettingRoute.to });
     },
     onError: (err: any) => {
       console.error(err);
-      alert(err.response?.data?.message ?? "画像アップロードに失敗しました");
+      error(err.response?.data?.message ?? "画像アップロードに失敗しました");
     },
   });
 

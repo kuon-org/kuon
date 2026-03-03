@@ -1,6 +1,6 @@
-import React, { type JSX, useEffect, useRef } from 'react';
-import mermaid from 'mermaid';
-import { uuidv7 } from '../../utils/uuid';
+import React, { type JSX, useEffect, useRef } from "react";
+import mermaid from "mermaid";
+import { uuidv7 } from "../../utils/uuid";
 
 type MermaidRendererProps = {
   code: string;
@@ -27,12 +27,6 @@ export const MermaidRenderer = React.memo(
       })();
     }, [code]);
 
-    return code ? (
-      <div ref={ref} key={code}>
-        {code}
-      </div>
-    ) : (
-      <div key={code}></div>
-    );
+    return code ? <div ref={ref}>{code}</div> : <div key={code}></div>;
   },
 );

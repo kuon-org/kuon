@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import apiClient from "../api/client";
 import { useNavigate } from "@tanstack/react-router";
+import { useNotify } from "./useNotify";
 
 interface Tag {
   id: string;
@@ -118,21 +119,18 @@ interface PaginatedArticles {
 
 export const useArticles = (articleId?: string) => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const { error, success } = useNotify();
   const createArticleMutation = useMutation({
     mutationFn: async (newArticle: CreateArticleData) => {
       const res = await apiClient.post("/articles/create", newArticle);
       return res.data;
     },
     onSuccess: () => {
-      alert("記事を作成しました！");
       queryClient.invalidateQueries({ queryKey: ["articles"] });
       queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
-      navigate({ to: "/" });
     },
     onError: (err: any) => {
       console.error(err);
-      alert(err.response?.data?.message ?? "作成中にエラーが発生しました");
     },
   });
   const editArticleMutation = useMutation({
@@ -144,15 +142,12 @@ export const useArticles = (articleId?: string) => {
       return res.data;
     },
     onSuccess: () => {
-      alert("記事を更新しました！");
       queryClient.invalidateQueries({ queryKey: ["articles"] });
       queryClient.invalidateQueries({ queryKey: ["article", articleId] });
       queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
-      navigate({ to: "/" });
     },
     onError: (err: any) => {
       console.error(err);
-      alert(err.response?.data?.message ?? "更新中にエラーが発生しました");
     },
   });
   // 📰 記事詳細の取得
@@ -306,7 +301,7 @@ export const useArticles = (articleId?: string) => {
     },
     onError: (err: any) => {
       console.error(err);
-      alert(err.response?.data?.message ?? "画像アップロードに失敗しました");
+      error(err.response?.data?.message ?? "画像アップロードに失敗しました");
     },
   });
 
@@ -318,7 +313,7 @@ export const useArticles = (articleId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
       queryClient.invalidateQueries({ queryKey: ["article", articleId] });
-      alert("下書きを破棄して公開済みの状態に戻しました");
+      success("下書きを破棄して公開済みの状態に戻しました");
     },
   });
   const deleteArticleMutation = useMutation({
@@ -333,10 +328,10 @@ export const useArticles = (articleId?: string) => {
       queryClient.invalidateQueries({ queryKey: ["TrashArticles"] });
       // 詳細表示中に削除した場合のために詳細も無効化
       queryClient.invalidateQueries({ queryKey: ["article", id] });
-      alert("記事を削除しました");
+      success("記事を削除しました");
     },
     onError: (err: any) => {
-      alert(err.response?.data?.message ?? "削除に失敗しました");
+      error(err.response?.data?.message ?? "削除に失敗しました");
     },
   });
 
@@ -356,7 +351,7 @@ export const useArticles = (articleId?: string) => {
       queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
       queryClient.invalidateQueries({ queryKey: ["TrashArticles"] });
       queryClient.invalidateQueries({ queryKey: ["article", id] });
-      alert("記事を復元しました");
+      success("記事を復元しました");
     },
   });
 
@@ -365,16 +360,16 @@ export const useArticles = (articleId?: string) => {
     mutationFn: async (id: string) => apiClient.delete(`/articles/${id}/hard`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["TrashArticles"] });
-      alert("記事を完全に削除しました");
+      success("記事を完全に削除しました");
     },
   });
 
   return {
     // 記事関連
-    createArticle: createArticleMutation.mutate,
+    createArticle: createArticleMutation.mutateAsync,
     isCreating: createArticleMutation.isPending,
 
-    editArticle: editArticleMutation.mutate,
+    editArticle: editArticleMutation.mutateAsync,
     isEditing: editArticleMutation.isPending,
     // articles: articlesQuery.data,
     // articles_isLoading: articlesQuery.isLoading,

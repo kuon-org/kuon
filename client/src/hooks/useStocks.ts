@@ -5,6 +5,7 @@ import {
   useInfiniteQuery,
 } from "@tanstack/react-query";
 import apiClient from "../api/client";
+import { useNotify } from "./useNotify";
 
 // 基本的なリスト情報の型
 export interface StockList {
@@ -77,14 +78,14 @@ export const useStocks = (
   q?: string,
 ) => {
   const queryClient = useQueryClient();
-
+  const { success } = useNotify();
   // 自分のリスト取得
   const {
     data: lists,
     isLoading,
     error,
   } = useQuery<StockList[]>({
-    queryKey: ["stocks", "lists", { articleId }],
+    queryKey: ["stocks", "lists"],
     queryFn: async () => {
       const params = articleId ? { articleId } : {};
       const { data } = await apiClient.get("/stocks/mylists", { params });
@@ -143,12 +144,10 @@ export const useStocks = (
       );
       return { listId: targetListId, ...data };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      success(data.message);
       queryClient.invalidateQueries({ queryKey: ["stocks", "lists"] });
       queryClient.invalidateQueries({ queryKey: ["stocks", "detail"] }); // 詳細も更新
-      if (articleId) {
-        queryClient.invalidateQueries({ queryKey: ["articles", articleId] });
-      }
     },
   });
 
@@ -213,7 +212,8 @@ export const useStocks = (
       });
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      success(data.message);
       queryClient.invalidateQueries({ queryKey: ["stocks", "lists"] });
       queryClient.invalidateQueries({ queryKey: ["stocks", "detail"] });
     },
