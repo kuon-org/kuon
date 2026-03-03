@@ -103,23 +103,6 @@ const FastEditor = forwardRef<FastEditorRef, FastEditorProps>(
       }
     }, [value, renderFromValue, restoreFullMarkdown]);
 
-    // compositionイベント（IME対策）
-    useEffect(() => {
-      const el = editorRef.current;
-      if (!el) return;
-
-      const onStart = () => (isComposingRef.current = true);
-      const onEnd = () => (isComposingRef.current = false);
-
-      el.addEventListener("compositionstart", onStart);
-      el.addEventListener("compositionend", onEnd);
-
-      return () => {
-        el.removeEventListener("compositionstart", onStart);
-        el.removeEventListener("compositionend", onEnd);
-      };
-    }, []);
-
     useImperativeHandle(ref, () => ({
       setValue: (text: string) => renderFromValue(text),
       getValue: () => {
@@ -166,12 +149,6 @@ const FastEditor = forwardRef<FastEditorRef, FastEditorProps>(
       }
     };
 
-    const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const text = e.clipboardData.getData("text/plain");
-      document.execCommand("insertText", false, text);
-    };
-
     return (
       <div
         ref={editorRef}
@@ -180,7 +157,6 @@ const FastEditor = forwardRef<FastEditorRef, FastEditorProps>(
         onInput={handleInput}
         onClick={handleClick}
         onScroll={onScroll}
-        onPaste={handlePaste}
         spellCheck={false}
         data-placeholder={placeholder}
         className="fast-editor" // index.css
