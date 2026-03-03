@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../api/client";
+import { useNotify } from "./useNotify";
 
 export interface Tag {
   id: string;
@@ -27,7 +28,7 @@ export interface UpsertTagData {
 
 export const useTagsQuery = (slug?: string) => {
   const queryClient = useQueryClient();
-
+  const { error } = useNotify();
   // 🏷 タグ一覧取得
   const tagsQuery = useQuery<Tags[]>({
     queryKey: ["tags"],
@@ -57,7 +58,7 @@ export const useTagsQuery = (slug?: string) => {
     },
     onError: (err: any) => {
       console.error(err);
-      alert(err.response?.data?.message ?? "タグの保存に失敗しました");
+      error(err.response?.data?.message ?? "タグの保存に失敗しました");
     },
   });
 

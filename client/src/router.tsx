@@ -48,6 +48,7 @@ import { StockDetail } from "./pages/Stock/StockDetails";
 import { PublicStocksPage } from "./pages/Stock/StockList";
 import { StockPage } from "./pages/Stock/StockPage";
 import { StockEditWrapper } from "./pages/Stock/StockEditWrapper";
+import { NotificationManager } from "./components/common/NotificationManager";
 
 interface MyRouterContext {
   user: { id: string; username: string } | null;
@@ -59,6 +60,7 @@ interface MyRouterContext {
 const baseRootRoute = createRootRouteWithContext<MyRouterContext>()({
   component: () => (
     <>
+      <NotificationManager />
       <Outlet />
       {/* <TanStackRouterDevtools initialIsOpen={false} /> */}
     </>
