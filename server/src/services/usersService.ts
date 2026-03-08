@@ -1,10 +1,10 @@
-import argon2 from 'argon2';
-import { UsersRepository } from '../repositories/usersRepository.js';
-import ScureBase32Plugin from '@otplib/plugin-base32-scure';
-import NodeCryptoPlugin from '@otplib/plugin-crypto-node';
-import { TOTP } from '@otplib/totp'
+import argon2 from "argon2";
+import { UsersRepository } from "../repositories/usersRepository.js";
+import ScureBase32Plugin from "@otplib/plugin-base32-scure";
+import NodeCryptoPlugin from "@otplib/plugin-crypto-node";
+import { TOTP } from "@otplib/totp";
 export class UsersService {
-  constructor(private usersRepo: UsersRepository) { }
+  constructor(private usersRepo: UsersRepository) {}
 
   async getAllUsers() {
     return await this.usersRepo.findAllUsers();
@@ -22,27 +22,39 @@ export class UsersService {
     return user;
   }
 
-  async registerUser(username: string, email: string, password: string, displayName?: string) {
+  async registerUser(
+    username: string,
+    email: string,
+    password: string,
+    displayName?: string,
+  ) {
     // バリデーション
     const existing = await this.usersRepo.isUsernameExisting(username);
     if (existing) throw new Error("UsernameAlreadyExists");
 
     // Repository側のトランザクションメソッドを呼び出し
-    return await this.usersRepo.createLocalAccount(username, email, password, displayName);
+    return await this.usersRepo.createLocalAccount(
+      username,
+      email,
+      password,
+      displayName,
+    );
   }
 
   async loginUser(emailOrUsername: string, password: string) {
     let account = await this.usersRepo.findLocalAccountByEmail(emailOrUsername);
     if (!account) {
-      account = await this.usersRepo.findLocalAccountByUsername(emailOrUsername);
+      account =
+        await this.usersRepo.findLocalAccountByUsername(emailOrUsername);
     }
-    if (!account || !account.password_hash) throw new Error('InvalidCredentials');
-    if (!account.user_id) throw new Error('UserNotFound');
+    if (!account || !account.password_hash)
+      throw new Error("InvalidCredentials");
+    if (!account.user_id) throw new Error("UserNotFound");
     const isValid = await argon2.verify(account.password_hash, password);
-    if (!isValid) throw new Error('InvalidCredentials');
+    if (!isValid) throw new Error("InvalidCredentials");
 
     const user = await this.usersRepo.findUserById(account.user_id);
-    if (!user) throw new Error('UserNotFound');
+    if (!user) throw new Error("UserNotFound");
     return user;
   }
 
@@ -74,12 +86,12 @@ export class UsersService {
 
   async getFollowers(userId: string) {
     const records = await this.usersRepo.getFollowers(userId);
-    return records.map(r => r.users_user_follows_follower_idTousers);
+    return records.map((r) => r.users_user_follows_follower_idTousers);
   }
 
   async getFollowings(userId: string) {
     const records = await this.usersRepo.getFollowings(userId);
-    return records.map(r => r.users_user_follows_followee_idTousers);
+    return records.map((r) => r.users_user_follows_followee_idTousers);
   }
 
   async get2FASettingValue(userId: string) {
@@ -102,7 +114,8 @@ export class UsersService {
     if (!account || !account.user_id) throw new Error("UserNotFound");
 
     const security = await this.usersRepo.findUserSecurity(account.user_id);
-    if (!security || !security.totp_secret) throw new Error("2FA設定が見つかりません");
+    if (!security || !security.totp_secret)
+      throw new Error("2FA設定が見つかりません");
 
     const totp = new TOTP({
       crypto: new NodeCryptoPlugin(),
@@ -126,7 +139,7 @@ export class UsersService {
     const user = await this.usersRepo.findUserById(account.user_id);
     if (!user) throw new Error("UserNotFound");
     return user;
-  };
+  }
 
   async updateLastLogin(userId: string) {
     return await this.usersRepo.updateLastLogin(userId);
@@ -145,11 +158,18 @@ export class UsersService {
   }
 
   async updateUserInfo(userId: string, displayName: string, bio: string) {
-    return await this.usersRepo.updateUser(userId, { display_name: displayName, bio, updated_at: new Date() });
+    return await this.usersRepo.updateUser(userId, {
+      display_name: displayName,
+      bio,
+      updated_at: new Date(),
+    });
   }
 
   async updateUsername(userId: string, username: string) {
-    return await this.usersRepo.updateUser(userId, { username, updated_at: new Date() });
+    return await this.usersRepo.updateUser(userId, {
+      username,
+      updated_at: new Date(),
+    });
   }
 
   async getUserIdentities(userId: string) {
@@ -158,5 +178,11 @@ export class UsersService {
 
   async updateLocalAvatar(userId: string, pathname: string) {
     return await this.usersRepo.upsertLocalAvatar(userId, pathname);
+  }
+
+  async getFollowingTags(userId: string) {
+    const result = await this.usersRepo.followingTags(userId);
+    const tags = result.map((r) => r.tags);
+    return tags;
   }
 }

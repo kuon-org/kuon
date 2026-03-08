@@ -352,4 +352,13 @@ export class UsersRepository {
       data: { last_login_at: new Date() },
     });
   }
+
+  async followingTags(userId: string) {
+    return await prisma.tag_follows.findMany({
+      where: { user_id: userId },
+      include: {
+        tags: true,
+      },
+    });
+  }
 }
