@@ -18,6 +18,7 @@ export const TagChip = ({ tag }: TagChipProps) => {
     <Link
       key={tag.id}
       to={tagProfileRoute.to}
+      search={{ page: 1 }}
       params={{ slug: tag.slug }}
       style={{ textDecoration: "none" }}
     >

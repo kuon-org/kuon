@@ -94,7 +94,13 @@ export const StockDetail = () => {
             renderItem={(item) => (
               <Link
                 // 💡 現在のパスを維持したまま、searchパラメータだけをマージする
-                from={listId ? "/stocks/$listId" : "/stocks"}
+                from={
+                  username
+                    ? "/$username/stocks/$listId"
+                    : listId
+                      ? "/stocks/$listId"
+                      : "/stocks"
+                }
                 search={(prev: any) => ({ ...prev, page: item.page })}
                 style={{ textDecoration: "none" }}
               >

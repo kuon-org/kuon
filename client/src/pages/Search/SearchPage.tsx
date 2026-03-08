@@ -11,12 +11,12 @@ import { searchRoute } from "../../router";
 export const SearchPage = () => {
   // URLの ?q=... &page=... を取得
   const { q, page = 1 } = useSearch({ from: searchRoute.id });
-
+  console.log(q);
   const { data, isLoading } = useQuery({
     queryKey: ["articles", "search", q, page],
     queryFn: async () => {
       const res = await apiClient.get("/articles", {
-        params: { q, page, limit: 20 }, // 検索結果は20件ずつ
+        params: { q, page, limit: 10 }, // 検索結果は20件ずつ
       });
       return res.data;
     },

@@ -42,19 +42,19 @@ const TabsBar = () => {
             sx={{ minHeight: 44 }}
           />
           <Tab
-            label="トレンド"
-            value="/trend"
-            component={Link as any}
-            to="/trend"
-            aria-label="Trend"
-            sx={{ minHeight: 44 }}
-          />
-          <Tab
             label="タイムライン"
             value="/timeline"
             component={Link as any}
             to="/timeline"
             aria-label="Timeline"
+            sx={{ minHeight: 44 }}
+          />
+          <Tab
+            label="トレンド"
+            value="/trend"
+            component={Link as any}
+            to="/trend"
+            aria-label="Trend"
             sx={{ minHeight: 44 }}
           />
           <Tab

@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import {
   Box,
   Grid,
@@ -8,12 +7,6 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useTagsQuery } from "../../hooks/useTags";
-
-async function fetchTags() {
-  const res = await fetch("/api/tags");
-  if (!res.ok) throw new Error("タグの取得に失敗しました");
-  return res.json();
-}
 
 const TagList = () => {
   const { tags, tags_isLoading, tags_isError } = useTagsQuery();

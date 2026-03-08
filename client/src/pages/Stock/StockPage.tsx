@@ -62,7 +62,7 @@ export const StockPage = () => {
         <Box sx={{ width: { xs: "100%", md: "300px" }, flexShrink: 0 }}>
           <Paper
             variant="outlined"
-            sx={{ p: 3, position: { md: "sticky" }, top: 24 }}
+            sx={{ p: 3, position: { md: "sticky" }, top: 96 }}
           >
             <Stack spacing={2.5}>
               {/* リスト名 */}
@@ -126,7 +126,7 @@ export const StockPage = () => {
               mt: 3,
               p: 3,
               position: { md: "sticky" },
-              top: 24,
+              top: 432,
             }}
           >
             <Typography variant="caption" sx={{ mb: 1 }}>

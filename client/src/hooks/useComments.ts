@@ -131,7 +131,7 @@ export const useComments = (articleId?: string, commentId?: string) => {
       );
       return res.data as IsLikedResponse;
     },
-    enabled: !!commentId,
+    enabled: !!commentId && !!queryClient.getQueryData(["authUser"]),
   });
 
   const likeMutation = useMutation({
