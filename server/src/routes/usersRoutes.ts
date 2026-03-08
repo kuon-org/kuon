@@ -5,6 +5,8 @@ import { UsersService } from "../services/usersService.js";
 import { UsersController } from "../controllers/usersController.js";
 import { UploadImagesRepository } from "../repositories/uploadImagesRepository.js";
 import { UploadImagesService } from "../services/uploadImagesService.js";
+import { TagsRepository } from "../repositories/tagsRepository.js";
+import { TagsService } from "../services/tagsService.js";
 
 const usersRouter = Router();
 
@@ -16,8 +18,14 @@ const usersService = new UsersService(usersRepo);
 const uploadImagesRepo = new UploadImagesRepository();
 const uploadImagesService = new UploadImagesService(uploadImagesRepo);
 
-const usersCtrl = new UsersController(usersService, uploadImagesService);
+const tagsRepo = new TagsRepository();
+const tagsService = new TagsService(tagsRepo);
 
+const usersCtrl = new UsersController(
+  usersService,
+  tagsService,
+  uploadImagesService,
+);
 
 /**
  * @openapi
@@ -160,7 +168,7 @@ usersRouter.post("/login", usersCtrl.loginUser);
  *   post:
  *     summary: 二段階認証コードの検証（JWT を Cookie にセット）
  *     description: |
- *       ログイン時に二段階認証が有効なユーザーが対象。  
+ *       ログイン時に二段階認証が有効なユーザーが対象。
  *       メールアドレスと6桁の認証コードを送信し、正しければ JWT を Cookie にセットします。
  *     tags: [Auth]
  *     requestBody:
@@ -213,7 +221,6 @@ usersRouter.post("/login", usersCtrl.loginUser);
  */
 usersRouter.post("/login/verify-2fa", usersCtrl.verifyLogin2FA);
 
-
 /**
  * @openapi
  * /api/logout:
@@ -257,7 +264,7 @@ usersRouter.put("/users/:userId/password", usersCtrl.changePassword);
 /**
  * @openapi
  * /api/users/update/info:
- *   put: 
+ *   put:
  *     summary: ユーザ情報更新
  *     tags: [Users]
  *   requestBody:
@@ -268,12 +275,16 @@ usersRouter.put("/users/:userId/password", usersCtrl.changePassword);
  *     '200':
  *       description: 更新成功
  */
-usersRouter.put("/users/update/info", authenticateToken, usersCtrl.updateUserInfo)
+usersRouter.put(
+  "/users/update/info",
+  authenticateToken,
+  usersCtrl.updateUserInfo,
+);
 
 /**
  * @openapi
  * /api/users/update/username:
- *   put: 
+ *   put:
  *     summary: ユーザ名情報更新
  *     tags: [Users]
  *   requestBody:
@@ -284,9 +295,11 @@ usersRouter.put("/users/update/info", authenticateToken, usersCtrl.updateUserInf
  *     '200':
  *       description: 更新成功
  */
-usersRouter.put("/users/update/username", authenticateToken, usersCtrl.updateUsername)
-
-
+usersRouter.put(
+  "/users/update/username",
+  authenticateToken,
+  usersCtrl.updateUsername,
+);
 
 /**
  * @openapi
@@ -309,8 +322,7 @@ usersRouter.put("/users/update/username", authenticateToken, usersCtrl.updateUse
  *       '401':
  *         description: 未ログインです
  */
-usersRouter.post("/users/follow", authenticateToken, usersCtrl.toggleFollow)
-
+usersRouter.post("/users/follow", authenticateToken, usersCtrl.toggleFollow);
 
 /**
  * @openapi
@@ -329,7 +341,11 @@ usersRouter.post("/users/follow", authenticateToken, usersCtrl.toggleFollow)
  *       '401':
  *         description: 未ログインです
  */
-usersRouter.get("/users/:followeeId/isfollowing", authenticateToken, usersCtrl.isFollowing);
+usersRouter.get(
+  "/users/:followeeId/isfollowing",
+  authenticateToken,
+  usersCtrl.isFollowing,
+);
 
 /**
  * @openapi
@@ -365,7 +381,6 @@ usersRouter.get("/users/:userId/follower", usersCtrl.getFollowers);
  */
 usersRouter.get("/users/:userId/follow", usersCtrl.getFollowings);
 
-
 /**
  * @openapi
  * /api/users/settings/setup2fa:
@@ -376,7 +391,11 @@ usersRouter.get("/users/:userId/follow", usersCtrl.getFollowings);
  *       '200':
  *         description: QRコードURL
  */
-usersRouter.get("/users/settings/setup2fa", authenticateToken, usersCtrl.setUp2FA)
+usersRouter.get(
+  "/users/settings/setup2fa",
+  authenticateToken,
+  usersCtrl.setUp2FA,
+);
 
 /**
  * @openapi
@@ -397,7 +416,11 @@ usersRouter.get("/users/settings/setup2fa", authenticateToken, usersCtrl.setUp2F
  *       '200':
  *         description: 二段階認証有効化
  */
-usersRouter.post("/users/settings/verify2fa", authenticateToken, usersCtrl.verify2FA)
+usersRouter.post(
+  "/users/settings/verify2fa",
+  authenticateToken,
+  usersCtrl.verify2FA,
+);
 
 /**
  * @openapi
@@ -405,12 +428,15 @@ usersRouter.post("/users/settings/verify2fa", authenticateToken, usersCtrl.verif
  *   delete:
  *     summary: 2FAの削除
  *     tags: [Users]
- *   response: 
+ *   response:
  *     '200':
  *       description: 二段階認証削除
  */
-usersRouter.delete("/users/settings/delete2fa", authenticateToken, usersCtrl.delete2FA);
-
+usersRouter.delete(
+  "/users/settings/delete2fa",
+  authenticateToken,
+  usersCtrl.delete2FA,
+);
 
 /**
  * @openapi
@@ -422,7 +448,11 @@ usersRouter.delete("/users/settings/delete2fa", authenticateToken, usersCtrl.del
  *       '200':
  *         description: 取得結果
  */
-usersRouter.get("/users/settings/uploaded_images", authenticateToken, usersCtrl.getUploadedImages)
+usersRouter.get(
+  "/users/settings/uploaded_images",
+  authenticateToken,
+  usersCtrl.getUploadedImages,
+);
 
 /**
  * @openapi
@@ -434,7 +464,11 @@ usersRouter.get("/users/settings/uploaded_images", authenticateToken, usersCtrl.
  *       '200':
  *         description: 取得結果
  */
-usersRouter.get("/users/settings/idpinfo", authenticateToken, usersCtrl.getUserIdentities)
+usersRouter.get(
+  "/users/settings/idpinfo",
+  authenticateToken,
+  usersCtrl.getUserIdentities,
+);
 
 /**
  * @openapi
@@ -450,6 +484,18 @@ usersRouter.get("/users/settings/idpinfo", authenticateToken, usersCtrl.getUserI
  *       '200':
  *         description: 画像URL
  */
-usersRouter.post("/users/settings/upload_avatar", authenticateToken, usersCtrl.uploadLocalAvatar);
+usersRouter.post(
+  "/users/settings/upload_avatar",
+  authenticateToken,
+  usersCtrl.uploadLocalAvatar,
+);
+
+usersRouter.get("/users/:userId/following_tags", usersCtrl.getFollowingTags);
+
+usersRouter.get(
+  "/users/tags/me",
+  authenticateToken,
+  usersCtrl.getMyFollowingtags,
+);
 
 export default usersRouter;

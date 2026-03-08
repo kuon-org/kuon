@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import prisma from "../prisma/client.js";
 import { parseSearchQuery } from "../utils/searchParser/index.js";
+import { TrendWeights } from "../types/Articles/TrendWeights.js";
 
 export class ArticlesRepository {
   private db: PrismaClient;
@@ -37,7 +38,9 @@ export class ArticlesRepository {
           },
           article_tags: {
             select: {
-              tags: { select: { id: true, name: true, slug: true } },
+              tags: {
+                select: { id: true, name: true, slug: true, avatar_url: true },
+              },
             },
           },
         },
@@ -46,6 +49,97 @@ export class ArticlesRepository {
 
     return {
       articles,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+      limit,
+    };
+  }
+
+  async findTrendingArticles(
+    weights: TrendWeights,
+    page: number,
+    limit: number,
+  ) {
+    const skip = (page - 1) * limit;
+
+    // 1. スコア計算とページネーションを適用した記事IDの取得
+    // $queryRaw 内の変数は Prisma によって適切にパラメータ化されます
+    const articlesWithScore = await this.db.$queryRaw<any[]>`
+    SELECT 
+      id,
+      (
+        (like_count * ${weights.like}) + 
+        (view_count * ${weights.view}) + 
+        (stock_count * ${weights.stock}) + 
+        (comment_count * ${weights.comment})
+      ) as trend_score
+    FROM knowledge.articles
+    WHERE is_published = TRUE 
+      AND is_deleted = FALSE 
+      AND is_private = FALSE
+    ORDER BY trend_score DESC
+    LIMIT ${limit} OFFSET ${skip}
+  `;
+
+    // 2. 全体件数の取得（totalPagesの計算に必要）
+    const totalCount = await this.db.articles.count({
+      where: {
+        is_published: true,
+        is_deleted: false,
+        is_private: false,
+      },
+    });
+
+    if (articlesWithScore.length === 0) {
+      return {
+        articles: [],
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        limit,
+      };
+    }
+
+    const targetIds = articlesWithScore.map((a) => a.id);
+
+    // 3. 詳細情報の取得 (既存の findAllPublishedArticles の select と合わせる)
+    const articles = await this.db.articles.findMany({
+      where: { id: { in: targetIds } },
+      select: {
+        id: true,
+        user_id: true,
+        title: true,
+        summary: true,
+        created_at: true,
+        updated_at: true,
+        like_count: true,
+        stock_count: true,
+        view_count: true,
+        comment_count: true,
+        is_published: true,
+        is_private: true,
+        is_deleted: true,
+        users: {
+          select: { username: true, display_name: true, avatar_url: true },
+        },
+        article_tags: {
+          select: {
+            tags: {
+              select: { id: true, name: true, slug: true, avatar_url: true },
+            },
+          },
+        },
+      },
+    });
+
+    // スコア順を維持するための並び替え
+    const sortedArticles = targetIds
+      .map((id) => articles.find((art) => art.id === id))
+      .filter(Boolean);
+
+    return {
+      articles: sortedArticles,
       totalCount,
       totalPages: Math.ceil(totalCount / limit),
       currentPage: page,
@@ -75,7 +169,9 @@ export class ArticlesRepository {
         users: { select: { username: true } },
         article_tags: {
           select: {
-            tags: { select: { id: true, name: true, slug: true } },
+            tags: {
+              select: { id: true, name: true, slug: true, avatar_url: true },
+            },
           },
         },
       },
@@ -104,7 +200,9 @@ export class ArticlesRepository {
         users: { select: { username: true } },
         article_tags: {
           select: {
-            tags: { select: { id: true, name: true, slug: true } },
+            tags: {
+              select: { id: true, name: true, slug: true, avatar_url: true },
+            },
           },
         },
       },
@@ -133,7 +231,9 @@ export class ArticlesRepository {
         },
         article_tags: {
           select: {
-            tags: { select: { id: true, name: true, slug: true } },
+            tags: {
+              select: { id: true, name: true, slug: true, avatar_url: true },
+            },
           },
         },
       },
