@@ -70,7 +70,7 @@ export const ArticleLayout = () => {
             </Link>
           </Tooltip>
 
-          <StockButton articleId={articleId} />
+          <StockButton key={articleId} articleId={articleId} />
           <More
             username={article?.users.username ?? ""}
             articleId={articleId}
@@ -118,7 +118,7 @@ export const ArticleLayout = () => {
           likeCount={likeCount}
           mutateLike={mutateLike}
         />
-        <StockButton articleId={articleId} />
+        <StockButton key={articleId} articleId={articleId} />
         <More
           username={article?.users.username ?? ""}
           articleId={articleId}

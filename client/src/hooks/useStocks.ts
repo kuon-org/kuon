@@ -85,13 +85,14 @@ export const useStocks = (
     isLoading,
     error,
   } = useQuery<StockList[]>({
-    queryKey: ["stocks", "lists"],
+    queryKey: ["stocks", "lists", articleId],
     queryFn: async () => {
       const params = articleId ? { articleId } : {};
       const { data } = await apiClient.get("/stocks/mylists", { params });
       return data;
     },
     retry: false,
+    enabled: !!queryClient.getQueryData(["authUser"]),
   });
 
   const {
@@ -131,6 +132,7 @@ export const useStocks = (
         });
         return data;
       },
+      enabled: listId ? true : !!queryClient.getQueryData(["authUser"]),
     });
 
   // 2. 記事の保存/解除 (トグル)
@@ -226,7 +228,7 @@ export const useStocks = (
       const res = await apiClient.get(`/stocks/lists/${listId}/islike`);
       return res.data.isLiked as boolean;
     },
-    enabled: !!listId,
+    enabled: !!listId && !!queryClient.getQueryData(["authUser"]),
   });
 
   const likeMutation = useMutation({
