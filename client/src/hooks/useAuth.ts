@@ -149,7 +149,7 @@ export const useAuthQuery = () => {
       await apiClient.post("/logout");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries();
+      queryClient.clear();
       success("ログアウトしました");
       navigate({ to: "/" });
     },
@@ -199,6 +199,7 @@ export const useAuthQuery = () => {
       );
       return data;
     },
+    enabled: !!authQuery.data,
   });
 
   const updateUserInfoMutation = useMutation({
@@ -257,6 +258,7 @@ export const useAuthQuery = () => {
       // ※ APIが { user_avatars: [...] } の形式で返す場合は data.user_avatars にしてください
       return data;
     },
+    enabled: !!authQuery.data,
   });
 
   const switchAvatarMutation = useMutation({

@@ -27,17 +27,17 @@ interface MarkdownEditorProps {
   setIsEdited: Dispatch<SetStateAction<boolean>>;
 }
 
-async function prettifyMarkdown(text: string): Promise<string> {
-  try {
-    return await prettier.format(text, {
-      parser: "markdown",
-      plugins: [prettierPluginMarkdown, prettierPluginEstree],
-    });
-  } catch (e) {
-    console.error("Markdown formatting failed:", e);
-    return text;
-  }
-}
+// async function prettifyMarkdown(text: string): Promise<string> {
+//   try {
+//     return await prettier.format(text, {
+//       parser: "markdown",
+//       plugins: [prettierPluginMarkdown, prettierPluginEstree],
+//     });
+//   } catch (e) {
+//     console.error("Markdown formatting failed:", e);
+//     return text;
+//   }
+// }
 
 export default function MarkdownEditor({
   text,
@@ -225,14 +225,14 @@ export default function MarkdownEditor({
     }
   };
 
-  useKey(
-    "F",
-    async () => {
-      const formatted = await prettifyMarkdown(text);
-      setText(formatted);
-    },
-    { altKey: true, shiftKey: true, preventDefault: true },
-  );
+  // useKey(
+  //   "F",
+  //   async () => {
+  //     const formatted = await prettifyMarkdown(text);
+  //     setText(formatted);
+  //   },
+  //   { altKey: true, shiftKey: true, preventDefault: true },
+  // );
   useKey(
     "Enter",
     () => {

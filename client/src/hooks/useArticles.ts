@@ -155,7 +155,6 @@ export const useArticles = (articleId?: string) => {
     queryKey: ["article", articleId],
     queryFn: async () => {
       const { data } = await apiClient.get<Article>(`/articles/${articleId}`);
-      console.log(data);
       return data;
     },
     enabled: !!articleId,
@@ -188,6 +187,30 @@ export const useArticles = (articleId?: string) => {
     },
     initialPageParam: 1,
   });
+
+  const trendArticlesInifiniteQuery = useInfiniteQuery({
+    queryKey: ["trends"],
+    queryFn: async ({ pageParam = 1 }) => {
+      const { data } = await apiClient.get<PaginatedArticles>(
+        `/articles/trends`,
+        {
+          params: {
+            page: pageParam,
+            limit: 10,
+          },
+        },
+      );
+      return data;
+    },
+    getNextPageParam: (lastPage) => {
+      // 現在のページが総ページ数より少なければ次のページ番号を返す
+      return lastPage.currentPage < lastPage.totalPages
+        ? lastPage.currentPage + 1
+        : undefined;
+    },
+    initialPageParam: 1,
+  });
+
   const getisOwned = useQuery({
     queryKey: ["isOwned", articleId],
     queryFn: async () => {
@@ -196,7 +219,7 @@ export const useArticles = (articleId?: string) => {
       );
       return res.data;
     },
-    enabled: !!articleId,
+    enabled: !!articleId && !!queryClient.getQueryData(["authUser"]),
   });
 
   // ❤️ 記事にいいねしたユーザー一覧と件数
@@ -218,15 +241,16 @@ export const useArticles = (articleId?: string) => {
       const res = await apiClient.get(`/articles/${articleId}/islike`);
       return res.data as IsLikedResponse;
     },
-    enabled: !!articleId,
+    enabled: !!articleId && !!queryClient.getQueryData(["authUser"]),
   });
 
   // 💬 いいねトグルミューテーション
   const likeMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await apiClient.post<{ isLike: boolean }>(
-        `/articles/${articleId}/like`,
-      );
+      const { data } = await apiClient.post<{
+        isLike: boolean;
+        message: string;
+      }>(`/articles/${articleId}/like`);
       return data;
     },
     onMutate: async () => {
@@ -263,6 +287,7 @@ export const useArticles = (articleId?: string) => {
       return { prevArticle, prevIsLiked };
     },
     onError: (_err, _vars, context) => {
+      error("いいねに失敗しました。");
       if (context?.prevArticle)
         queryClient.setQueryData(["article", articleId], context.prevArticle);
       if (context?.prevIsLiked)
@@ -271,8 +296,9 @@ export const useArticles = (articleId?: string) => {
           context.prevIsLiked,
         );
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // 成功時に再フェッチ
+      success(data.message);
       queryClient.invalidateQueries({ queryKey: ["article", articleId] });
       queryClient.invalidateQueries({
         queryKey: ["articleLikeUser", articleId],
@@ -289,6 +315,7 @@ export const useArticles = (articleId?: string) => {
       const { data } = await apiClient.get<UserArticles[]>(`/articles/me`);
       return data;
     },
+    enabled: !!queryClient.getQueryData(["authUser"]),
   });
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -341,6 +368,7 @@ export const useArticles = (articleId?: string) => {
       const res = await apiClient.get<UserArticles[]>("/articles/trash/list");
       return res.data;
     },
+    enabled: !!queryClient.getQueryData(["authUser"]),
   });
 
   // 復元 mutation
@@ -383,6 +411,17 @@ export const useArticles = (articleId?: string) => {
     isFetchingNextPage: articlesInfiniteQuery.isFetchingNextPage, // 追加読み込み中か
     fetchNextPage: articlesInfiniteQuery.fetchNextPage,
     /** */
+    trendArticles:
+      trendArticlesInifiniteQuery.data?.pages.flatMap(
+        (page) => page.articles,
+      ) ?? [],
+    trendArticlesIsLoading: trendArticlesInifiniteQuery.isLoading,
+    trendArticlesIsError: trendArticlesInifiniteQuery.isError,
+    trendArticlesHasNextPage: trendArticlesInifiniteQuery.hasNextPage,
+    trendArticlesIsFetchingNextPage:
+      trendArticlesInifiniteQuery.isFetchingNextPage,
+    trendArticlesFetchNextPage: trendArticlesInifiniteQuery.fetchNextPage,
+
     article: articleQuery.data,
     isOwned: getisOwned.data?.isOwned ?? false,
     isLoading: articleQuery.isLoading,

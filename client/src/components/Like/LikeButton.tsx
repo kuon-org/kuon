@@ -1,6 +1,8 @@
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { CircularProgress, IconButton } from "@mui/material";
+import { useAuthQuery } from "../../hooks/useAuth";
+import { useNotify } from "../../hooks/useNotify";
 
 interface LikeButtonProps {
   isLiked: boolean;
@@ -14,9 +16,16 @@ export const LikeButton = ({
   isLikePending,
   mutateLike,
 }: LikeButtonProps) => {
+  const { user } = useAuthQuery();
+  const isAuth = !!user;
+  const { error } = useNotify();
+  const handleClick = () => {
+    if (!isAuth) return error("ログインしてください");
+    mutateLike();
+  };
   return (
     <IconButton
-      onClick={() => mutateLike()}
+      onClick={handleClick}
       disabled={isLikePending}
       aria-label="like-button"
       style={{

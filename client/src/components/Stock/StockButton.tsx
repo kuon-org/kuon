@@ -3,6 +3,8 @@ import { IconButton, Tooltip, Box, CircularProgress } from "@mui/material";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import { StockManageDialog } from "./StockManageDialog";
 import { useStocks } from "../../hooks/useStocks";
+import { useAuthQuery } from "../../hooks/useAuth";
+import { useNotify } from "../../hooks/useNotify";
 
 interface StockButtonProps {
   articleId: string;
@@ -12,7 +14,11 @@ export const StockButton = ({ articleId }: StockButtonProps) => {
   const [open, setOpen] = useState(false);
   const { isStoredInDefault, toggleDefaultStock, isToggling, defaultList } =
     useStocks(articleId);
+  const { user } = useAuthQuery();
+  const { error } = useNotify();
+  const isAuth = !!user;
   const handleClick = () => {
+    if (!isAuth) return error("ログインしてください。");
     if (defaultList) {
       // 🚀 デフォルトリストが存在すれば即座に実行
       toggleDefaultStock();
@@ -36,6 +42,7 @@ export const StockButton = ({ articleId }: StockButtonProps) => {
             onContextMenu={(e) => {
               // 🚀 右クリックで詳細管理ダイアログを開く
               e.preventDefault();
+              if (!isAuth) return error("ログインしてください");
               setOpen(true);
             }}
             sx={{
@@ -54,6 +61,7 @@ export const StockButton = ({ articleId }: StockButtonProps) => {
       </Box>
 
       <StockManageDialog
+        key={articleId}
         open={open}
         onClose={() => setOpen(false)}
         articleId={articleId}

@@ -152,7 +152,7 @@ export const ArticleCard = ({ article }: ArticleCardProps) => {
             ♡ {article.like_count}
           </Typography>
           <Box onClick={stopPropagation}>
-            <StockButton articleId={article.id} />
+            <StockButton key={article.id} articleId={article.id} />
           </Box>
         </Box>
       </CardContent>

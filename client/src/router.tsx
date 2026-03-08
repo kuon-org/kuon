@@ -49,6 +49,9 @@ import { PublicStocksPage } from "./pages/Stock/StockList";
 import { StockPage } from "./pages/Stock/StockPage";
 import { StockEditWrapper } from "./pages/Stock/StockEditWrapper";
 import { NotificationManager } from "./components/common/NotificationManager";
+import Trends from "./pages/Trends/Trends";
+import { TagLists } from "./components/Tag/TagLists";
+import { TagEdit } from "./pages/TagEdit";
 
 interface MyRouterContext {
   user: { id: string; username: string } | null;
@@ -99,7 +102,9 @@ const sidebarLayoutRoute = createRoute({
   id: "layout-with-sidebar",
   component: () => (
     <Box sx={{ display: "flex" }}>
-      <LeftSection />
+      <LeftSection>
+        <TagLists />
+      </LeftSection>
       <Box sx={{ flex: 1, py: 3, px: { sm: 0, md: 3 } }}>
         <Outlet />
       </Box>
@@ -186,7 +191,7 @@ const stockListRoute = createRoute({
 const trendRoute = createRoute({
   getParentRoute: () => sidebarLayoutRoute,
   path: "trend",
-  component: () => <div>トレンド</div>,
+  component: Trends,
 });
 
 // ℹ️ Trend（サイド付き）
@@ -380,7 +385,18 @@ const tagsRoute = createRoute({
 export const tagProfileRoute = createRoute({
   getParentRoute: () => layoutWithTopRoute,
   path: "tags/$slug",
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      page: Number(search.page) || 1,
+    };
+  },
   component: TagProfile,
+});
+
+export const tagEditRoute = createRoute({
+  getParentRoute: () => layoutWithTopRoute,
+  path: "tags/$slug/edit",
+  component: TagEdit,
 });
 
 // 🔐 ログイン / 登録（完全に素）
@@ -434,6 +450,7 @@ const routeTree = baseRootRoute.addChildren([
     ]),
     tagsRoute,
     tagProfileRoute,
+    tagEditRoute,
     articleRoute.addChildren([articleIndexRoute, articleLikerRoute]),
     userStockRoute.addChildren([userStockIndexRoute]),
     userSettingsRoute.addChildren([

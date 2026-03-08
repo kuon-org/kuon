@@ -24,7 +24,7 @@ export const useUserQuery = (username?: string) => {
       );
       return res.data;
     },
-    enabled: !!userQuery.data?.id, // userIdが確定してから実行
+    enabled: !!queryClient.getQueryData(["authUser"]), // userIdが確定してから実行
   });
 
   const getFollowing = useQuery({

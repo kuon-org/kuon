@@ -1,5 +1,4 @@
-// components/common/NotifyAlert.tsx
-import { Alert, Slide } from "@mui/material";
+import { Alert, Slide, useMediaQuery } from "@mui/material";
 import { useEffect, useState } from "react";
 import type { UUID } from "../../utils/uuid";
 
@@ -17,18 +16,22 @@ export const NotifyAlert = ({
   onClose,
 }: NotifyAlertProps) => {
   const [show, setShow] = useState(true);
+
+  const isMobile = useMediaQuery("(max-width:600px)");
+
   useEffect(() => {
-    // 1. 指定時間後に「閉じアニメーション」を開始させる
     const timer = setTimeout(() => setShow(false), 3000);
     return () => clearTimeout(timer);
   }, []);
+
   const handleExited = () => {
     onClose(id);
   };
+
   return (
     <Slide
       in={show}
-      direction="left"
+      direction={isMobile ? "down" : "left"} // スマホだけ上→下
       mountOnEnter
       unmountOnExit
       onExited={handleExited}
@@ -36,10 +39,12 @@ export const NotifyAlert = ({
       <Alert
         severity={severity}
         variant="filled"
-        onClose={() => setShow(false)} // 手動で閉じるボタン
+        onClose={() => setShow(false)}
         sx={{
-          width: 360,
-          borderLeft: `5px solid ${severity === "error" ? "#ff1744" : "#2979ff"}`,
+          width: isMobile ? "90vw" : 360,
+          borderLeft: `5px solid ${
+            severity === "error" ? "#ff1744" : "#2979ff"
+          }`,
           boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
           fontWeight: 600,
           bgcolor: "#1a1a1a",
