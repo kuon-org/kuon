@@ -30,7 +30,33 @@ export class ArticlesController {
       res.status(500).json({ message: error.message });
     }
   };
+  getTrendingArticles = async (req: Request, res: Response) => {
+    try {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
 
+      // スライダー等の比重設定を取得
+      const weights = {
+        like: req.query.like ? parseFloat(req.query.like as string) : undefined,
+        view: req.query.view ? parseFloat(req.query.view as string) : undefined,
+        stock: req.query.stock
+          ? parseFloat(req.query.stock as string)
+          : undefined,
+        comment: req.query.comment
+          ? parseFloat(req.query.comment as string)
+          : undefined,
+      };
+
+      const result = await this.articlesService.getTrendingArticleList(
+        page,
+        limit,
+        weights,
+      );
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
   getArticlesByUserId = async (req: AuthRequest, res: Response) => {
     try {
       if (!isAuthenticated(req))

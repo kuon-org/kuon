@@ -38,6 +38,8 @@ const articlesCtrl = new ArticlesController(
  */
 articlesRouter.get("/articles", articlesCtrl.getArticles);
 
+articlesRouter.get("/articles/trends", articlesCtrl.getTrendingArticles);
+
 /**
  * @openapi
  * /api/articles/me:

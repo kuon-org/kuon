@@ -6,7 +6,22 @@ export class ArticlesService {
   async getPublishedArticleList(page: number, limit: number, q?: string) {
     return await this.articlesRepo.findAllPublishedArticles(page, limit, q);
   }
+  // articlesService.ts 内に追加
+  async getTrendingArticleList(page: number, limit: number, weights?: any) {
+    // デフォルトの重み付け設定
+    const safeWeights = {
+      like: Number(weights?.like ?? 10),
+      view: Number(weights?.view ?? 1),
+      stock: Number(weights?.stock ?? 20),
+      comment: Number(weights?.comment ?? 15),
+    };
 
+    return await this.articlesRepo.findTrendingArticles(
+      safeWeights,
+      page,
+      limit,
+    );
+  }
   async getArticle(articleId: string, currentUserId?: string) {
     const article = await this.articlesRepo.findArticleById(articleId);
     if (!article || article.is_deleted) throw new Error("ArticleNotFound");
