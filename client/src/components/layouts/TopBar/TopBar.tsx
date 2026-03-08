@@ -9,6 +9,7 @@ import {
   useMediaQuery,
   IconButton,
   Fade,
+  Avatar,
 } from "@mui/material";
 import { useAuthQuery } from "../../../hooks/useAuth";
 import { NavButton } from "../../common/NavButton";
@@ -20,6 +21,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { adminRoute } from "../../../router";
 import { useState } from "react";
+import { KuonLogo } from "../../Logo/Kuon";
 
 const TopBar = () => {
   const { user } = useAuthQuery();
@@ -51,16 +53,19 @@ const TopBar = () => {
       >
         {/* 左側：ロゴ */}
         <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 700,
-              letterSpacing: "0.1rem",
-              color: "primary.contrastText",
-            }}
-          >
-            KUON
-          </Typography>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <KuonLogo size={32} variant="accent" />
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                letterSpacing: "0.1rem",
+                color: "primary.contrastText",
+              }}
+            >
+              KUON
+            </Typography>
+          </Box>
         </Link>
         {/* 中央：検索アイコンまたは検索バー */}
         {isMobile ? (
