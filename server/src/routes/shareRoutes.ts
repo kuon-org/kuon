@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { ArticlesRepository } from "../repositories/articlesRepository";
-import { ArticlesService } from "../services/articlesService";
-import { ShareController } from "../controllers/shareController";
-
+import { ArticlesRepository } from "../repositories/articlesRepository.js";
+import { ArticlesService } from "../services/articlesService.js";
+import { ShareController } from "../controllers/shareController.js";
 
 const shareRouter = Router();
 const articleRepo = new ArticlesRepository();
