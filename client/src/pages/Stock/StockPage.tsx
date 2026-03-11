@@ -18,6 +18,7 @@ import { useAuthQuery } from "../../hooks/useAuth";
 import { useUserQuery } from "../../hooks/useUsers";
 import { TagChip } from "../../components/common/TagChip";
 import { LikeButton } from "../../components/Like/LikeButton";
+import { useCallback } from "react";
 
 export const StockPage = () => {
   const { listId } = useParams({ strict: false });
@@ -29,6 +30,8 @@ export const StockPage = () => {
     listDetail?.users.username || "",
   );
   const { user: authUser } = useAuthQuery();
+  const isAuth = !!authUser;
+
   if (isDetailLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
@@ -182,7 +185,7 @@ export const StockPage = () => {
               {listDetail.users.bio || "自己紹介はありません。"}
             </Typography>
             {/* フォローボタンは自分のプロフィールでは表示しない */}
-            {!isMe && (
+            {!isMe && isAuth && (
               <Button
                 variant={isFollowing?.isFollow ? "outlined" : "contained"}
                 sx={{ mt: 2, width: "fit-content" }}
