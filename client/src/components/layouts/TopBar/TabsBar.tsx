@@ -1,16 +1,27 @@
 // components/layouts/TopBar/TabsBar.tsx
 import { AppBar, Toolbar, Tabs, Tab } from "@mui/material";
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useMatchRoute } from "@tanstack/react-router";
+import {
+  stockListRoute,
+  stocksDetailsRoute,
+  stocksRoute,
+  userStockRoute,
+} from "../../../router";
 
 const TabsBar = () => {
-  const { pathname } = useLocation();
-
+  const matchRoute = useMatchRoute();
   let currentValue = "/";
-  if (pathname.startsWith("/trend")) {
+
+  if (matchRoute({ to: "/trend" })) {
     currentValue = "/trend";
-  } else if (pathname.startsWith("/timeline")) {
+  } else if (matchRoute({ to: "/timeline" })) {
     currentValue = "/timeline";
-  } else if (pathname.startsWith("/stock-feed")) {
+  } else if (
+    matchRoute({ to: stockListRoute.fullPath }) ||
+    matchRoute({ to: stocksRoute.fullPath }) ||
+    matchRoute({ to: stocksDetailsRoute.fullPath }) ||
+    matchRoute({ to: userStockRoute.fullPath })
+  ) {
     currentValue = "/stock-feed";
   }
   return (
