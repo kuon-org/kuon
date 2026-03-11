@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { IconButton, Tooltip, Box, CircularProgress } from "@mui/material";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import { StockManageDialog } from "./StockManageDialog";
 import { useStocks } from "../../hooks/useStocks";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { useNotify } from "../../hooks/useNotify";
+import { useLongPress } from "../../hooks/useLongPress";
 
 interface StockButtonProps {
   articleId: string;
@@ -17,16 +18,26 @@ export const StockButton = ({ articleId }: StockButtonProps) => {
   const { user } = useAuthQuery();
   const { error } = useNotify();
   const isAuth = !!user;
-  const handleClick = () => {
+
+  const openDetail = useCallback(() => {
     if (!isAuth) return error("ログインしてください。");
-    if (defaultList) {
-      // 🚀 デフォルトリストが存在すれば即座に実行
-      toggleDefaultStock();
-    } else {
-      // なければダイアログを開く
-      setOpen(true);
-    }
-  };
+    setOpen(true);
+  }, [isAuth, error]);
+  const longPressEvents = useLongPress({
+    onLongPress: () => {
+      openDetail();
+      if (navigator.vibrate) navigator.vibrate(50);
+    },
+    onClick: () => {
+      if (!isAuth) return error("ログインしてください。");
+      if (defaultList) {
+        toggleDefaultStock();
+      } else {
+        openDetail();
+      }
+    },
+    threshold: 500,
+  });
 
   return (
     <>
@@ -38,12 +49,10 @@ export const StockButton = ({ articleId }: StockButtonProps) => {
           placement="right"
         >
           <IconButton
-            onClick={handleClick}
+            {...longPressEvents} // 🚀 ここにスプレッド
             onContextMenu={(e) => {
-              // 🚀 右クリックで詳細管理ダイアログを開く
-              e.preventDefault();
-              if (!isAuth) return error("ログインしてください");
-              setOpen(true);
+              e.preventDefault(); // システムメニュー抑制
+              openDetail();
             }}
             sx={{
               // 🚀 保存済みなら色を変える

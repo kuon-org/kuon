@@ -9,7 +9,6 @@ import {
   useMediaQuery,
   IconButton,
   Fade,
-  Avatar,
 } from "@mui/material";
 import { useAuthQuery } from "../../../hooks/useAuth";
 import { NavButton } from "../../common/NavButton";
@@ -28,7 +27,6 @@ const TopBar = () => {
   const [searchValue, setSearchValue] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const navigate = useNavigate();
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchValue.trim()) return;
