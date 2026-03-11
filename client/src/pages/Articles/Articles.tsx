@@ -113,9 +113,10 @@ const Articles = ({ article, isLoading, isError, error }: ArticlesProps) => {
         }}
       >
         <BottomUserCard
-          image_src=""
+          image_src={article.users.avatar_url}
           username={article.users.username}
           display_name={article.users.display_name}
+          bio={article.users.bio}
         />
       </Paper>
       <Paper
