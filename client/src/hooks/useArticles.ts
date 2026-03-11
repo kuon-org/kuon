@@ -50,6 +50,7 @@ export interface Article {
     username: string;
     display_name: string;
     avatar_url: string;
+    bio: string;
   };
   article_tags: ArticleTag[];
 }
