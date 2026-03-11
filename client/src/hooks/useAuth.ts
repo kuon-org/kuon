@@ -148,7 +148,10 @@ export const useAuthQuery = () => {
     mutationFn: async () => {
       await apiClient.post("/logout");
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.setQueryData(["authUser"], null);
+      queryClient.removeQueries({ queryKey: ["uploaded_images"] });
+      queryClient.removeQueries({ queryKey: ["userAvatars"] });
       queryClient.clear();
       success("ログアウトしました");
       navigate({ to: "/" });
