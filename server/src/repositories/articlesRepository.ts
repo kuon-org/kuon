@@ -34,7 +34,12 @@ export class ArticlesRepository {
           is_private: true,
           is_deleted: true,
           users: {
-            select: { username: true, display_name: true, avatar_url: true },
+            select: {
+              username: true,
+              display_name: true,
+              avatar_url: true,
+              bio: true,
+            },
           },
           article_tags: {
             select: {
@@ -121,7 +126,12 @@ export class ArticlesRepository {
         is_private: true,
         is_deleted: true,
         users: {
-          select: { username: true, display_name: true, avatar_url: true },
+          select: {
+            username: true,
+            display_name: true,
+            avatar_url: true,
+            bio: true,
+          },
         },
         article_tags: {
           select: {
@@ -227,7 +237,12 @@ export class ArticlesRepository {
         is_private: true,
         is_deleted: true,
         users: {
-          select: { username: true, display_name: true, avatar_url: true },
+          select: {
+            username: true,
+            display_name: true,
+            avatar_url: true,
+            bio: true,
+          },
         },
         article_tags: {
           select: {
