@@ -68,7 +68,6 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
       queryClient.invalidateQueries({ queryKey: ["tag", slug] });
     },
     onError: (err: any) => {
-      console.error(err);
       error(err.response?.data?.message ?? "タグの保存に失敗しました");
     },
   });
@@ -88,7 +87,6 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
     queryKey: ["myFollowingTags"],
     queryFn: async () => {
       const { data } = await apiClient.get("/users/tags/me");
-      console.log("useTags", data);
       return data;
     },
     enabled: !!queryClient.getQueryData(["authUser"]),

@@ -65,7 +65,7 @@ const baseRootRoute = createRootRouteWithContext<MyRouterContext>()({
     <>
       <NotificationManager />
       <Outlet />
-      {/* <TanStackRouterDevtools initialIsOpen={false} /> */}
+      <TanStackRouterDevtools initialIsOpen={false} />
     </>
   ),
 });
@@ -178,7 +178,7 @@ const indexRoute = createRoute({
   },
 });
 
-const stockListRoute = createRoute({
+export const stockListRoute = createRoute({
   getParentRoute: () => sidebarLayoutRoute,
   path: "stock-feed",
   component: PublicStocksPage,

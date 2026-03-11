@@ -1,3 +1,5 @@
+import Kuon from "../../assets/kuon.svg";
+
 interface KuonLogoProps {
   size?: number;
   variant?: "default" | "light" | "accent";
@@ -32,6 +34,7 @@ export function KuonLogo({ size = 120, variant = "default" }: KuonLogoProps) {
   const colorScheme = colors[variant];
 
   return (
+    // <img src={Kuon} width="32px" />
     <svg
       width={size}
       height={size}
@@ -40,15 +43,20 @@ export function KuonLogo({ size = 120, variant = "default" }: KuonLogoProps) {
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* 背景円（オプション） */}
-      <circle cx="60" cy="60" r="58" fill={KATSUIRO_DEEP} opacity="0.3" />
+      <rect
+        x="2"
+        y="2"
+        width="116"
+        height="116"
+        rx="24"
+        fill={KATSUIRO_DEEP}
+        opacity="0.4"
+      />
 
       {/* Kの縦棒（ペン） */}
       <g>
         {/* ペンの本体 - よりクラシックな万年筆風 */}
-        <path
-          d="M 44 25 L 51 25 L 51 92 L 44 92 Z"
-          fill={colorScheme.primary}
-        />
+        <path d="M 44 25 H 51 V 92 H 44 Z" fill={colorScheme.primary} />
         {/* ペン先 - シンプルな三角形 */}
         <path d="M 44 92 L 47.5 98 L 51 92 Z" fill={colorScheme.primary} />
         {/* ペン先の中央ライン */}
@@ -56,7 +64,7 @@ export function KuonLogo({ size = 120, variant = "default" }: KuonLogoProps) {
           x1="47.5"
           y1="92"
           x2="47.5"
-          y2="96"
+          y2="97.5"
           stroke={colorScheme.accent}
           strokeWidth="0.5"
         />
@@ -75,46 +83,52 @@ export function KuonLogo({ size = 120, variant = "default" }: KuonLogoProps) {
       <g>
         {/* 一番奥のページ */}
         <path
-          d="M 51 56 L 80 32 L 83 34 L 54 58 Z"
+          d="M 45.9 62.4 L 79.9 27.3 L 82.9 29.9 L 48.9 65 Z"
           fill={colorScheme.secondary}
           opacity="0.5"
         />
         {/* 中間のページ */}
         <path
-          d="M 51 55 L 78 31 L 81 33 L 54 57 Z"
+          d="M 46.1 61 L 78.1 25.9 L 81.1 28.5 L 49.1 63.6 Z"
           fill={colorScheme.secondary}
           opacity="0.7"
         />
         {/* 一番手前のページ */}
         <path
-          d="M 51 54 L 76 30 L 79 32 L 54 56 Z"
+          d="M 45.9 59.7 L 75.9 24.6 L 78.9 27.2 L 48.9 62.3 Z"
           fill={colorScheme.primary}
         />
         {/* ページのエッジ（厚み） */}
-        <path d="M 76 30 L 79 32 L 79 33 L 76 31 Z" fill={colorScheme.accent} />
+        <path
+          d="M 75.7 24.6 L 78.7 27.2 L 78.7 28.5 L 75.7 25.9 Z"
+          fill={colorScheme.accent}
+        />
       </g>
 
       {/* 下の角度部分（本のページ - 下）- より閉じた角度 */}
       <g>
         {/* 一番奥のページ */}
         <path
-          d="M 51 64 L 80 88 L 83 86 L 54 62 Z"
+          d="M 52.6 53.9 L 83.2 93.9 L 85.9 92.9 L 55.3 51.9 Z"
           fill={colorScheme.secondary}
           opacity="0.5"
         />
         {/* 中間のページ */}
         <path
-          d="M 51 65 L 78 89 L 81 87 L 54 63 Z"
+          d="M 52.6 54.9 L 81.4 94.9 L 84.1 93.9 L 55.3 52.9 Z"
           fill={colorScheme.secondary}
           opacity="0.7"
         />
         {/* 一番手前のページ */}
         <path
-          d="M 51 66 L 76 90 L 79 88 L 54 64 Z"
+          d="M 52.5 55.9 L 79.5 95.9 L 82.2 94.9 L 55.2 53.9 Z"
           fill={colorScheme.primary}
         />
         {/* ページのエッジ（厚み） */}
-        <path d="M 76 90 L 79 88 L 79 87 L 76 89 Z" fill={colorScheme.accent} />
+        <path
+          d="M 79.7 96.9 L 82.4 94.9 L 82.4 93.9 L 79.7 95.9 Z"
+          fill={colorScheme.accent}
+        />
       </g>
     </svg>
   );
