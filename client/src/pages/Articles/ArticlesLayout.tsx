@@ -87,7 +87,7 @@ export const ArticleLayout = () => {
           py: 3,
           px: { sm: 0, md: 3 },
           width: { xs: "100vw", sm: "100vw" },
-          maxWidth: { md: "450px", lg: "750px", xl: "1200px" },
+          maxWidth: { md: "450px", lg: "750px", xl: "1000px" },
           justifyContent: "center",
         }}
       >

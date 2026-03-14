@@ -13,7 +13,8 @@ const RightSection = ({ children, sticky = false }: RightSectionProps) => {
         display: { xs: "none", sm: "none", md: "block" }, // 👈 スマホでは非表示！
         width: "auto",
         minWidth: "200px",
-        mr: 4,
+        maxWidth: "300px",
+        mr: "auto",
         p: 2,
         boxSizing: "border-box",
         position: sticky ? "sticky" : "relative",

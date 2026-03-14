@@ -1,0 +1,18 @@
+/* Material Symbols 調整（すでに <link> で読み込み済み前提） */
+.md-admonition .material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,   /* 0=アウトライン, 1=塗りつぶし */
+    'wght' 500, /* 100-700 */
+    'GRAD' 0,
+    'opsz' 20;  /* 20/24/40/48 */
+  font-size: 18px;
+  line-height: 1;
+  vertical-align: middle;
+  display: inline-flex;
+}
+
+/* 視認性を上げたい場合の例：Warning/Caution を塗りつぶしに */
+.admonition-warning .material-symbols-outlined,
+.admonition-caution  .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20;
+}

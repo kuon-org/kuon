@@ -5,7 +5,7 @@ import React, {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { Box, useMediaQuery, Tabs, Tab } from "@mui/material";
+import { Box, useMediaQuery, Tabs, Tab, Paper } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import MarkdownPage from "../../Markdown";
 import { useKey } from "../../../hooks/useKey";
@@ -301,18 +301,18 @@ export default function MarkdownEditor({
         {/* プレビュー */}
         {(viewMode === "preview" || viewMode === "split") &&
           (tab === 1 || !isSmall) && (
-            <Box
+            <Paper
               ref={previewRef}
               sx={{
                 flex: 1,
                 overflowY: "auto",
                 p: 2,
-                bgcolor: "background.paper",
+                borderRadius: 0,
               }}
             >
               {/* プレビューは state 更新タイミング（= デバウンス後）だけ追従 */}
               <MarkdownPage text={text} onEditDrawio={handleEditDrawio} />
-            </Box>
+            </Paper>
           )}
       </Box>
 
