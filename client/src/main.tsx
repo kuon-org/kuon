@@ -7,6 +7,10 @@ import "./index.css";
 import { themes } from "./styles/themes";
 import { CssBaseline } from "@mui/material";
 import { Provider } from "react-redux";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import "material-symbols";
+import "./styles/admonitions.css";
 import store from "./store";
 const queryClient = new QueryClient({
   defaultOptions: {

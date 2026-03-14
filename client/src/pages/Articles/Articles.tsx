@@ -32,10 +32,11 @@ const Articles = ({ article, isLoading, isError, error }: ArticlesProps) => {
         sx={{
           flex: 1,
           p: 3,
-          backgroundColor: "background.paper",
+          mx: "auto",
           scrollBehavior: "smooth",
           width: { xs: "100vw", sm: "100vw" },
-          maxWidth: { md: "450px", lg: "750px", xl: "1200px" },
+          maxWidth: { md: "450px", lg: "750px", xl: "1000px" },
+          bgcolor: "background.paper",
         }}
       >
         <Box
@@ -106,10 +107,11 @@ const Articles = ({ article, isLoading, isError, error }: ArticlesProps) => {
       <Paper
         sx={{
           mt: 2,
+          mx: "auto",
           backgroundColor: "background.paper",
           scrollBehavior: "smooth",
           width: { xs: "100vw", sm: "100vw" },
-          maxWidth: { md: "450px", lg: "750px", xl: "1200px" },
+          maxWidth: { md: "450px", lg: "750px", xl: "1000px" },
         }}
       >
         <BottomUserCard
@@ -122,10 +124,11 @@ const Articles = ({ article, isLoading, isError, error }: ArticlesProps) => {
       <Paper
         sx={{
           mt: 2,
+          mx: "auto",
           backgroundColor: "background.paper",
           scrollBehavior: "smooth",
           width: { xs: "100vw", sm: "100vw" },
-          maxWidth: { md: "450px", lg: "750px", xl: "1200px" },
+          maxWidth: { md: "450px", lg: "750px", xl: "1000px" },
         }}
       >
         <Comment articleId={article.id} />
