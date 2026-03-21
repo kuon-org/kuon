@@ -460,10 +460,6 @@ CREATE TABLE IF NOT EXISTS knowledge.user_avatars (
         ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
--- 1ユーザーにつき is_selected = true は1つだけという制約
--- CREATE UNIQUE INDEX IF NOT EXISTS idx_user_avatars_selected_one 
--- ON knowledge.user_avatars (user_id) 
--- WHERE (is_selected = TRUE);
 
 COMMENT ON TABLE knowledge.user_avatars IS 'ユーザーのアバター画像管理';
 COMMENT ON COLUMN knowledge.user_avatars.id IS 'アバターID';
@@ -511,6 +507,19 @@ COMMENT ON TABLE knowledge.tag_follows IS 'ユーザのフォローしている�
 COMMENT ON COLUMN knowledge.tag_follows.user_id IS 'フォローしたユーザ';
 COMMENT ON COLUMN knowledge.tag_follows.tag_id IS 'フォローされたタグ';
 COMMENT ON COLUMN knowledge.tag_follows.followed_at IS 'フォロー日時';
+
+-- article_pickups
+CREATE TABLE IF NOT EXISTS knowledge.article_pickups (
+    user_id UUID REFERENCES users(id),
+    article_id UUID REFERENCES articles(id),
+    pickuped_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (user_id, article_id)
+);
+
+COMMENT ON TABLE knowledge.article_pickups IS 'ピックアップ記事';
+COMMENT ON COLUMN knowledge.article_pickups.user_id IS 'ユーザID';
+COMMENT ON COLUMN knowledge.article_pickups.article_id IS '記事ID';
+COMMENT ON COLUMN knowledge.article_pickups.pickuped_at IS 'ピックアップ日時';
 
 
 
