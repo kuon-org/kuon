@@ -3,8 +3,12 @@ import { UsersRepository } from "../repositories/usersRepository.js";
 import ScureBase32Plugin from "@otplib/plugin-base32-scure";
 import NodeCryptoPlugin from "@otplib/plugin-crypto-node";
 import { TOTP } from "@otplib/totp";
+import { ArticlesRepository } from "../repositories/articlesRepository.js";
 export class UsersService {
-  constructor(private usersRepo: UsersRepository) {}
+  constructor(
+    private usersRepo: UsersRepository,
+    private articlesRepo: ArticlesRepository,
+  ) {}
 
   async getAllUsers() {
     return await this.usersRepo.findAllUsers();
@@ -184,5 +188,21 @@ export class UsersService {
     const result = await this.usersRepo.followingTags(userId);
     const tags = result.map((r) => r.tags);
     return tags;
+  }
+
+  async getPickupArticles(userId: string) {
+    const data = await this.articlesRepo.findPickupArticles(userId);
+    // dataが [{ articles: {...} }, { articles: {...} }] になっているので展開する
+    return data.map((item) => item.articles);
+  }
+
+  async createPickupArticle(userId: string, articleId: string) {
+    const current = await this.articlesRepo.findPickupArticles(userId);
+    if (current.length >= 3) throw new Error("ピックアップ記事は3件までです");
+    return await this.articlesRepo.createPickupArticle(userId, articleId);
+  }
+
+  async deletePickupArticle(userId: string, articleId: string) {
+    return await this.articlesRepo.deletePickupArticle(userId, articleId);
   }
 }

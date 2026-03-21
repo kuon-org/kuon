@@ -157,6 +157,7 @@ export class ArticlesRepository {
     };
   }
 
+  // 現状はピックアップ記事登録に利用
   async findAllArticlesByUserId(userId: string) {
     return this.db.articles.findMany({
       where: { user_id: userId, is_deleted: false },
@@ -186,6 +187,67 @@ export class ArticlesRepository {
         },
       },
     });
+  }
+
+  async findArticlesByUserId(
+    userId: string,
+    page: number,
+    limit: number,
+    q?: string,
+  ) {
+    const skip = (page - 1) * limit;
+
+    // 1. 公開済み・未削除・非公開でない記事をベースにする
+    const where = this.buildPrismaWhere(q);
+
+    // 2. userId での絞り込みを追加（既存の where オブジェクトを拡張）
+    where.user_id = userId;
+
+    const [totalCount, articles] = await Promise.all([
+      this.db.articles.count({ where }),
+      this.db.articles.findMany({
+        where,
+        orderBy: { created_at: "desc" },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          user_id: true,
+          title: true,
+          summary: true,
+          created_at: true,
+          updated_at: true,
+          like_count: true,
+          stock_count: true,
+          is_published: true,
+          is_private: true,
+          is_deleted: true,
+          users: {
+            select: {
+              username: true,
+              display_name: true,
+              avatar_url: true,
+              bio: true,
+            },
+          },
+          article_tags: {
+            select: {
+              tags: {
+                select: { id: true, name: true, slug: true, avatar_url: true },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      articles,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+      limit,
+    };
   }
 
   async findDeletedArticlesByUserId(userId: string) {
@@ -349,6 +411,63 @@ export class ArticlesRepository {
     return this.db.articles.update({
       where: { id: articleId },
       data: { view_count: { increment: 1 } },
+    });
+  }
+
+  async findPickupArticles(userId: string) {
+    return this.db.article_pickups.findMany({
+      where: { user_id: userId },
+      select: {
+        articles: {
+          select: {
+            id: true,
+            user_id: true,
+            title: true,
+            summary: true,
+            created_at: true,
+            updated_at: true,
+            like_count: true,
+            stock_count: true,
+            view_count: true,
+            comment_count: true,
+            is_published: true,
+            is_private: true,
+            is_deleted: true,
+            users: {
+              select: {
+                username: true,
+                display_name: true,
+                avatar_url: true,
+                bio: true,
+              },
+            },
+            article_tags: {
+              select: {
+                tags: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    avatar_url: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async createPickupArticle(userId: string, articleId: string) {
+    return this.db.article_pickups.create({
+      data: { user_id: userId, article_id: articleId },
+    });
+  }
+
+  async deletePickupArticle(userId: string, articleId: string) {
+    return this.db.article_pickups.delete({
+      where: { user_id_article_id: { user_id: userId, article_id: articleId } },
     });
   }
 

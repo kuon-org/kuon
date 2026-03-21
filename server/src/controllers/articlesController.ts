@@ -57,7 +57,7 @@ export class ArticlesController {
       res.status(500).json({ message: error.message });
     }
   };
-  getArticlesByUserId = async (req: AuthRequest, res: Response) => {
+  getAllArticlesByUserId = async (req: AuthRequest, res: Response) => {
     try {
       if (!isAuthenticated(req))
         return res.status(401).json({ message: "未ログインです" });
@@ -65,6 +65,25 @@ export class ArticlesController {
         req.user.userId,
       );
       res.json(articles);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  getArticlesByUserId = async (req: Request, res: Response) => {
+    try {
+      const userId = String(req.params.userId);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
+      const q = req.query.q as string; // 検索クエリ文字列を取得
+
+      const result = await this.articlesService.getArticlesByUserId(
+        userId,
+        page,
+        limit,
+        q,
+      );
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

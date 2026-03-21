@@ -7,12 +7,14 @@ import { UploadImagesRepository } from "../repositories/uploadImagesRepository.j
 import { UploadImagesService } from "../services/uploadImagesService.js";
 import { TagsRepository } from "../repositories/tagsRepository.js";
 import { TagsService } from "../services/tagsService.js";
+import { ArticlesRepository } from "../repositories/articlesRepository.js";
 
 const usersRouter = Router();
 
 // インスタンス化
 const usersRepo = new UsersRepository();
-const usersService = new UsersService(usersRepo);
+const articlesRepos = new ArticlesRepository();
+const usersService = new UsersService(usersRepo, articlesRepos);
 
 // UploadImagesServiceが必要なため、こちらもインスタンス化
 const uploadImagesRepo = new UploadImagesRepository();
@@ -498,4 +500,17 @@ usersRouter.get(
   usersCtrl.getMyFollowingtags,
 );
 
+usersRouter.get("/users/:userId/pickup", usersCtrl.getPickupArticles);
+
+usersRouter.post(
+  "/users/pickup/create",
+  authenticateToken,
+  usersCtrl.createPickupArticle,
+);
+
+usersRouter.post(
+  "/users/pickup/delete",
+  authenticateToken,
+  usersCtrl.deletePickupArticle,
+);
 export default usersRouter;
