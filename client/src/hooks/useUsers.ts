@@ -2,11 +2,24 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../api/client";
 import { useNotify } from "./useNotify";
 
-export const useUserQuery = (username?: string) => {
+interface User {
+  id: string;
+  username: string;
+  display_name: string;
+  email: string;
+  avatar_url: string;
+  bio: string;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+  last_login_at: string;
+  created_by: any;
+}
+export const useUserQuery = (username?: string, userId?: string) => {
   const { error, notify } = useNotify();
   const queryClient = useQueryClient();
   // ユーザ情報を取得
-  const userQuery = useQuery({
+  const userQuery = useQuery<User>({
     queryKey: ["user", username],
     queryFn: async () => {
       const res = await apiClient.get(`/users/${username}`);
@@ -65,6 +78,48 @@ export const useUserQuery = (username?: string) => {
       error("フォローに失敗しました");
     },
   });
+  const getPickupArticles = useQuery({
+    queryKey: ["pickup", userId],
+    queryFn: async () => {
+      const res = await apiClient.get(`/users/${userId}/pickup`);
+      return res.data;
+    },
+    enabled: !!userId,
+  });
+
+  const createPickupArticles = useMutation({
+    mutationFn: async (articleId: string) => {
+      const res = await apiClient.post("/users/pickup/create", {
+        articleId,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pickup", userId] });
+    },
+    onError: (err: any) => {
+      error(
+        err.response?.data?.message ?? "ピックアップ記事の設定に失敗しました",
+      );
+    },
+  });
+
+  const deletePickupArticles = useMutation({
+    mutationFn: async (articleId: string) => {
+      const res = await apiClient.post("/users/pickup/delete", {
+        articleId,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pickup", userId] });
+    },
+    onError: (err: any) => {
+      error(
+        err.response?.data?.message ?? "ピックアップ記事の設定に失敗しました",
+      );
+    },
+  });
 
   return {
     user: userQuery.data,
@@ -79,5 +134,12 @@ export const useUserQuery = (username?: string) => {
     follower: getFollower.data,
     follower_isLoading: getFollower.isLoading,
     follower_count: getFollower.data?.length ?? 0,
+
+    pickup: getPickupArticles.data,
+    pickupIsLoading: getPickupArticles.isLoading,
+    pickupIsError: getPickupArticles.isError,
+
+    createPickup: createPickupArticles.mutateAsync,
+    deletePickup: deletePickupArticles.mutateAsync,
   };
 };
