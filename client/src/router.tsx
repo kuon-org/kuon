@@ -25,7 +25,7 @@ import { useAuthQuery } from "./hooks/useAuth";
 import { ArticleLiker } from "./pages/Articles/ArticleLiker";
 import { Edit } from "./pages/Editor/Edit";
 import { New } from "./pages/Editor/New";
-import { ArticleList } from "./pages/User/Articlelist";
+import { UserTop } from "./pages/User/UserTop";
 import { FollowerList } from "./pages/User/FollowerList";
 import { FollowingList } from "./pages/User/FollowingList";
 import { Drafts } from "./pages/Drafts/Drafts";
@@ -52,6 +52,7 @@ import { NotificationManager } from "./components/common/NotificationManager";
 import Trends from "./pages/Trends/Trends";
 import { TagLists } from "./components/Tag/TagLists";
 import { TagEdit } from "./pages/TagEdit";
+import { FollowingTagsPage } from "./pages/User/FollowingTagsPage";
 
 interface MyRouterContext {
   user: { id: string; username: string } | null;
@@ -211,7 +212,7 @@ export const userRoute = createRoute({
 export const userProfileIndexRoute = createRoute({
   getParentRoute: () => userRoute,
   path: "/",
-  component: ArticleList,
+  component: UserTop,
 });
 
 export const userFollowerRoute = createRoute({
@@ -224,6 +225,12 @@ export const userFollowingRoute = createRoute({
   getParentRoute: () => userRoute,
   path: "following",
   component: FollowingList,
+});
+
+export const userFollowingTagsRoute = createRoute({
+  getParentRoute: () => userRoute,
+  path: "following_tags",
+  component: FollowingTagsPage,
 });
 
 export const articleRoute = createRoute({
@@ -372,14 +379,10 @@ export const uploadedImagesRoute = createRoute({
 });
 
 // 🏷️ タグ一覧（TopBar付き・サイドなし）
-const tagsRoute = createRoute({
+export const tagsRoute = createRoute({
   getParentRoute: () => layoutWithTopRoute,
   path: "tags",
-  component: () => (
-    <Box sx={{ p: 3 }}>
-      <TagList />
-    </Box>
-  ),
+  component: TagList,
 });
 
 export const tagProfileRoute = createRoute({
@@ -466,6 +469,7 @@ const routeTree = baseRootRoute.addChildren([
       userProfileIndexRoute,
       userFollowerRoute,
       userFollowingRoute,
+      userFollowingTagsRoute,
     ]),
   ]),
 ]);

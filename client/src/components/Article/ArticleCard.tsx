@@ -32,19 +32,19 @@ export const ArticleCard = ({ article }: ArticleCardProps) => {
   const stopPropagation = (e: React.MouseEvent) => {
     e.stopPropagation();
   };
-
+  const handleNavigate = () => {
+    navigate({
+      to: "/$username/$articleId",
+      params: {
+        username: article.users.username,
+        articleId: article.id,
+      },
+    });
+  };
   return (
     <Card
       variant="outlined"
-      onClick={() => {
-        navigate({
-          to: "/$username/$articleId",
-          params: {
-            username: article.users.username,
-            articleId: article.id,
-          },
-        });
-      }}
+      onClick={handleNavigate}
       sx={{
         cursor: "pointer",
         borderRadius: 2,
@@ -55,7 +55,7 @@ export const ArticleCard = ({ article }: ArticleCardProps) => {
           bgcolor: "action.hover",
         },
         "@media (max-width:600px)": {
-          width: "100vw",
+          width: "auto",
           borderRadius: 0.5,
           mx: "-16px",
         },
