@@ -60,8 +60,10 @@ articlesRouter.get("/articles/trends", articlesCtrl.getTrendingArticles);
 articlesRouter.get(
   "/articles/me",
   authenticateToken,
-  articlesCtrl.getArticlesByUserId,
+  articlesCtrl.getAllArticlesByUserId,
 );
+
+articlesRouter.get("/articles/user/:userId", articlesCtrl.getArticlesByUserId);
 
 /**
  * @openapi

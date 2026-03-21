@@ -502,6 +502,7 @@ export class UsersController {
         page,
         limit,
       );
+      console.log("フォロー中のタグ", result);
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -514,6 +515,45 @@ export class UsersController {
         return res.status(401).json({ message: "未ログインです" });
       const result = await this.usersService.getFollowingTags(req.user.userId);
       console.log(result);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  getPickupArticles = async (req: Request, res: Response) => {
+    try {
+      const userId = String(req.params.userId);
+      const result = await this.usersService.getPickupArticles(userId);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  createPickupArticle = async (req: AuthRequest, res: Response) => {
+    try {
+      const articleId = String(req.body.articleId);
+      if (!isAuthenticated(req))
+        return res.status(401).json({ message: "未ログインです" });
+      const result = await this.usersService.createPickupArticle(
+        req.user.userId,
+        articleId,
+      );
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+  deletePickupArticle = async (req: AuthRequest, res: Response) => {
+    try {
+      const articleId = String(req.body.articleId);
+      if (!isAuthenticated(req))
+        return res.status(401).json({ message: "未ログインです" });
+      const result = await this.usersService.deletePickupArticle(
+        req.user.userId,
+        articleId,
+      );
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
