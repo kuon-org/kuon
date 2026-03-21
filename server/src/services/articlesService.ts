@@ -42,10 +42,19 @@ export class ArticlesService {
     return article;
   }
 
+  // /articles/meで利用中
   async getAllArticlesByUserId(userId: string) {
     return await this.articlesRepo.findAllArticlesByUserId(userId);
   }
 
+  async getArticlesByUserId(
+    userId: string,
+    page: number,
+    limit: number,
+    q?: string,
+  ) {
+    return await this.articlesRepo.findArticlesByUserId(userId, page, limit, q);
+  }
   async getArticleLikeUserWithCount(articleId: string) {
     const likeRecords =
       await this.articlesRepo.getArticleLikeUserByArticleId(articleId);

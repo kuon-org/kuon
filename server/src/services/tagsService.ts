@@ -42,7 +42,16 @@ export class TagsService {
   }
 
   async getFollowingTags(userId: string, page: number, limit: number) {
-    return await this.repo.followingTags(userId, page, limit);
+    const { tags: rawTags, ...pagination } = await this.repo.followingTags(
+      userId,
+      page,
+      limit,
+    );
+
+    return {
+      tags: rawTags.map((r) => r.tags),
+      ...pagination,
+    };
   }
 
   async getIsFollowing(userId: string, slug: string) {
