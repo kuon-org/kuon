@@ -38,7 +38,7 @@ const admonitionStyleMap = {
     title: "Note",
   },
   tip: {
-    iconName: "tips_and_updates", // 💡
+    iconName: "lightbulb", // 💡
     borderColor: "success.light",
     color: (theme: any) => theme.palette.success.main,
     bg: (theme: any) =>
@@ -58,7 +58,7 @@ const admonitionStyleMap = {
     title: "Warning",
   },
   important: {
-    iconName: "priority_high", // ！
+    iconName: "feedback", // ！
     borderColor: "secondary.light",
     color: (theme: any) => theme.palette.secondary.main,
     bg: (theme: any) =>

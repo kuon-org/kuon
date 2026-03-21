@@ -3,13 +3,18 @@ import { UserList } from "../../components/UserList/UserList";
 import { userRoute } from "../../router";
 import { useUserQuery } from "../../hooks/useUsers";
 
-
-
 export const FollowerList = () => {
   const { username } = userRoute.useParams();
-  const { follower, follower_count, } = useUserQuery(username);
+  const { follower, follower_count } = useUserQuery(username);
   return (
-    <Paper sx={{ width:  { xs: "100%", sm: "600px" }, minHeight: "300px", p: 2 }}>
+    <Paper
+      sx={{
+        mx: "auto",
+        width: { xs: "100%", sm: "600px" },
+        minHeight: "300px",
+        p: 2,
+      }}
+    >
       <Typography variant="subtitle1" sx={{ mb: 1 }}>
         フォロワー
       </Typography>
@@ -17,7 +22,12 @@ export const FollowerList = () => {
       {follower_count === 0 ? (
         <Typography
           variant="caption"
-          sx={{ display: "block", mt: 2, color: "text.secondary", textAlign: "center" }}
+          sx={{
+            display: "block",
+            mt: 2,
+            color: "text.secondary",
+            textAlign: "center",
+          }}
         >
           フォロワーはいません
         </Typography>
@@ -25,5 +35,5 @@ export const FollowerList = () => {
         <UserList users={follower} />
       )}
     </Paper>
-  )
+  );
 };

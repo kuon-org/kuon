@@ -118,7 +118,7 @@ interface PaginatedArticles {
   limit: number;
 }
 
-export const useArticles = (articleId?: string) => {
+export const useArticles = (articleId?: string, userId?: string) => {
   const queryClient = useQueryClient();
   const { error, success } = useNotify();
   const createArticleMutation = useMutation({

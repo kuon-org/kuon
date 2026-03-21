@@ -16,6 +16,7 @@ export interface Tags {
   id: string;
   name: string;
   slug: string;
+  avatar_url: string;
   articleCount: number;
   followCount: number;
 }
@@ -27,13 +28,21 @@ export interface UpsertTagData {
   description?: string;
 }
 
-export interface MyFollwingTags {
+export interface FollowingTags {
   id: string;
   name: string;
   slug: string;
   avatar_url: string;
   description: string;
   created_at: string;
+}
+
+export interface UserFollowingTags {
+  tags: FollowingTags[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  limit: number;
 }
 
 export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
@@ -72,18 +81,18 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
     },
   });
 
-  const getFollowingTags = useQuery({
+  const getFollowingTags = useQuery<UserFollowingTags>({
     queryKey: ["followingTags", userId, page],
     queryFn: async () => {
       const { data } = await apiClient.get(`/users/${userId}/following_tags`, {
-        params: { page, limit: 20 },
+        params: { page: 1, limit: 20 },
       });
       return data;
     },
     enabled: !!userId,
   });
 
-  const getMyFollowingTags = useQuery<MyFollwingTags[]>({
+  const getMyFollowingTags = useQuery<FollowingTags[]>({
     queryKey: ["myFollowingTags"],
     queryFn: async () => {
       const { data } = await apiClient.get("/users/tags/me");
