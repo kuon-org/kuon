@@ -3,12 +3,13 @@ import { useSlugList } from "../../hooks/useSlug/useSlugList";
 
 interface TocListProps {
   content: string;
+  onItemClick?: () => void;
 }
 
 /**
  * Markdownの見出しリストを表示する目次コンポーネント
  */
-const TocList = ({ content }: TocListProps) => {
+const TocList = ({ content, onItemClick }: TocListProps) => {
   const slugList = useSlugList(content ?? "", { minLevel: 1, maxLevel: 3 });
   const handleClick = (id: string) => {
     const el = document.getElementById(id);
@@ -19,6 +20,7 @@ const TocList = ({ content }: TocListProps) => {
         behavior: "smooth",
       });
       window.history.replaceState(null, "", `#${id}`);
+      if (onItemClick) onItemClick();
     }
   };
 
