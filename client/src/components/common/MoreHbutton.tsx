@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import { IconButton, Menu, type PopoverOrigin } from '@mui/material';
-import type { ReactNode, MouseEvent } from 'react';
+import { useState } from "react";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import { IconButton, Menu, type PopoverOrigin } from "@mui/material";
+import type { ReactNode, MouseEvent } from "react";
 
 interface MoreHButtonProps {
   children: ReactNode;
@@ -11,8 +11,8 @@ interface MoreHButtonProps {
 
 export const MoreHButton = ({
   children,
-  anchorOrigin = { vertical: 'top', horizontal: 'right' },
-  transformOrigin = { vertical: 'top', horizontal: 'left' },
+  anchorOrigin = { vertical: "top", horizontal: "right" },
+  transformOrigin = { vertical: "top", horizontal: "left" },
 }: MoreHButtonProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -36,6 +36,7 @@ export const MoreHButton = ({
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
+        onClick={handleClose}
         anchorOrigin={anchorOrigin}
         transformOrigin={transformOrigin}
       >
