@@ -26,6 +26,8 @@ services:
       - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
       - db
+    volumes:
+      - ./server/public/uploads:/app/public/uploads
 
 volumes:
   db-data:
