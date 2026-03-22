@@ -123,6 +123,7 @@ export const ArticleLayout = () => {
           username={article?.users.username ?? ""}
           articleId={articleId}
           isOwned={isOwned}
+          content={article?.render_content}
         />
       </BottomBar>
     </Box>
