@@ -7,6 +7,7 @@ import path from "node:path";
 import { get } from "lodash-es";
 import { AuthRepository } from "../repositories/authRepository.js";
 import prisma from "../prisma/client.js";
+import { SAML } from "@node-saml/node-saml";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const pkceStore = new Map<string, { verifier: string }>();
@@ -19,10 +20,35 @@ export class AuthService {
     const record = await this.repo.findProviderByName(providerName);
     if (!record || !record.idp_configurations)
       throw new Error("Provider not found");
-
     const config = record.idp_configurations.config as any;
+
+    // pkce.default() の戻り値から正しく分割代入する
     const { code_verifier, code_challenge } = await pkce.default();
     const state = crypto.randomUUID();
+
+    // pkceStore に保存する際、プロパティ名を verifier に合わせるか、
+    // あるいは保存側も code_verifier に合わせます。
+    // 既存の handleCallback 側が `pkceStore.get(state)?.verifier` を見ているなら以下：
+    pkceStore.set(state, { verifier: code_verifier });
+
+    // SAML の場合はここで分岐
+    if (record.provider_type === "SAML") {
+      const saml = await this.getSamlInstance(providerName);
+
+      // --- デバッグ開始 ---
+      const authUrl = await saml.getAuthorizeUrlAsync(state, undefined, {});
+      console.log("---------- SAML DEBUG START ----------");
+      console.log("Target URL (Keycloak SSO):", config.entry_point);
+      console.log("Generated Auth URL:", authUrl);
+
+      // URLからSAMLRequestパラメータを抽出してデコードするためのヒント
+      const urlParams = new URL(authUrl).searchParams;
+      console.log("SAMLRequest (Raw):", urlParams.get("SAMLRequest"));
+      console.log("---------- SAML DEBUG END ----------");
+      // --- デバッグ終了 ---
+
+      return { url: authUrl };
+    }
     pkceStore.set(state, { verifier: code_verifier });
 
     const url = new URL(config.auth_url);
@@ -238,5 +264,77 @@ export class AuthService {
       await fs.unlink(path.join(this.AVATAR_DIR, file)).catch(() => {});
     }
     return this.repo.deleteIdentityAndAvatar(userId, providerName);
+  }
+
+  private async getSamlInstance(providerName: string) {
+    const record = await this.repo.findProviderByName(providerName);
+    if (!record || record.idp_configurations == null)
+      // チェックを厳密に
+      throw new Error("Invalid SAML provider");
+
+    const config = record.idp_configurations.config as any;
+
+    return new SAML({
+      // 【重要】issuer は Keycloak 側の "Client ID" と 完全に一致 させる必要があります
+      issuer: config.issuer,
+
+      // 【重要】callbackUrl は Keycloak 側の "Master SAML Processing URL" と一致させる
+      callbackUrl: config.redirect_uri,
+
+      // 【重要】entryPoint は Keycloak の SSO URL
+      entryPoint: config.entry_point,
+
+      // 証明書を整形して渡す
+      idpCert: this.formatCert(config.cert),
+
+      // Keycloak 側の "Sign Assertions" が On ならここも true
+      wantAssertionsSigned: true, // ユーザー情報の署名は必須（セキュリティ上重要）
+      wantAuthnResponseSigned: false,
+
+      // 【追加】Keycloak 20系以降で 400 エラーを回避するために推奨される設定
+      // 署名の検証時に IDp の証明書をより柔軟に扱う
+      signatureAlgorithm: "sha256",
+    });
+  }
+
+  async handleSamlCallback(providerName: string, body: any) {
+    const saml = await this.getSamlInstance(providerName);
+
+    // XMLの検証
+    const { profile } = await saml.validatePostResponseAsync(body);
+    if (!profile) throw new Error("SAML verification failed");
+
+    const record = await this.repo.findProviderByName(providerName);
+    const config = record!.idp_configurations!.config as any;
+
+    // 属性マッピング (profileから必要な情報を抜く)
+    const idpUser = {
+      id: String(get(profile, config.mapping?.id) || profile.nameID),
+      username: get(profile, config.mapping?.username),
+      name: get(profile, config.mapping?.display_name),
+    };
+
+    const tokenDataForDb = JSON.parse(JSON.stringify(profile));
+
+    // 既存のユーザー作成/紐付けロジックに渡す
+    const user = await this.findOrCreateUser(
+      record!.id,
+      idpUser,
+      tokenDataForDb,
+    );
+    return jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "24h" });
+  }
+
+  private formatCert(cert: string): string {
+    if (!cert) return "";
+
+    // 1. 全ての改行とスペースを削除して、純粋な Base64 文字列のみを取り出す
+    const cleanCert = cert
+      .replace(/-----BEGIN CERTIFICATE-----/g, "")
+      .replace(/-----END CERTIFICATE-----/g, "")
+      .replace(/\s+/g, ""); // 空白、改行、タブをすべて削除
+
+    // 2. 改めて PEM 形式に包み直す (64文字ごとの改行はライブラリがやってくれるので不要な場合が多いですが、念のため)
+    return `-----BEGIN CERTIFICATE-----\n${cleanCert}\n-----END CERTIFICATE-----`;
   }
 }
