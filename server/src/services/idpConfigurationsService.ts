@@ -69,7 +69,7 @@ export class IdpConfigurationsService {
       updated_at: new Date(),
       // 必要に応じて display_name などをデフォルトセット
       display_name: existing?.display_name || provider_name,
-      provider_type: existing?.provider_type || "OIDC",
+      provider_type: data.provider_type || existing?.provider_type || "OIDC",
     };
 
     return await this.repo.upsertIdp(provider_name, combineData);

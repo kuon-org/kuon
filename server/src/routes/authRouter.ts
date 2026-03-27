@@ -2,7 +2,7 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/authController.js";
 import { authenticateToken, optionalAuth } from "../middlewares/auth.js";
-
+import express from "express";
 const authRouter = Router();
 const authController = new AuthController();
 
@@ -19,7 +19,7 @@ const authController = new AuthController();
  *         schema:
  *           type: string
  *         description: 外部認証プロバイダ名
- *     responses: 
+ *     responses:
  *       '200':
  *         description: パラメータの外部認証機構へリダイレクト
  */
@@ -28,7 +28,7 @@ authRouter.get("/auth/:provider/login", authController.login);
 /**
  * @opanapi
  * /auth/{provider}/callback:
- *   get:
+ *   all:
  *     summary: 外部Idpからのコールバック
  *     tags: [Auth]
  *     parameters:
@@ -38,11 +38,16 @@ authRouter.get("/auth/:provider/login", authController.login);
  *         schema:
  *           type: string
  *         description: 外部認証プロバイダ名
- *     responses: 
+ *     responses:
  *       '200':
  *         description: ログイン成功
  */
-authRouter.get("/auth/:provider/callback", optionalAuth, authController.callback);
+authRouter.all(
+  "/auth/:provider/callback",
+  express.urlencoded({ extended: false }),
+  optionalAuth,
+  authController.callback,
+);
 
 /**
  * @openapi
@@ -63,7 +68,11 @@ authRouter.get("/auth/:provider/callback", optionalAuth, authController.callback
  *       '200':
  *         description: アバター更新成功
  */
-authRouter.post("/auth/avatar/select",authenticateToken, authController.selectAvatar);
+authRouter.post(
+  "/auth/avatar/select",
+  authenticateToken,
+  authController.selectAvatar,
+);
 
 /**
  * @opanapi
@@ -77,9 +86,13 @@ authRouter.post("/auth/avatar/select",authenticateToken, authController.selectAv
  *         required: true
  *         schema:
  *           type: string
- *     responses: 
+ *     responses:
  *       '200':
- *         description: 解除成功   
+ *         description: 解除成功
  */
-authRouter.delete("/auth/:provider/unlink", authenticateToken, authController.unlinkProvider)
+authRouter.delete(
+  "/auth/:provider/unlink",
+  authenticateToken,
+  authController.unlinkProvider,
+);
 export default authRouter;
