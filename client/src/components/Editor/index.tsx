@@ -172,6 +172,7 @@ export default function ArticleEditor({
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button
               variant="contained"
+              color="secondary"
               onClick={
                 isEdited ? () => setIsConfirmDialogOpen(true) : handleBack
               }
@@ -187,6 +188,7 @@ export default function ArticleEditor({
             </Button>
             <Button
               variant="contained"
+              color="secondary"
               onClick={() => setIsDialogOpen(true)}
               disabled={!text.trim()}
             >
@@ -304,7 +306,7 @@ export default function ArticleEditor({
           </Button>
           <Button
             variant="contained"
-            color="primary"
+            color="secondary"
             onClick={() => handleSave("public")}
             disabled={isFetching || !title.trim()}
           >
