@@ -266,34 +266,45 @@ export class AuthService {
     return this.repo.deleteIdentityAndAvatar(userId, providerName);
   }
 
+  // src/services/authService.ts
+
   private async getSamlInstance(providerName: string) {
     const record = await this.repo.findProviderByName(providerName);
     if (!record || record.idp_configurations == null)
-      // チェックを厳密に
       throw new Error("Invalid SAML provider");
 
     const config = record.idp_configurations.config as any;
 
     return new SAML({
-      // 【重要】issuer は Keycloak 側の "Client ID" と 完全に一致 させる必要があります
+      // --- 必須・基本設定 ---
       issuer: config.issuer,
-
-      // 【重要】callbackUrl は Keycloak 側の "Master SAML Processing URL" と一致させる
       callbackUrl: config.redirect_uri,
-
-      // 【重要】entryPoint は Keycloak の SSO URL
       entryPoint: config.entry_point,
-
-      // 証明書を整形して渡す
       idpCert: this.formatCert(config.cert),
 
-      // Keycloak 側の "Sign Assertions" が On ならここも true
-      wantAssertionsSigned: true, // ユーザー情報の署名は必須（セキュリティ上重要）
-      wantAuthnResponseSigned: false,
+      // --- 詳細設定 (フロントから送信された値を使用) ---
+      // 許容する時刻のズレ (秒 -> ミリ秒に変換)
+      acceptedClockSkewMs: (config.clockSkewSeconds || 0) * 1000,
 
-      // 【追加】Keycloak 20系以降で 400 エラーを回避するために推奨される設定
-      // 署名の検証時に IDp の証明書をより柔軟に扱う
-      signatureAlgorithm: "sha256",
+      // Requestの有効期限 (ミリ秒)
+      requestIdExpirationPeriodMs: config.requestIdExpirationMs || 28800000,
+
+      // 署名の検証設定
+      wantAssertionsSigned: config.wantAssertionsSigned ?? true,
+      wantAuthnResponseSigned: config.wantAuthnResponseSigned ?? false,
+
+      // AuthnContextの無効化 (Azure AD等で RequestedAuthnContext が原因でエラーになる場合に使用)
+      disableRequestedAuthnContext:
+        config.disableRequestedAuthnContext ?? false,
+
+      // アルゴリズム系 (デフォルト sha256)
+      signatureAlgorithm: config.signature_algorithm || "sha256",
+      digestAlgorithm: config.signature_algorithm || "sha256",
+
+      // Identifier Format
+      identifierFormat:
+        config.identifier_format ||
+        "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
     });
   }
 
