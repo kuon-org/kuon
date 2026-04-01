@@ -6,8 +6,17 @@ interface NavButtonProps {
   path: string; // 遷移先のパス
   message?: string; // ボタンのテキスト
   variant?: "text" | "outlined" | "contained"; // MUIボタンのvariant
+  color?:
+    | "error"
+    | "info"
+    | "inherit"
+    | "primary"
+    | "secondary"
+    | "success"
+    | "warning";
   Icon?: ReactNode; // アイコンを渡したい場合
   iconOnly?: boolean; // アイコンボタンモード
+  fullWidth?: boolean;
   cbfn?: () => void;
 }
 
@@ -15,9 +24,11 @@ export const NavButton = ({
   path,
   message = "ボタン",
   variant = "contained",
+  color = "inherit",
   Icon,
   iconOnly = false,
-  cbfn
+  fullWidth = false,
+  cbfn,
 }: NavButtonProps) => {
   if (iconOnly) {
     // アイコンのみの場合（IconButton）
@@ -39,7 +50,9 @@ export const NavButton = ({
       component={Link}
       to={path}
       variant={variant}
+      color={color}
       startIcon={Icon}
+      fullWidth={fullWidth}
       onClick={cbfn}
     >
       {message}
