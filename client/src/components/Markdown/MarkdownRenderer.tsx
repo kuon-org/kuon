@@ -411,7 +411,48 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
             </Box>
           );
         }
+        if (!inline && match?.[1] === "svg") {
+          const svgContent = String(children ?? "").trim();
 
+          // 最低限のサニタイズ（scriptタグの混入防止）
+          const isPotentiallyUnsafe = /<script/i.test(svgContent);
+
+          return (
+            <Box
+              sx={{
+                my: 2,
+                p: 2,
+                border: "1px solid divider",
+                borderRadius: 1,
+                overflow: "auto",
+                display: "flex",
+                justifyContent: "center",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark"
+                    ? "rgba(255,255,255,0.05)"
+                    : "transparent",
+              }}
+            >
+              {isPotentiallyUnsafe ? (
+                <Box
+                  component="span"
+                  sx={{ color: "error.main", fontSize: "0.875rem" }}
+                >
+                  安全性に問題があるためSVGを表示できません（scriptタグが検出されました）
+                </Box>
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "flex-start",
+                  }}
+                  dangerouslySetInnerHTML={{ __html: svgContent }}
+                />
+              )}
+            </Box>
+          );
+        }
         return (
           <CodeSyntaxHighlighter
             inline={inline}
