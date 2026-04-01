@@ -15,6 +15,9 @@ import {
   AccordionDetails,
   Switch,
   Paper,
+  MenuItem,
+  FormControlLabel,
+  Divider,
 } from "@mui/material";
 import { ExpandMore as ExpandMoreIcon, ContentCopy } from "@mui/icons-material";
 
@@ -40,7 +43,6 @@ export const SAMLForm = ({
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    // SAMLでは一般的に ACS (Assertion Consumer Service) URL と呼ばれる
     const acsUrl =
       initialData.redirect_uri ||
       `${window.location.origin}/api/auth/callback/${provider_name}`;
@@ -51,9 +53,21 @@ export const SAMLForm = ({
 
   const form = useForm({
     defaultValues: {
-      issuer: initialData.issuer || "", // SP Entity ID
-      entry_point: initialData.entry_point || "", // IdP SSO URL
-      cert: initialData.cert || "", // Public Certificate
+      issuer: initialData.issuer || "",
+      entry_point: initialData.entry_point || "",
+      cert: initialData.cert || "",
+      // --- 高度な設定項目 ---
+      clockSkewSeconds: initialData.clockSkewSeconds || 0,
+      requestIdExpirationMs: initialData.requestIdExpirationMs || 28800000, // 8時間
+      wantAssertionsSigned: initialData.wantAssertionsSigned ?? true,
+      wantAuthnResponseSigned: initialData.wantAuthnResponseSigned ?? false,
+      disableRequestedAuthnContext:
+        initialData.disableRequestedAuthnContext ?? false,
+      identifier_format:
+        initialData.identifier_format ||
+        "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+      signature_algorithm: initialData.signature_algorithm || "sha256",
+      // --- 属性マッピング ---
       mapping: {
         id: initialData.mapping?.id || "nameID",
         username: initialData.mapping?.username || "email",
@@ -71,10 +85,14 @@ export const SAMLForm = ({
 
   return (
     <Box>
+      <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+        {provider_name} の設定
+      </Typography>
+      <Divider />
       <Paper
         sx={{
           p: 3,
-          mb: 3,
+          my: 2,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -85,13 +103,13 @@ export const SAMLForm = ({
             プロバイダ状態: {isActive ? "有効" : "無効"}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            SAML認証を有効化または無効化します
+            このSAMLプロバイダ経由のログインを許可します
           </Typography>
         </Box>
         <Switch
           checked={isActive}
           onChange={() => toggleActive(provider_name)}
-          color="primary"
+          color="success"
         />
       </Paper>
 
@@ -101,9 +119,10 @@ export const SAMLForm = ({
           e.stopPropagation();
           form.handleSubmit();
         }}
+        autoComplete="off"
       >
         <Grid container spacing={3}>
-          {/* 基本設定 */}
+          {/* 基本設定セクション */}
           <Grid size={12}>
             <Typography variant="h6" gutterBottom>
               基本設定 (Service Provider)
@@ -114,7 +133,6 @@ export const SAMLForm = ({
               size="small"
               value={initialData.redirect_uri || "保存後に生成されます"}
               disabled
-              helperText="IdP側の設定（Reply URL / ACS URL）に入力してください"
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -127,6 +145,7 @@ export const SAMLForm = ({
                   </InputAdornment>
                 ),
               }}
+              helperText="IdP側に登録するコールバックURLです"
             />
           </Grid>
 
@@ -139,13 +158,12 @@ export const SAMLForm = ({
                   size="small"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  helperText="本アプリケーションの識別子（例: https://your-app.com/saml）"
+                  helperText="本アプリケーションの識別子（通常はメタデータのURLやドメイン）"
                 />
               )}
             </form.Field>
           </Grid>
 
-          {/* IdP設定 */}
           <Grid size={12}>
             <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
               IdP設定 (Identity Provider)
@@ -153,12 +171,12 @@ export const SAMLForm = ({
             <form.Field name="entry_point">
               {(field) => (
                 <TextField
-                  label="Single Sign-On URL (SSO URL)"
+                  label="Single Sign-On URL"
                   fullWidth
                   size="small"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="https://idp.example.com/saml2/sso"
+                  placeholder="https://example.com/saml/sso"
                 />
               )}
             </form.Field>
@@ -168,47 +186,184 @@ export const SAMLForm = ({
             <form.Field name="cert">
               {(field) => (
                 <TextField
-                  label="Public Certificate (PEM format)"
+                  label="IdP Public Certificate (PEM format)"
                   fullWidth
                   multiline
-                  rows={6}
+                  rows={10}
                   size="small"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="-----BEGIN CERTIFICATE-----\n..."
                   sx={{
                     "& .MuiInputBase-input": {
                       fontFamily: "monospace",
                       fontSize: "0.8rem",
                     },
                   }}
+                  placeholder="-----BEGIN CERTIFICATE----- ..."
                 />
               )}
             </form.Field>
           </Grid>
 
-          {/* 属性マッピング */}
+          {/* 詳細設定アコーディオン */}
           <Grid size={12}>
-            <Accordion variant="outlined" sx={{ mt: 2 }}>
+            <Accordion variant="outlined" sx={{ mt: 1 }}>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography>属性マッピング設定</Typography>
+                <Typography variant="subtitle2" fontWeight="bold">
+                  高度な設定 (Clock Skew / セキュリティ)
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  display="block"
-                  sx={{ mb: 2 }}
-                >
-                  SAML
-                  Assertion内のどの属性をユーザー情報として使用するか指定します。
+                <Grid container spacing={2}>
+                  <Grid size={6}>
+                    <form.Field name="clockSkewSeconds">
+                      {(field) => (
+                        <TextField
+                          label="Clock Skew (秒)"
+                          type="number"
+                          fullWidth
+                          size="small"
+                          value={field.state.value}
+                          onChange={(e) =>
+                            field.handleChange(Number(e.target.value))
+                          }
+                          helperText="IdPとの許容される時刻のズレ"
+                        />
+                      )}
+                    </form.Field>
+                  </Grid>
+                  <Grid size={6}>
+                    <form.Field name="requestIdExpirationMs">
+                      {(field) => (
+                        <TextField
+                          label="Request Expiration (ms)"
+                          type="number"
+                          fullWidth
+                          size="small"
+                          value={field.state.value}
+                          onChange={(e) =>
+                            field.handleChange(Number(e.target.value))
+                          }
+                          helperText="SAMLリクエストの有効期限"
+                        />
+                      )}
+                    </form.Field>
+                  </Grid>
+
+                  <Grid size={12}>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                      <form.Field name="wantAssertionsSigned">
+                        {(field) => (
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={field.state.value}
+                                onChange={(e) =>
+                                  field.handleChange(e.target.checked)
+                                }
+                              />
+                            }
+                            label={
+                              <Typography variant="body2">
+                                アサーションの署名を必須とする
+                              </Typography>
+                            }
+                          />
+                        )}
+                      </form.Field>
+                      <form.Field name="wantAuthnResponseSigned">
+                        {(field) => (
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={field.state.value}
+                                onChange={(e) =>
+                                  field.handleChange(e.target.checked)
+                                }
+                              />
+                            }
+                            label={
+                              <Typography variant="body2">
+                                レスポンス全体の署名を必須とする
+                              </Typography>
+                            }
+                          />
+                        )}
+                      </form.Field>
+                      <form.Field name="disableRequestedAuthnContext">
+                        {(field) => (
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={field.state.value}
+                                onChange={(e) =>
+                                  field.handleChange(e.target.checked)
+                                }
+                              />
+                            }
+                            label={
+                              <Typography variant="body2">
+                                RequestedAuthnContext を無効化する (Azure
+                                AD等の互換用)
+                              </Typography>
+                            }
+                          />
+                        )}
+                      </form.Field>
+                    </Box>
+                  </Grid>
+
+                  <Grid size={6}>
+                    <form.Field name="signature_algorithm">
+                      {(field) => (
+                        <TextField
+                          select
+                          label="署名アルゴリズム"
+                          fullWidth
+                          size="small"
+                          value={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                        >
+                          <MenuItem value="sha256">SHA-256</MenuItem>
+                          <MenuItem value="sha512">SHA-512</MenuItem>
+                          <MenuItem value="sha1">SHA-1 (非推奨)</MenuItem>
+                        </TextField>
+                      )}
+                    </form.Field>
+                  </Grid>
+                  <Grid size={6}>
+                    <form.Field name="identifier_format">
+                      {(field) => (
+                        <TextField
+                          label="Identifier Format"
+                          fullWidth
+                          size="small"
+                          value={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                        />
+                      )}
+                    </form.Field>
+                  </Grid>
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+
+          {/* 属性マッピングアコーディオン */}
+          <Grid size={12}>
+            <Accordion variant="outlined">
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="subtitle2" fontWeight="bold">
+                  属性マッピング設定
                 </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
                 <Grid container spacing={2}>
                   <Grid size={12}>
                     <form.Field name="mapping.id">
                       {(field) => (
                         <TextField
-                          label="User ID (NameID or Attribute)"
+                          label="User ID Attribute (e.g. nameID)"
                           fullWidth
                           size="small"
                           value={field.state.value}
@@ -221,7 +376,7 @@ export const SAMLForm = ({
                     <form.Field name="mapping.username">
                       {(field) => (
                         <TextField
-                          label="Username Attribute"
+                          label="Username / Email Attribute"
                           fullWidth
                           size="small"
                           value={field.state.value}
