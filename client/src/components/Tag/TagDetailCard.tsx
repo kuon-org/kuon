@@ -101,7 +101,10 @@ export const TagDetailCard = ({ tag, slug }: TagDetailCardProps) => {
       </Box>
       {user && (
         <Box sx={{ display: "flex", mt: 4, mx: "auto" }}>
-          <Button variant="outlined" onClick={() => followTag(slug)}>
+          <Button
+            variant={isFollowing?.isFollow ? "outlined" : "contained"}
+            onClick={() => followTag(slug)}
+          >
             {isFollowing.isFollow ? "フォロー中" : "フォローする"}
           </Button>
         </Box>
