@@ -131,15 +131,23 @@ const TopBar = () => {
                 path="/drafts/new"
                 message="記事を作成"
                 Icon={<EditIcon />}
+                variant="contained"
+                color="secondary"
               />
             </>
           ) : (
             <>
-              <NavButton path="/login" message="ログイン" variant="outlined" />
+              <NavButton
+                path="/login"
+                message="ログイン"
+                variant="outlined"
+                color="inherit"
+              />
               <NavButton
                 path="/register"
                 message="アカウント登録"
                 variant="contained"
+                color="secondary"
               />
             </>
           )}
