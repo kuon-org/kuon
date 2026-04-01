@@ -39,8 +39,8 @@ export const AuthSettings = () => {
       </Tabs>
 
       <Box sx={{ mt: 2 }}>
-        {mainTab === 0 && <Typography>ID/Pass 設定フォーム</Typography>}
-        {mainTab === 1 && <Typography>LDAP 設定フォーム</Typography>}
+        {mainTab === 0 && <Typography>ID/Pass 設定フォーム ※準備中</Typography>}
+        {mainTab === 1 && <Typography>LDAP 設定フォーム ※準備中</Typography>}
         {mainTab === 2 && (
           <Box sx={{ p: 2 }}>
             <Box sx={{ p: 2 }}>
@@ -71,7 +71,7 @@ export const AuthSettings = () => {
               <Tab label="Discord" />
               <Tab label="Twitter" />
               <Tab label="GitHub" />
-              <Tab label="Custom" />
+              {/* <Tab label="Custom" /> */}
               {/* 必要に応じて追加 */}
             </Tabs>
 
@@ -79,9 +79,9 @@ export const AuthSettings = () => {
               {oauthTab === 0 && <AuthSettingForm provider_name="discord" />}
               {oauthTab === 1 && <AuthSettingForm provider_name="twitter" />}
               {oauthTab === 2 && <AuthSettingForm provider_name="github" />}
-              {oauthTab === 3 && (
+              {/* {oauthTab === 3 && (
                 <Typography>その他OAuth2 用設定フォーム</Typography>
-              )}
+              )} */}
             </Box>
           </>
         )}
