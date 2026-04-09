@@ -125,7 +125,7 @@ export class ArticlesService {
       ...otherData
     } = payload;
 
-    const updateData: any = { ...otherData };
+    const updateData: any = { ...otherData, updated_at: new Date() };
 
     // 🚀 「保存して公開（更新）」ボタンが押された場合
     if (status === "public") {
