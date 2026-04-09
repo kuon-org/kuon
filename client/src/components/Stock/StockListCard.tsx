@@ -13,7 +13,7 @@ import ArticleIcon from "@mui/icons-material/Article";
 import { userStockRoute } from "../../router";
 export const StockListCard = ({ list }: { list: any }) => {
   // 標準関数で日付整形
-  const formattedDate = new Date(list.created_at).toLocaleDateString("ja-JP");
+  const formattedDate = new Date(list.created_at).toLocaleString("ja-JP");
   const stopPropagation = (e: React.MouseEvent) => {
     e.stopPropagation();
   };

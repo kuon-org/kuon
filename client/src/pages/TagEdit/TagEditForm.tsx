@@ -109,7 +109,15 @@ export const TagEditForm = ({
               />
             )}
           />
-          <Box onClick={handleBoxClick}>
+          <Box
+            onClick={handleBoxClick}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              cursor: "pointer",
+            }}
+          >
             <Avatar
               src={resUrl || undefined}
               alt="tagAvatar"
@@ -128,6 +136,7 @@ export const TagEditForm = ({
               onChange={handleFileChange}
               style={{ display: "none" }}
             />
+            <Typography>タグアイコンをアップロード</Typography>
           </Box>
           <form.Field
             name="description"

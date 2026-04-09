@@ -95,7 +95,7 @@ export const PickupArticleDialog = ({
                           primary={article.title}
                           secondary={new Date(
                             article.created_at,
-                          ).toLocaleDateString()}
+                          ).toLocaleString()}
                         />
                         <Box sx={{ ml: 2 }}>
                           {isPicked ? (

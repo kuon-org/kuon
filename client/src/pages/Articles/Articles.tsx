@@ -89,15 +89,22 @@ const Articles = ({ article, isLoading, isError, error }: ArticlesProps) => {
           <Typography variant="subtitle1" sx={{ fontSize: "0.75rem" }}>
             ♡ {article.like_count}
           </Typography>
-          <Box sx={{ display: "flex", gap: 1, verticalAlign: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 1,
+              verticalAlign: "center",
+            }}
+          >
             {article.updated_at &&
               article.updated_at !== article.created_at && (
-                <Typography variant="subtitle1" color="text.secondary">
-                  最終更新日 {new Date(article.updated_at).toLocaleDateString()}
+                <Typography variant="subtitle2" color="text.secondary">
+                  最終更新日 {new Date(article.updated_at).toLocaleString()}
                 </Typography>
               )}
-            <Typography variant="subtitle1" color="text.secondary">
-              投稿日 {new Date(article.created_at).toLocaleDateString()}
+            <Typography variant="subtitle2" color="text.secondary">
+              投稿日 {new Date(article.created_at).toLocaleString()}
             </Typography>
           </Box>
         </Box>

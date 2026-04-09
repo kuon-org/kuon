@@ -108,7 +108,7 @@ export const ArticleCard = ({ article }: ArticleCardProps) => {
               color="text.secondary"
               display="block"
             >
-              {new Date(article.created_at).toLocaleDateString()}
+              {new Date(article.created_at).toLocaleString()}
             </Typography>
           </Box>
         </Box>

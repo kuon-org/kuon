@@ -48,9 +48,7 @@ export const StockPage = () => {
 
   const isMe = authUser?.id === listDetail.users.id;
   // 日付整形
-  const formattedDate = new Date(listDetail.created_at).toLocaleDateString(
-    "ja-JP",
-  );
+  const formattedDate = new Date(listDetail.created_at).toLocaleString("ja-JP");
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
