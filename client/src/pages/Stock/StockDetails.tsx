@@ -91,22 +91,27 @@ export const StockDetail = () => {
             page={page}
             variant="outlined"
             shape="rounded"
-            renderItem={(item) => (
-              <Link
-                // 💡 現在のパスを維持したまま、searchパラメータだけをマージする
-                from={
-                  username
-                    ? "/$username/stocks/$listId"
-                    : listId
-                      ? "/stocks/$listId"
-                      : "/stocks"
-                }
-                search={(prev: any) => ({ ...prev, page: item.page })}
-                style={{ textDecoration: "none" }}
-              >
-                <PaginationItem {...item} />
-              </Link>
-            )}
+            renderItem={(item) => {
+              if (item.disabled) {
+                return <PaginationItem {...item} />;
+              }
+              return (
+                <Link
+                  // 💡 現在のパスを維持したまま、searchパラメータだけをマージする
+                  from={
+                    username
+                      ? "/$username/stocks/$listId"
+                      : listId
+                        ? "/stocks/$listId"
+                        : "/stocks"
+                  }
+                  search={(prev: any) => ({ ...prev, page: item.page })}
+                  style={{ textDecoration: "none" }}
+                >
+                  <PaginationItem {...item} />
+                </Link>
+              );
+            }}
           />
         </Box>
       )}

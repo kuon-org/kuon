@@ -43,15 +43,20 @@ export const SearchPagination = ({
           page={currentPage}
           variant="outlined"
           shape="rounded"
-          renderItem={(item) => (
-            <Link
-              to="/search"
-              search={{ q, page: item.page ?? 1 }}
-              style={{ textDecoration: "none" }}
-            >
-              <PaginationItem {...item} />
-            </Link>
-          )}
+          renderItem={(item) => {
+            if (item.disabled) {
+              return <PaginationItem {...item} />;
+            }
+            return (
+              <Link
+                to="/search"
+                search={{ q, page: item.page ?? 1 }}
+                style={{ textDecoration: "none" }}
+              >
+                <PaginationItem {...item} />
+              </Link>
+            );
+          }}
         />
       </Stack>
 
