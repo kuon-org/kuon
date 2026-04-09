@@ -28,11 +28,22 @@ export class AuthService {
 
     // pkceStore に userId も保存
     pkceStore.set(state, { verifier: code_verifier, userId: currentUserId });
-
+    console.log("Timing generateAuthUrl currentUserId:", currentUserId);
     if (record.provider_type === "SAML") {
       const saml = await this.getSamlInstance(providerName);
       // 第1引数の state は RelayState として IdP に送られ、戻ってくる
       const authUrl = await saml.getAuthorizeUrlAsync(state, undefined, {});
+
+      // --- デバッグ開始 ---
+      console.log("---------- SAML DEBUG START ----------");
+      console.log("Target URL (Keycloak SSO):", config.entry_point);
+      console.log("Generated Auth URL:", authUrl);
+
+      // URLからSAMLRequestパラメータを抽出してデコードするためのヒント
+      const urlParams = new URL(authUrl).searchParams;
+      console.log("SAMLRequest (Raw):", urlParams.get("SAMLRequest"));
+      console.log("---------- SAML DEBUG END ----------");
+      // --- デバッグ終了 ---
       return { url: authUrl };
     }
 
@@ -144,10 +155,18 @@ export class AuthService {
     };
 
     if (config.auth_method === "header") {
+      // Twitterなどの Basic 認証パターン
       const basicAuth = Buffer.from(
         `${config.client_id}:${config.client_secret}`,
       ).toString("base64");
       headers["Authorization"] = `Basic ${basicAuth}`;
+      // Header認証の場合、Bodyに client_id を含めても良いですが、
+      // Twitterは厳格なので Secret は Body に含めないのが安全です
+      params.set("client_id", config.client_id);
+    } else {
+      // GitHubなどの Body 認証パターン
+      params.set("client_id", config.client_id);
+      params.set("client_secret", config.client_secret);
     }
 
     const res = await axios.post(config.token_url, params.toString(), {
@@ -192,6 +211,7 @@ export class AuthService {
       return this.repo.findUserById(identity.user_id).then((u) => u!);
 
     if (currentUserId) {
+      console.log("既存ユーザあり、紐づけ:", currentUserId);
       await this.repo.linkIdentity(
         currentUserId,
         providerId,
@@ -245,12 +265,32 @@ export class AuthService {
       throw new Error("Invalid SAML provider");
     const config = record.idp_configurations.config as any;
     return new SAML({
+      // --- 必須・基本設定 ---
       issuer: config.issuer,
       callbackUrl: config.redirect_uri,
       entryPoint: config.entry_point,
       idpCert: this.formatCert(config.cert),
+
+      // --- 詳細設定 (フロントから送信された値を使用) ---
+      // 許容する時刻のズレ (秒 -> ミリ秒に変換)
       acceptedClockSkewMs: (config.clockSkewSeconds || 0) * 1000,
+
+      // Requestの有効期限 (ミリ秒)
+      requestIdExpirationPeriodMs: config.requestIdExpirationMs || 28800000,
+
+      // 署名の検証設定
+      wantAssertionsSigned: config.wantAssertionsSigned ?? true,
+      wantAuthnResponseSigned: config.wantAuthnResponseSigned ?? false,
+
+      // AuthnContextの無効化 (Azure AD等で RequestedAuthnContext が原因でエラーになる場合に使用)
+      disableRequestedAuthnContext:
+        config.disableRequestedAuthnContext ?? false,
+
+      // アルゴリズム系 (デフォルト sha256)
       signatureAlgorithm: config.signature_algorithm || "sha256",
+      digestAlgorithm: config.signature_algorithm || "sha256",
+
+      // Identifier Format
       identifierFormat:
         config.identifier_format ||
         "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
@@ -268,7 +308,7 @@ export class AuthService {
     if (!stored) throw new Error("Invalid SAML state (RelayState)");
 
     const currentUserId = stored.userId || fallbackUserId;
-
+    console.log("Timing handleSamlCallback", currentUserId);
     const saml = await this.getSamlInstance(providerName);
     const { profile } = await saml.validatePostResponseAsync(body);
     if (!profile) throw new Error("SAML verification failed");
@@ -296,10 +336,14 @@ export class AuthService {
 
   private formatCert(cert: string): string {
     if (!cert) return "";
+
+    // 1. 全ての改行とスペースを削除して、純粋な Base64 文字列のみを取り出す
     const cleanCert = cert
       .replace(/-----BEGIN CERTIFICATE-----/g, "")
       .replace(/-----END CERTIFICATE-----/g, "")
-      .replace(/\s+/g, "");
+      .replace(/\s+/g, ""); // 空白、改行、タブをすべて削除
+
+    // 2. 改めて PEM 形式に包み直す (64文字ごとの改行はライブラリがやってくれるので不要な場合が多いですが、念のため)
     return `-----BEGIN CERTIFICATE-----\n${cleanCert}\n-----END CERTIFICATE-----`;
   }
 }
