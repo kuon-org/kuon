@@ -1,10 +1,11 @@
-import axios from 'axios';
+import axios from "axios";
+import { queryClient } from "../utils/queryClient";
 // import { router } from '../router'
 const apiClient = axios.create({
-  baseURL: '/api', // 全てのリクエストの先頭に付与
+  baseURL: "/api", // 全てのリクエストの先頭に付与
   withCredentials: true, // Cookieを自動で送受信する設定（超重要！）
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -13,11 +14,11 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const currentPath = window.location.pathname;
-    if (error.response?.status === 401 && currentPath !== '/login') {
-    //   router.navigate({ to: '/login' });
+    if (error.response?.status === 401 && currentPath !== "/login") {
+      queryClient.setQueryData(["authUser"], null);
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;
