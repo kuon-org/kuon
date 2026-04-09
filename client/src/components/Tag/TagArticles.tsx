@@ -34,7 +34,7 @@ export const TagArticles = ({ tag }: TagArticlesProps) => {
 
   return (
     <>
-      <Box sx={{ mb: 1 }}>
+      <Box sx={{ mb: 1, width: { xs: "100%", sm: "600px" } }}>
         <Typography variant="h6" sx={{ mb: 1, fontWeight: "bold" }}>
           {tag.name}に関する記事一覧
         </Typography>
@@ -56,20 +56,25 @@ export const TagArticles = ({ tag }: TagArticlesProps) => {
               </Stack>
 
               <Pagination
-                count={Math.min(data.totalPages)}
+                count={data.totalPages}
                 page={page}
                 variant="outlined"
                 shape="rounded"
                 sx={{ mx: "auto" }}
-                renderItem={(item) => (
-                  <Link
-                    to={tagProfileRoute.to}
-                    search={{ page: item.page ?? 1 }}
-                    params={{ slug }}
-                  >
-                    <PaginationItem {...item} />
-                  </Link>
-                )}
+                renderItem={(item) => {
+                  if (item.disabled) {
+                    return <PaginationItem {...item} />;
+                  }
+                  return (
+                    <Link
+                      to={tagProfileRoute.to}
+                      search={{ page: item.page ?? 1 }}
+                      params={{ slug }}
+                    >
+                      <PaginationItem {...item} />
+                    </Link>
+                  );
+                }}
               />
             </>
           ) : (

@@ -119,10 +119,13 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
     return (
       <>
         <MoreHButton>
-          {/* 読者向けのオプションとして目次を追加 */}
-          <StyledListHeader>表示オプション</StyledListHeader>
-          {TocMenuItem}
-          <Divider sx={{ my: 1 }} /> {/* 区切り線 */}
+          {content && (
+            <>
+              <StyledListHeader>表示オプション</StyledListHeader>
+              {TocMenuItem}
+              <Divider sx={{ my: 1 }} />
+            </>
+          )}
           <StyledListHeader>記事の情報</StyledListHeader>
           <Link
             to={articleLikerRoute.to}
@@ -156,9 +159,13 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
     <>
       <MoreHButton>
         {/* 編集系メニューの前に目次を追加 */}
-        <StyledListHeader>表示オプション</StyledListHeader>
-        {TocMenuItem}
-        <Divider sx={{ my: 1 }} />
+        {content && (
+          <>
+            <StyledListHeader>表示オプション</StyledListHeader>
+            {TocMenuItem}
+            <Divider sx={{ my: 1 }} />
+          </>
+        )}
 
         <StyledListHeader>記事の編集</StyledListHeader>
         <MenuItem onClick={handleEdit}>
