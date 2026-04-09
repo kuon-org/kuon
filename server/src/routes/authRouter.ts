@@ -3,8 +3,12 @@ import { Router } from "express";
 import { AuthController } from "../controllers/authController.js";
 import { authenticateToken, optionalAuth } from "../middlewares/auth.js";
 import express from "express";
+import { AuthService } from "../services/authService.js";
+import { AuthRepository } from "../repositories/authRepository.js";
 const authRouter = Router();
-const authController = new AuthController();
+const authRepository = new AuthRepository();
+const authSercice = new AuthService(authRepository);
+const authController = new AuthController(authSercice);
 
 /**
  * @opanapi
