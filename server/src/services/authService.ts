@@ -10,46 +10,31 @@ import prisma from "../prisma/client.js";
 import { SAML } from "@node-saml/node-saml";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
-const pkceStore = new Map<string, { verifier: string }>();
+// userId を保持できるように拡張
+const pkceStore = new Map<string, { verifier: string; userId?: string }>();
 
 export class AuthService {
-  private repo = new AuthRepository();
+  constructor(private repo: AuthRepository) {}
   private AVATAR_DIR = "public/uploads/avatars";
 
-  async generateAuthUrl(providerName: string) {
+  async generateAuthUrl(providerName: string, currentUserId?: string) {
     const record = await this.repo.findProviderByName(providerName);
     if (!record || !record.idp_configurations)
       throw new Error("Provider not found");
     const config = record.idp_configurations.config as any;
 
-    // pkce.default() の戻り値から正しく分割代入する
     const { code_verifier, code_challenge } = await pkce.default();
     const state = crypto.randomUUID();
 
-    // pkceStore に保存する際、プロパティ名を verifier に合わせるか、
-    // あるいは保存側も code_verifier に合わせます。
-    // 既存の handleCallback 側が `pkceStore.get(state)?.verifier` を見ているなら以下：
-    pkceStore.set(state, { verifier: code_verifier });
+    // pkceStore に userId も保存
+    pkceStore.set(state, { verifier: code_verifier, userId: currentUserId });
 
-    // SAML の場合はここで分岐
     if (record.provider_type === "SAML") {
       const saml = await this.getSamlInstance(providerName);
-
-      // --- デバッグ開始 ---
+      // 第1引数の state は RelayState として IdP に送られ、戻ってくる
       const authUrl = await saml.getAuthorizeUrlAsync(state, undefined, {});
-      console.log("---------- SAML DEBUG START ----------");
-      console.log("Target URL (Keycloak SSO):", config.entry_point);
-      console.log("Generated Auth URL:", authUrl);
-
-      // URLからSAMLRequestパラメータを抽出してデコードするためのヒント
-      const urlParams = new URL(authUrl).searchParams;
-      console.log("SAMLRequest (Raw):", urlParams.get("SAMLRequest"));
-      console.log("---------- SAML DEBUG END ----------");
-      // --- デバッグ終了 ---
-
       return { url: authUrl };
     }
-    pkceStore.set(state, { verifier: code_verifier });
 
     const url = new URL(config.auth_url);
     url.searchParams.set("response_type", "code");
@@ -67,20 +52,21 @@ export class AuthService {
     providerName: string,
     code: string,
     state: string,
-    currentUserId?: string,
+    fallbackUserId?: string,
   ) {
     const stored = pkceStore.get(state);
     if (!stored) throw new Error("Invalid state");
+
+    // pkceStore に保存されていた userId を優先的に使用
+    const currentUserId = stored.userId || fallbackUserId;
 
     const record = await this.repo.findProviderByName(providerName);
     if (!record || !record.idp_configurations)
       throw new Error("Provider not found");
     const config = record.idp_configurations.config as any;
 
-    // 1. トークン取得 (結果はそのまま token_data として保存可能)
     const tokenData = await this.fetchToken(config, code, stored.verifier);
 
-    // 2. ユーザー情報の取得元を切り替え
     let rawUserInfo: any;
     if (record.provider_type?.toUpperCase() === "OIDC") {
       if (!tokenData.id_token)
@@ -93,28 +79,24 @@ export class AuthService {
       rawUserInfo = res.data;
     }
 
-    // 3. マッピング
     const idpUser = {
       id: String(get(rawUserInfo, config.mapping.id)),
       username: get(rawUserInfo, config.mapping.username),
       name: get(rawUserInfo, config.mapping.display_name),
     };
 
-    // 4. ユーザー特定/作成 (tokenDataを丸ごと渡す)
     let user = await this.findOrCreateUser(
       record.id,
       idpUser,
       tokenData,
       currentUserId,
     );
+
     if (user.is_active === false) {
-      // pkceStoreのゴミ掃除をしてからエラーを投げる
       pkceStore.delete(state);
-      throw new Error(
-        "このアカウントは無効化されています。管理者に問い合わせてください。",
-      );
+      throw new Error("このアカウントは無効化されています。");
     }
-    // 5. アバター処理
+
     const remoteAvatarUrl = this.getAvatarUrl(rawUserInfo, config.mapping);
     if (remoteAvatarUrl) {
       const localPath = await this.downloadAvatar(
@@ -162,24 +144,16 @@ export class AuthService {
     };
 
     if (config.auth_method === "header") {
-      // Twitterなどの Basic 認証パターン
       const basicAuth = Buffer.from(
         `${config.client_id}:${config.client_secret}`,
       ).toString("base64");
       headers["Authorization"] = `Basic ${basicAuth}`;
-      // Header認証の場合、Bodyに client_id を含めても良いですが、
-      // Twitterは厳格なので Secret は Body に含めないのが安全です
-      params.set("client_id", config.client_id);
-    } else {
-      // GitHubなどの Body 認証パターン
-      params.set("client_id", config.client_id);
-      params.set("client_secret", config.client_secret);
     }
 
     const res = await axios.post(config.token_url, params.toString(), {
       headers,
     });
-    return res.data; // access_token, refresh_token, id_token, expires_in 等が含まれる
+    return res.data;
   }
 
   private getAvatarUrl(raw: any, mapping: any): string | null {
@@ -255,7 +229,6 @@ export class AuthService {
     });
     if (identityCount <= 1)
       throw new Error("最後の連携手段を解除することはできません。");
-
     const files = await fs.readdir(this.AVATAR_DIR).catch(() => []);
     const targetFiles = files.filter((f) =>
       f.startsWith(`${userId}_${providerName}`),
@@ -266,59 +239,43 @@ export class AuthService {
     return this.repo.deleteIdentityAndAvatar(userId, providerName);
   }
 
-  // src/services/authService.ts
-
   private async getSamlInstance(providerName: string) {
     const record = await this.repo.findProviderByName(providerName);
     if (!record || record.idp_configurations == null)
       throw new Error("Invalid SAML provider");
-
     const config = record.idp_configurations.config as any;
-
     return new SAML({
-      // --- 必須・基本設定 ---
       issuer: config.issuer,
       callbackUrl: config.redirect_uri,
       entryPoint: config.entry_point,
       idpCert: this.formatCert(config.cert),
-
-      // --- 詳細設定 (フロントから送信された値を使用) ---
-      // 許容する時刻のズレ (秒 -> ミリ秒に変換)
       acceptedClockSkewMs: (config.clockSkewSeconds || 0) * 1000,
-
-      // Requestの有効期限 (ミリ秒)
-      requestIdExpirationPeriodMs: config.requestIdExpirationMs || 28800000,
-
-      // 署名の検証設定
-      wantAssertionsSigned: config.wantAssertionsSigned ?? true,
-      wantAuthnResponseSigned: config.wantAuthnResponseSigned ?? false,
-
-      // AuthnContextの無効化 (Azure AD等で RequestedAuthnContext が原因でエラーになる場合に使用)
-      disableRequestedAuthnContext:
-        config.disableRequestedAuthnContext ?? false,
-
-      // アルゴリズム系 (デフォルト sha256)
       signatureAlgorithm: config.signature_algorithm || "sha256",
-      digestAlgorithm: config.signature_algorithm || "sha256",
-
-      // Identifier Format
       identifierFormat:
         config.identifier_format ||
         "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
     });
   }
 
-  async handleSamlCallback(providerName: string, body: any) {
-    const saml = await this.getSamlInstance(providerName);
+  async handleSamlCallback(
+    providerName: string,
+    body: any,
+    fallbackUserId?: string,
+  ) {
+    // RelayState から state を取得し、保存されていた userId を復元
+    const state = body.RelayState;
+    const stored = pkceStore.get(state);
+    if (!stored) throw new Error("Invalid SAML state (RelayState)");
 
-    // XMLの検証
+    const currentUserId = stored.userId || fallbackUserId;
+
+    const saml = await this.getSamlInstance(providerName);
     const { profile } = await saml.validatePostResponseAsync(body);
     if (!profile) throw new Error("SAML verification failed");
 
     const record = await this.repo.findProviderByName(providerName);
     const config = record!.idp_configurations!.config as any;
 
-    // 属性マッピング (profileから必要な情報を抜く)
     const idpUser = {
       id: String(get(profile, config.mapping?.id) || profile.nameID),
       username: get(profile, config.mapping?.username),
@@ -327,25 +284,22 @@ export class AuthService {
 
     const tokenDataForDb = JSON.parse(JSON.stringify(profile));
 
-    // 既存のユーザー作成/紐付けロジックに渡す
     const user = await this.findOrCreateUser(
       record!.id,
       idpUser,
       tokenDataForDb,
+      currentUserId,
     );
+    pkceStore.delete(state);
     return jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "24h" });
   }
 
   private formatCert(cert: string): string {
     if (!cert) return "";
-
-    // 1. 全ての改行とスペースを削除して、純粋な Base64 文字列のみを取り出す
     const cleanCert = cert
       .replace(/-----BEGIN CERTIFICATE-----/g, "")
       .replace(/-----END CERTIFICATE-----/g, "")
-      .replace(/\s+/g, ""); // 空白、改行、タブをすべて削除
-
-    // 2. 改めて PEM 形式に包み直す (64文字ごとの改行はライブラリがやってくれるので不要な場合が多いですが、念のため)
+      .replace(/\s+/g, "");
     return `-----BEGIN CERTIFICATE-----\n${cleanCert}\n-----END CERTIFICATE-----`;
   }
 }

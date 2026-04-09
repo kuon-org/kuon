@@ -5,15 +5,18 @@ import { AuthRequest } from "../middlewares/auth.js";
 
 const BASE_URL = process.env.APP_SITE_URL ?? process.env.FRONTEND_URL;
 export class AuthController {
-  private service = new AuthService();
+  constructor(private service: AuthService) {}
 
-  login = async (req: Request, res: Response) => {
+  login = async (req: AuthRequest, res: Response) => {
     try {
+      // ログイン中であれば userId を渡す（共通エンドポイント対応）
       const { url } = await this.service.generateAuthUrl(
         String(req.params.provider),
+        req.user?.userId,
       );
       res.redirect(url);
     } catch (err) {
+      console.error("Auth URL generation failed:", err);
       res.status(500).json({ error: "Auth URL generation failed" });
     }
   };
@@ -23,10 +26,13 @@ export class AuthController {
       const providerName = String(req.params.provider);
       let token: string;
 
-      // メソッドで分岐
       if (req.method === "POST") {
         // SAMLコールバック (POST)
-        token = await this.service.handleSamlCallback(providerName, req.body);
+        token = await this.service.handleSamlCallback(
+          providerName,
+          req.body,
+          req.user?.userId,
+        );
       } else {
         // 既存の OAuth2/OIDC コールバック (GET)
         const { code, state } = req.query;
@@ -45,12 +51,7 @@ export class AuthController {
       });
       res.redirect(BASE_URL || "http://localhost:5050");
     } catch (err: any) {
-      // 詳細をコンソールに出す
-      console.error("Auth Callback Error Details:", {
-        message: err.message,
-        stack: err.stack,
-        response: err.response?.data, // axiosのエラーだった場合、中身が見れる
-      });
+      console.error("Auth Callback Error:", err.message);
       res
         .status(500)
         .json({ error: "Authentication failed", details: err.message });
@@ -67,23 +68,18 @@ export class AuthController {
       res.status(500).json({ error: "Failed to switch avatar" });
     }
   };
+
   unlinkProvider = async (req: AuthRequest, res: Response) => {
     try {
       const provider = String(req.params.provider);
       const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-      // DBの削除実行
-      await this.service.unlinkService(userId, provider); // または repo.deleteIdentityAndAvatar
-
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      await this.service.unlinkService(userId, provider);
       res.json({
         success: true,
         message: `${provider} の連携を解除しました。`,
       });
     } catch (err: any) {
-      console.error("Unlink error:", err);
       res.status(500).json({ error: "連携解除に失敗しました。" });
     }
   };
