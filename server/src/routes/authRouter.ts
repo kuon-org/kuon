@@ -27,7 +27,7 @@ const authController = new AuthController(authSercice);
  *       '200':
  *         description: パラメータの外部認証機構へリダイレクト
  */
-authRouter.get("/auth/:provider/login", authController.login);
+authRouter.get("/auth/:provider/login", optionalAuth, authController.login);
 
 /**
  * @opanapi
