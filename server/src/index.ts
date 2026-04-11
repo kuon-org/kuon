@@ -13,6 +13,7 @@ import commentsRouter from "./routes/commnetsRouter.js";
 import adminRouter from "./routes/adminRouter.js";
 import shareRouter from "./routes/shareRoutes.js";
 import stocksRoutes from "./routes/stocksRoutes.js";
+import pumlRouter from "./routes/plantumlRouter.js";
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
@@ -30,6 +31,7 @@ app.use("/api", idpRouter);
 app.use("/api", commentsRouter);
 app.use("/api", adminRouter);
 app.use("/api", stocksRoutes);
+app.use("/api", pumlRouter);
 app.use("/", authRouter);
 app.use("/", shareRouter);
 app.get("/api-docs.json", (_req, res) => {
