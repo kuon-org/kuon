@@ -19,6 +19,8 @@ import {
   normalizeDirectiveBracketLabelToAttrs,
 } from "../../utils/remark/admonitionDirectives";
 import remarkGemoji from "remark-gemoji";
+import { PlantUMLRenderer } from "./PlantUMLRenderer";
+import { ZoomableContent } from "../common/ZoomableContent";
 
 interface MarkdownRendererProps {
   text: string;
@@ -310,11 +312,18 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
         );
       },
       img: ({ ...props }: any) => (
-        <Box
-          component="img"
-          sx={{ display: "block", maxWidth: "100%", maxHeight: "80vh", my: 2 }}
-          {...props}
-        />
+        <ZoomableContent>
+          <Box
+            component="img"
+            sx={{
+              display: "block",
+              maxWidth: "100%",
+              maxHeight: "80vh",
+              my: 2,
+            }}
+            {...props}
+          />
+        </ZoomableContent>
       ),
 
       table: ({ children }: any) => (
@@ -355,7 +364,14 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
 
       code: ({ inline, className, children, node, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || "");
-
+        if (!inline && match?.[1] === "plantuml") {
+          const code = String(children ?? "").trimEnd();
+          return (
+            <ZoomableContent>
+              <PlantUMLRenderer code={code} />
+            </ZoomableContent>
+          );
+        }
         if (!inline && match?.[1] === "mermaid") {
           // children は配列/改行を含むことがあるので安定化
           const code = String(children ?? "").trimEnd();
@@ -363,7 +379,11 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           // ★ node.position が取れるなら key にして再マウントを抑えやすい（任意）
           const key = node?.position?.start?.offset ?? undefined;
 
-          return <MermaidRenderer key={key} code={code} />;
+          return (
+            <ZoomableContent>
+              <MermaidRenderer key={key} code={code} />
+            </ZoomableContent>
+          );
         }
 
         if (!inline && match?.[1] === "drawio") {
@@ -383,11 +403,13 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
               }}
             >
               <Box sx={{ p: 2, textAlign: "start" }}>
-                <img
-                  src={`data:image/svg+xml;base64,${base64}`}
-                  style={{ maxWidth: "100%", height: "auto" }}
-                  alt="drawio"
-                />
+                <ZoomableContent>
+                  <img
+                    src={`data:image/svg+xml;base64,${base64}`}
+                    style={{ maxWidth: "100%", height: "auto" }}
+                    alt="drawio"
+                  />
+                </ZoomableContent>
               </Box>
               {onEditDrawio && (
                 <Button
@@ -420,17 +442,9 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           return (
             <Box
               sx={{
-                my: 2,
-                p: 2,
                 border: "1px solid divider",
                 borderRadius: 1,
                 overflow: "auto",
-                display: "flex",
-                justifyContent: "center",
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark"
-                    ? "rgba(255,255,255,0.05)"
-                    : "transparent",
               }}
             >
               {isPotentiallyUnsafe ? (
@@ -441,14 +455,16 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
                   安全性に問題があるためSVGを表示できません（scriptタグが検出されました）
                 </Box>
               ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "flex-start",
-                  }}
-                  dangerouslySetInnerHTML={{ __html: svgContent }}
-                />
+                <ZoomableContent>
+                  <div
+                    style={{
+                      width: "auto",
+                      display: "flex",
+                      justifyContent: "flex-start",
+                    }}
+                    dangerouslySetInnerHTML={{ __html: svgContent }}
+                  />
+                </ZoomableContent>
               )}
             </Box>
           );
@@ -520,10 +536,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
             remarkGfm,
             remarkGemoji,
             remarkAdmonitions,
-            [
-              remarkPlantUML,
-              { plantumlUri: import.meta.env.VITE_PLANTUML_URL },
-            ],
+            // [remarkPlantUML, { plantumlUri: "/api/plantuml" }],
           ]}
           rehypePlugins={[
             rehypeRaw,

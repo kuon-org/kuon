@@ -53,6 +53,9 @@ import Trends from "./pages/Trends/Trends";
 import { TagLists } from "./components/Tag/TagLists";
 import { TagEdit } from "./pages/TagEdit";
 import { FollowingTagsPage } from "./pages/User/FollowingTagsPage";
+import { queryClient } from "./utils/queryClient";
+import apiClient from "./api/client";
+import type { Article } from "./hooks/useArticles";
 
 interface MyRouterContext {
   user: { id: string; username: string } | null;
@@ -236,7 +239,32 @@ export const userFollowingTagsRoute = createRoute({
 export const articleRoute = createRoute({
   getParentRoute: () => layoutWithTopRoute,
   path: "$username/$articleId",
-  // component を定義しない場合、自動的に <Outlet /> が描画されます
+  loader: async ({ params }) => {
+    // コンポーネント内のuseQueryと同じKey、同じロジックでデータを取得
+    const article = await queryClient.ensureQueryData({
+      queryKey: ["article", params.articleId],
+      queryFn: async () => {
+        const { data } = await apiClient.get<Article>(
+          `/articles/${params.articleId}`,
+        );
+        return data;
+      },
+    });
+
+    // ユーザー名チェック
+    if (article.users.username !== params.username) {
+      throw redirect({
+        to: "/$username/$articleId", // または articleRoute.to
+        params: {
+          username: article.users.username,
+          articleId: article.id,
+        },
+        replace: true,
+      });
+    }
+
+    return { article };
+  },
 });
 
 export const userStockRoute = createRoute({

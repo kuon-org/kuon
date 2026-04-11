@@ -214,7 +214,7 @@ export const Drafts = () => {
               タイトル未設定
             </Typography>
           )}
-          <Box px={4} mt={1} mb={1} display="flex" gap={1} flexWrap="wrap">
+          <Box mt={1} mb={1} display="flex" gap={1} flexWrap="wrap">
             {selectedArticle?.article_tags.map((tagItem) => (
               <TagChip key={tagItem.tags.id} tag={tagItem.tags} />
             ))}
