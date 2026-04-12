@@ -57,6 +57,25 @@ export class ArticlesController {
       res.status(500).json({ message: error.message });
     }
   };
+
+  getRecommendArticles = async (req: AuthRequest, res: Response) => {
+    try {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
+      const userId = req.user?.userId ?? null;
+
+      const result = await this.articlesService.getRecommendArticleList(
+        userId,
+        page,
+        limit,
+      );
+
+      res.status(200).json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
   getAllArticlesByUserId = async (req: AuthRequest, res: Response) => {
     try {
       if (!isAuthenticated(req))

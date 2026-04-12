@@ -513,4 +513,11 @@ usersRouter.post(
   authenticateToken,
   usersCtrl.deletePickupArticle,
 );
+
+usersRouter.get("/users/:userId/comments", usersCtrl.getCommentCount);
+
+usersRouter.get("/users/:userId/articles", usersCtrl.getArticleCount);
+
+usersRouter.get("/users/ranking/all", usersCtrl.getAllRanking);
+
 export default usersRouter;
