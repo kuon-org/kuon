@@ -168,7 +168,10 @@ export const userSettingsRoute = createRoute({
       <UserSettings />
     </Suspense>
   ),
-  beforeLoad: ({ location }) => {
+  beforeLoad: ({ location, context }) => {
+    if (!context.user) {
+      throw redirect({ to: "/" });
+    }
     if (
       location.pathname === "/settings" ||
       location.pathname === "/settings/"

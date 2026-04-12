@@ -6,28 +6,18 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
-import {
-  Navigate,
-  Outlet,
-  useLocation,
-  useNavigate,
-} from "@tanstack/react-router";
+import { Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   accountSettingRoute,
   publicProfileRoute,
   uploadedImagesRoute,
   user2faSettingRoute,
 } from "../../routes";
-import { useAuthQuery } from "../../hooks/useAuth";
 export const UserSettings = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuthQuery();
-  const isAuth = user ? true : false;
   const isSelected = (path: string) => location.pathname === path;
-  if (!isAuth) {
-    return <Navigate to="/" />;
-  }
+
   return (
     <Container
       sx={{
