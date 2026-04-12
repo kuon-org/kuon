@@ -1,6 +1,7 @@
 import { Paper, Button, Box, Typography, TextField } from "@mui/material";
 import { useState } from "react";
 import { useAuthQuery } from "../../hooks/useAuth";
+import { useNavigate } from "@tanstack/react-router";
 
 export const TwoFASetting = () => {
   const {
@@ -10,9 +11,9 @@ export const TwoFASetting = () => {
     setupVerify2FA,
     setupVerify2FA_isPending,
     delete2FA,
-    delete2FA_isPending
+    delete2FA_isPending,
   } = useAuthQuery();
-
+  const navigate = useNavigate();
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [token, setToken] = useState("");
 
@@ -29,17 +30,16 @@ export const TwoFASetting = () => {
   const handleVerify = () => {
     setupVerify2FA(token, {
       onSuccess: () => {
-        alert("二段階認証を有効化しました！");
         setQrCode(null);
         setToken("");
+        navigate({ to: "/" });
       },
     });
   };
 
-    const handleDelete = () => {
-      delete2FA();
-    }
-
+  const handleDelete = () => {
+    delete2FA();
+  };
 
   return (
     <Paper
@@ -63,7 +63,12 @@ export const TwoFASetting = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             新しい端末で設定したい場合は、一度無効化してください。
           </Typography>
-          <Button color="error" variant="outlined" onClick={handleDelete} disabled={delete2FA_isPending}>
+          <Button
+            color="error"
+            variant="outlined"
+            onClick={handleDelete}
+            disabled={delete2FA_isPending}
+          >
             無効化する
           </Button>
         </Box>

@@ -3,21 +3,21 @@ import { useArticles } from "../../hooks/useArticles";
 import { ArticlesSkeleton } from "../../components/common/Loading/ArticlesSkelton";
 import { ArticleCard } from "../../components/Article/ArticleCard";
 
-const Trends = () => {
+const Timeline = () => {
   const {
-    trendArticles,
-    trendArticlesIsLoading,
-    trendArticlesIsError,
-    trendArticlesHasNextPage, // 追加
-    trendArticlesIsFetchingNextPage, // 追加
-    trendArticlesFetchNextPage, // 追加
+    articles,
+    articles_isLoading: isLoading,
+    articles_isError: isError,
+    hasNextPage, // 追加
+    isFetchingNextPage, // 追加
+    fetchNextPage, // 追加
   } = useArticles();
 
-  if (trendArticlesIsLoading) {
+  if (isLoading) {
     return (
       <Container sx={{ mt: 5 }}>
         <Typography variant="subtitle2" gutterBottom>
-          トレンド
+          タイムライン
         </Typography>
         <Stack spacing={2}>
           {[...Array(5)].map((_, i) => (
@@ -28,7 +28,7 @@ const Trends = () => {
     );
   }
 
-  if (trendArticlesIsError) {
+  if (isError) {
     return (
       <Container sx={{ textAlign: "center", mt: 5 }}>
         <Typography color="error">記事の取得に失敗しました</Typography>
@@ -39,17 +39,16 @@ const Trends = () => {
   return (
     <Container sx={{ mt: 5 }}>
       <Typography variant="subtitle2" gutterBottom>
-        トレンド
+        タイムライン
       </Typography>
-
-      {!trendArticles || trendArticles.length === 0 ? (
+      {!articles || articles.length === 0 ? (
         <Typography>記事がありません</Typography>
       ) : (
         <Stack spacing={{ sm: 0, md: 2 }}>
-          {trendArticles.map((article) => (
+          {articles.map((article) => (
             <ArticleCard key={article.id} article={article} />
           ))}
-          {trendArticlesIsFetchingNextPage && (
+          {isFetchingNextPage && (
             <Stack spacing={2} sx={{ mt: 2 }}>
               {[...Array(3)].map((_, i) => (
                 <ArticlesSkeleton key={i} />
@@ -58,17 +57,15 @@ const Trends = () => {
           )}
         </Stack>
       )}
-      {trendArticlesHasNextPage && (
+      {hasNextPage && (
         <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
           <Button
             variant="outlined"
-            onClick={() => trendArticlesFetchNextPage()}
-            disabled={trendArticlesIsFetchingNextPage}
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
             sx={{ borderRadius: 10, px: 4 }}
           >
-            {trendArticlesIsFetchingNextPage
-              ? "読み込み中..."
-              : "もっと読み込む"}
+            {isFetchingNextPage ? "読み込み中..." : "もっと読み込む"}
           </Button>
         </Box>
       )}
@@ -76,4 +73,4 @@ const Trends = () => {
   );
 };
 
-export default Trends;
+export default Timeline;

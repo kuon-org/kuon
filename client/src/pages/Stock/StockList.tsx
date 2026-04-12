@@ -28,7 +28,7 @@ export const PublicStocksPage = () => {
 
   return (
     <Container sx={{ mt: 5, mb: 10 }}>
-      <Typography variant="h4" sx={{ mb: 4, fontWeight: "bold" }}>
+      <Typography variant="subtitle2" sx={{ mb: 4, fontWeight: "bold" }}>
         新着ストックリスト
       </Typography>
 

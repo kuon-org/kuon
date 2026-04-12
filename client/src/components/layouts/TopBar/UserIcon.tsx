@@ -45,7 +45,11 @@ export const UserIcon = () => {
   };
 
   const handleLogout = async () => {
-    logout();
+    logout(undefined, {
+      onSuccess: async () => {
+        navigate({ to: "/" });
+      },
+    });
     handleCloseMenu();
   };
 

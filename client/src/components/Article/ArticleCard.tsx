@@ -50,6 +50,7 @@ export const ArticleCard = ({ article }: ArticleCardProps) => {
         borderRadius: 2,
         mt: 1,
         width: "auto",
+        height: "100%",
         transition: "background-color 0.2s",
         "&:hover": {
           bgcolor: "action.hover",

@@ -117,15 +117,11 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
   // --- 自分の記事ではない場合 ---
   if (!isOwned)
     return (
-      <>
+      <Box>
         <MoreHButton>
-          {content && (
-            <>
-              <StyledListHeader>表示オプション</StyledListHeader>
-              {TocMenuItem}
-              <Divider sx={{ my: 1 }} />
-            </>
-          )}
+          {content && <StyledListHeader>表示オプション</StyledListHeader>}
+          {content && TocMenuItem}
+          {content && <Divider sx={{ my: 1 }} />}
           <StyledListHeader>記事の情報</StyledListHeader>
           <Link
             to={articleLikerRoute.to}
@@ -151,21 +147,17 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
           </MenuItem>
         </MoreHButton>
         {tocDrawer} {/* Drawerを配置 */}
-      </>
+      </Box>
     );
 
   // --- 自分の記事の場合 ---
   return (
-    <>
+    <Box>
       <MoreHButton>
         {/* 編集系メニューの前に目次を追加 */}
-        {content && (
-          <>
-            <StyledListHeader>表示オプション</StyledListHeader>
-            {TocMenuItem}
-            <Divider sx={{ my: 1 }} />
-          </>
-        )}
+        {content && <StyledListHeader>表示オプション</StyledListHeader>}
+        {content && TocMenuItem}
+        {content && <Divider sx={{ my: 1 }} />}
 
         <StyledListHeader>記事の編集</StyledListHeader>
         <MenuItem onClick={handleEdit}>
@@ -204,6 +196,6 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
         </MenuItem>
       </MoreHButton>
       {tocDrawer} {/* Drawerを配置 */}
-    </>
+    </Box>
   );
 };

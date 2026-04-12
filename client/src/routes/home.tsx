@@ -6,6 +6,7 @@ import Loading from "../components/common/Loading/Loading";
 // 遅延ローディング対応
 const Home = lazy(() => import("../pages/Home/Home"));
 const Trends = lazy(() => import("../pages/Trends/Trends"));
+const Timeline = lazy(() => import("../pages/Timeline/Timeline"));
 const SearchPage = lazy(() =>
   import("../pages/Search/SearchPage").then((mod) => ({
     default: mod.SearchPage,
@@ -49,7 +50,11 @@ export const trendRoute = createRoute({
 export const timelineRoute = createRoute({
   getParentRoute: () => sidebarLayoutRoute,
   path: "timeline",
-  component: () => <div>タイムライン</div>,
+  component: () => (
+    <Suspense fallback={<LoadingFallback />}>
+      <Timeline />
+    </Suspense>
+  ),
 });
 
 /**

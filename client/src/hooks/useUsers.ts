@@ -15,6 +15,14 @@ interface User {
   last_login_at: string;
   created_by: any;
 }
+
+interface Ranking {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string;
+  contribution: number;
+}
 export const useUserQuery = (username?: string, userId?: string) => {
   const { error, notify } = useNotify();
   const queryClient = useQueryClient();
@@ -53,6 +61,21 @@ export const useUserQuery = (username?: string, userId?: string) => {
     queryFn: async () => {
       const res = await apiClient.get(`/users/${userQuery.data!.id}/follower`);
       return res.data;
+    },
+  });
+
+  const getCommentCount = useQuery({
+    queryKey: ["commentCount", userQuery.data?.id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/users/${userQuery.data!.id}/comments`);
+      return res.data.commentCount;
+    },
+  });
+  const getArticleCount = useQuery({
+    queryKey: ["articleCount", userQuery.data?.id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/users/${userQuery.data!.id}/articles`);
+      return res.data.articleCount;
     },
   });
 
@@ -121,6 +144,14 @@ export const useUserQuery = (username?: string, userId?: string) => {
     },
   });
 
+  const allRanking = useQuery<Ranking[]>({
+    queryKey: ["allranking"],
+    queryFn: async () => {
+      const res = await apiClient.get("/users/ranking/all");
+      return res.data;
+    },
+  });
+
   return {
     user: userQuery.data,
     isLoading: userQuery.isLoading,
@@ -141,5 +172,14 @@ export const useUserQuery = (username?: string, userId?: string) => {
 
     createPickup: createPickupArticles.mutateAsync,
     deletePickup: deletePickupArticles.mutateAsync,
+
+    commentCount: getCommentCount.data,
+    commentCountIsLoading: getCommentCount.isLoading,
+
+    articleCount: getArticleCount.data,
+    articleCountIsLoading: getArticleCount.isLoading,
+
+    ranking: allRanking.data,
+    rankingIsLoading: allRanking.isLoading,
   };
 };
