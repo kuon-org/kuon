@@ -29,7 +29,11 @@ export const AvatarUpload = () => {
       error("ファイルを選択してください。");
       return;
     }
-    localAvatarUpload(selectedFile);
+    localAvatarUpload(selectedFile, {
+      onSuccess: async () => {
+        navigate({ to: accountSettingRoute.to });
+      },
+    });
   };
   const handleCancel = () => {
     navigate({ to: accountSettingRoute.to });

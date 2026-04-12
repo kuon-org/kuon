@@ -1,18 +1,26 @@
 import { Button, TextField, Typography, Paper } from "@mui/material";
 import { useState } from "react";
 import { useAuthQuery } from "../../hooks/useAuth";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Login2FA = () => {
   const { loginVerify2FA, loginVerify2FA_isPending } = useAuthQuery();
   const [token, setToken] = useState("");
   const email = sessionStorage.getItem("pendingEmail");
-
+  const navigate = useNavigate();
   const handleVerify = () => {
     if (!email) {
       alert("メール情報が見つかりません。ログインをやり直してください。");
       return;
     }
-    loginVerify2FA({ email, token });
+    loginVerify2FA(
+      { email, token },
+      {
+        onSuccess: async () => {
+          navigate({ to: "/" });
+        },
+      },
+    );
   };
 
   return (

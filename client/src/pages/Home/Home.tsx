@@ -1,23 +1,26 @@
-import { Container, Typography, Stack, Box, Button } from "@mui/material";
+import { Container, Typography, Stack, Box, Button, Grid } from "@mui/material";
 import { useArticles } from "../../hooks/useArticles";
 import { ArticlesSkeleton } from "../../components/common/Loading/ArticlesSkelton";
 import { ArticleCard } from "../../components/Article/ArticleCard";
+import { Link } from "@tanstack/react-router";
 
 const Home = () => {
   const {
-    articles,
-    articles_isLoading: isLoading,
-    articles_isError: isError,
-    hasNextPage, // 追加
-    isFetchingNextPage, // 追加
-    fetchNextPage, // 追加
+    trendArticles,
+    trendArticlesIsLoading,
+    recommendArticles: articles,
+    recommendArticlesIsLoading: isLoading,
+    recommendArticlesIsError: isError,
+    recommendArticlesHasNextPage: hasNextPage, // 追加
+    recommendArticlesFetchingNextPage: isFetchingNextPage, // 追加
+    recommendArticlesFetchNextPage: fetchNextPage, // 追加
   } = useArticles();
 
   if (isLoading) {
     return (
       <Container sx={{ mt: 5 }}>
-        <Typography variant="h4" gutterBottom>
-          最新記事
+        <Typography variant="subtitle2" gutterBottom>
+          おすすめの記事
         </Typography>
         <Stack spacing={2}>
           {[...Array(5)].map((_, i) => (
@@ -38,12 +41,37 @@ const Home = () => {
 
   return (
     <Container sx={{ mt: 5 }}>
-      <Typography variant="h4" gutterBottom>
-        最新記事
+      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Typography variant="subtitle2" gutterBottom>
+          トレンドの記事
+        </Typography>
+        <Link to="/trend" style={{ textDecoration: "none", color: "inherit" }}>
+          トレンド一覧を見る
+        </Link>
+      </Box>
+      {trendArticlesIsLoading ? (
+        <Stack direction="row" spacing={2}>
+          {[...Array(3)].map((_, i) => (
+            <ArticlesSkeleton key={i} />
+          ))}
+        </Stack>
+      ) : (
+        <Grid container spacing={2} alignItems="stretch">
+          {trendArticles?.slice(0, 3).map((article) => (
+            <Grid size={{ xs: 12, md: 4 }} key={article.id}>
+              <ArticleCard article={article} />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+      <Typography variant="subtitle2" gutterBottom mt={2}>
+        おすすめの記事
       </Typography>
 
       {!articles || articles.length === 0 ? (
-        <Typography>記事がありません</Typography>
+        <Typography>
+          タグのフォローや記事のいいねをするとここに記事が表示されます
+        </Typography>
       ) : (
         <Stack spacing={{ sm: 0, md: 2 }}>
           {articles.map((article) => (

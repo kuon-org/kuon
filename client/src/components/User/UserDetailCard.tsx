@@ -13,18 +13,22 @@ interface UserDetailCardProps {
   username: string;
 }
 
-const mockdata = {
-  article_count: 0,
-  follow_count: 0,
-  follower_count: 0,
-  contribution: 0,
-};
-
 export const UserDetailCard = ({ username }: UserDetailCardProps) => {
   const { user: data } = useAuthQuery();
-  const { user, isFollowing, follow, follower_count, following_count } =
-    useUserQuery(username);
+  const {
+    user,
+    isFollowing,
+    follow,
+    follower_count,
+    following_count,
+    commentCount,
+    commentCountIsLoading,
+    articleCount,
+    articleCountIsLoading,
+  } = useUserQuery(username);
   const navigate = useNavigate();
+  if (commentCountIsLoading || articleCountIsLoading) return <></>;
+  const contribution = commentCount + articleCount;
   const isMe = user?.id === data?.id;
   if (!user) return <>ユーザが見つかりません</>;
   return (
@@ -70,7 +74,7 @@ export const UserDetailCard = ({ username }: UserDetailCardProps) => {
           gap: 1,
         }}
       >
-        <Typography variant="body1">{mockdata.contribution}</Typography>
+        <Typography variant="body1">{contribution}</Typography>
         <Typography variant="caption"> Contribution</Typography>
       </Box>
 
@@ -96,7 +100,7 @@ export const UserDetailCard = ({ username }: UserDetailCardProps) => {
               flexDirection: "column",
             }}
           >
-            <Typography variant="caption">{mockdata.article_count}</Typography>
+            <Typography variant="caption">{articleCount}</Typography>
             <Typography variant="caption">投稿</Typography>
           </Link>
         </Box>

@@ -120,7 +120,6 @@ const LeftSection = ({ children, sticky = false }: LeftSectionProps) => {
         minWidth: "200px",
         maxWidth: "300px",
         ml: "auto",
-        p: 2,
         height: "fit-content",
         position: sticky ? "sticky" : "relative",
         top: sticky ? "120px" : "auto",
@@ -130,7 +129,7 @@ const LeftSection = ({ children, sticky = false }: LeftSectionProps) => {
         overflowY: "auto",
       }}
     >
-      <Box sx={{ width: sticky ? 120 : 200, mx: "auto", p: 2, mt: 4 }}>
+      <Box sx={{ width: sticky ? 120 : 250, mx: "auto", p: 2, mt: 4 }}>
         {!children ? (
           <Typography variant="h6" gutterBottom>
             何か入れる予定
