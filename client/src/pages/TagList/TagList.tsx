@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import { useTagsQuery } from "../../hooks/useTags";
 import { useNavigate } from "@tanstack/react-router";
-import { tagProfileRoute } from "../../router";
+import { tagProfileRoute } from "../../routes";
 
 // APIのデータ構造に合わせた型定義
 interface Tag {

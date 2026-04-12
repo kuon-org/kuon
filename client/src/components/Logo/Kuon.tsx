@@ -1,4 +1,4 @@
-import Kuon from "../../assets/kuon.svg";
+// import Kuon from "../../assets/kuon.svg";
 
 interface KuonLogoProps {
   size?: number;

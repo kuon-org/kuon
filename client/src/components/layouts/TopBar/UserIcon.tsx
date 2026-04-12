@@ -19,7 +19,7 @@ import { ThemeSelect } from "../../common/ThemeSelect";
 import ContrastIcon from "@mui/icons-material/Contrast";
 import DeleteIcon from "@mui/icons-material/Delete";
 import styled from "@emotion/styled";
-import { stocksRoute } from "../../../router";
+import { stocksRoute } from "../../../routes";
 
 const StyledListHeader = styled(Box)({
   display: "flex",

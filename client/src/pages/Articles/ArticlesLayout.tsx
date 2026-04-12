@@ -4,7 +4,7 @@ import RightSection from "../../components/layouts/SideSection/RightSection";
 import TocList from "../../components/Markdown/TocList";
 import { useArticles } from "../../hooks/useArticles";
 import Articles from "./Articles";
-import { articleLikerRoute, articleRoute } from "../../router";
+import { articleLikerRoute, articleRoute } from "../../routes";
 import { LikeButton } from "../../components/Like/LikeButton";
 import { Link } from "@tanstack/react-router";
 import { More } from "../../components/Markdown/More";

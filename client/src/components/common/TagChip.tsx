@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { tagProfileRoute } from "../../router";
+import { tagProfileRoute } from "../../routes";
 import { Avatar, Chip } from "@mui/material";
 
 interface Tag {

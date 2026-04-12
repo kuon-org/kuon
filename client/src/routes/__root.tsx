@@ -1,0 +1,88 @@
+import {
+  createRootRouteWithContext,
+  createRoute,
+  Outlet,
+} from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { Box } from "@mui/material";
+
+import TopBar from "../components/layouts/TopBar/TopBar";
+import TabsBar from "../components/layouts/TopBar/TabsBar";
+import LeftSection from "../components/layouts/SideSection/LeftSection";
+import RightSection from "../components/layouts/SideSection/RightSection";
+import { Footer } from "../components/layouts/Footer/Footer";
+import { NotificationManager } from "../components/common/NotificationManager";
+import { TagLists } from "../components/Tag/TagLists";
+
+export interface MyRouterContext {
+  user: { id: string; username: string } | null;
+}
+
+/**
+ * 完全に素のルート（最上位）
+ */
+export const baseRootRoute = createRootRouteWithContext<MyRouterContext>()({
+  component: () => (
+    <>
+      <NotificationManager />
+      <Outlet />
+      <TanStackRouterDevtools initialIsOpen={false} />
+    </>
+  ),
+});
+
+/**
+ * TopBar + TabsBar 付きレイアウト
+ */
+export const layoutWithTopRoute = createRoute({
+  getParentRoute: () => baseRootRoute,
+  id: "layout-with-top",
+  component: () => (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
+      }}
+    >
+      <TopBar />
+      <TabsBar />
+      <Box component="main" sx={{ flexGrow: 1 }}>
+        <Outlet />
+      </Box>
+      <Footer />
+    </Box>
+  ),
+});
+
+/**
+ * サイドバー付きレイアウト
+ */
+export const sidebarLayoutRoute = createRoute({
+  getParentRoute: () => layoutWithTopRoute,
+  id: "layout-with-sidebar",
+  component: () => (
+    <Box sx={{ display: "flex" }}>
+      <LeftSection>
+        <TagLists />
+      </LeftSection>
+      <Box sx={{ flex: 1, py: 3, px: { sm: 0, md: 3 } }}>
+        <Outlet />
+      </Box>
+      <RightSection />
+    </Box>
+  ),
+});
+
+/**
+ * 完全に素のレイアウト（TopBarもSidebarもなし）
+ */
+export const plainLayoutRoute = createRoute({
+  getParentRoute: () => baseRootRoute,
+  id: "layout-plain",
+  component: () => (
+    <Box>
+      <Outlet />
+    </Box>
+  ),
+});

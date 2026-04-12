@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { useUserQuery } from "../../hooks/useUsers";
-import { userRoute } from "../../router";
+import { userRoute } from "../../routes";
 import { PickupArticles } from "./PickupList";
 import { UserArticles } from "./UserArticles";
 

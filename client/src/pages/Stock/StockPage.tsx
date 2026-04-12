@@ -18,7 +18,6 @@ import { useAuthQuery } from "../../hooks/useAuth";
 import { useUserQuery } from "../../hooks/useUsers";
 import { TagChip } from "../../components/common/TagChip";
 import { LikeButton } from "../../components/Like/LikeButton";
-import { useCallback } from "react";
 
 export const StockPage = () => {
   const { listId } = useParams({ strict: false });

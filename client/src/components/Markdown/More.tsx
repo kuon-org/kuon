@@ -7,7 +7,7 @@ import {
 } from "@mui/material"; // インポートを追加
 import { MoreHButton } from "../common/MoreHbutton";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { articleEditRoute, articleLikerRoute } from "../../router";
+import { articleEditRoute, articleLikerRoute } from "../../routes";
 import ModeEditIcon from "@mui/icons-material/ModeEdit";
 import TextSnippetIcon from "@mui/icons-material/TextSnippet";
 import DeleteIcon from "@mui/icons-material/Delete";

@@ -17,7 +17,7 @@ import {
   publicProfileRoute,
   uploadedImagesRoute,
   user2faSettingRoute,
-} from "../../router";
+} from "../../routes";
 import { useAuthQuery } from "../../hooks/useAuth";
 export const UserSettings = () => {
   const navigate = useNavigate();

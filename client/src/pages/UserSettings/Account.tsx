@@ -15,7 +15,7 @@ import { useAuthQuery } from "../../hooks/useAuth";
 import { useForm } from "@tanstack/react-form";
 import Loading from "../../components/common/Loading/Loading";
 import { Link } from "@tanstack/react-router";
-import { accountCustomImageRoute } from "../../router";
+import { accountCustomImageRoute } from "../../routes";
 
 export const Account = () => {
   const {

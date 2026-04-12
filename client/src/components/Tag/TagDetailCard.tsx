@@ -12,7 +12,7 @@ import { useAuthQuery } from "../../hooks/useAuth";
 import { MoreHButton } from "../common/MoreHbutton";
 import Loading from "../common/Loading/Loading";
 import { useNavigate } from "@tanstack/react-router";
-import { tagEditRoute } from "../../router";
+import { tagEditRoute } from "../../routes";
 
 interface TagDetailCardProps {
   tag: Tag;

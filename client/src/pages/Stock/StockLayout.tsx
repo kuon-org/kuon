@@ -17,7 +17,7 @@ import {
 import { useStocks } from "../../hooks/useStocks";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import { stocksNewRoute, stocksRoute } from "../../router";
+import { stocksNewRoute, stocksRoute } from "../../routes";
 
 export const StocksLayout = () => {
   const navigate = useNavigate();

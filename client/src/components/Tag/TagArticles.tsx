@@ -1,9 +1,8 @@
 import { Link, useSearch } from "@tanstack/react-router";
-import { tagProfileRoute } from "../../router";
+import { tagProfileRoute } from "../../routes";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "../../api/client";
 import {
-  Container,
   Typography,
   Stack,
   Box,

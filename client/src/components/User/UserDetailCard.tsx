@@ -7,7 +7,7 @@ import {
   userFollowerRoute,
   userFollowingRoute,
   userProfileIndexRoute,
-} from "../../router";
+} from "../../routes";
 
 interface UserDetailCardProps {
   username: string;

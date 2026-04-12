@@ -17,7 +17,7 @@ import { useState } from "react";
 import { useStocks } from "../../hooks/useStocks";
 import { useTagsQuery } from "../../hooks/useTags";
 import { useNavigate } from "@tanstack/react-router";
-import { stocksDetailsRoute, stocksRoute } from "../../router";
+import { stocksDetailsRoute, stocksRoute } from "../../routes";
 
 interface StockEditPageProps {
   initialData?: any; // 既存リストのデータ

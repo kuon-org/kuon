@@ -14,7 +14,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useTagsQuery } from "../../hooks/useTags";
 import { Link } from "@tanstack/react-router";
-import { tagProfileRoute } from "../../router";
+import { tagProfileRoute } from "../../routes";
 
 export const TagLists = () => {
   const { myFollowingTags, myFollowingTagsIsLoading, myFollowingTagsIsError } =
