@@ -361,4 +361,65 @@ export class UsersRepository {
       },
     });
   }
+
+  async commentCount(userId: string) {
+    return await prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        _count: {
+          select: {
+            comments: {
+              where: { is_deleted: false },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async articleCount(userId: string) {
+    return await prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        _count: {
+          select: {
+            articles: {
+              where: {
+                is_deleted: false,
+                is_published: true,
+                is_private: false,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async allRanking() {
+    return await prisma.users.findMany({
+      where: {
+        is_active: true, // アクティブなユーザーのみ
+      },
+      select: {
+        id: true,
+        username: true,
+        display_name: true,
+        avatar_url: true,
+        _count: {
+          select: {
+            articles: {
+              where: {
+                is_deleted: false,
+                is_published: true,
+                is_private: false,
+              },
+            },
+            comments: { where: { is_deleted: false } },
+          },
+        },
+      },
+      take: 10, // 上位10名
+    });
+  }
 }

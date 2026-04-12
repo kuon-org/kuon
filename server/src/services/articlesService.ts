@@ -22,6 +22,14 @@ export class ArticlesService {
       limit,
     );
   }
+
+  async getRecommendArticleList(
+    userId: string | null,
+    page: number,
+    limit: number,
+  ) {
+    return await this.articlesRepo.findRecommendedArticles(userId, page, limit);
+  }
   async getArticle(articleId: string, currentUserId?: string) {
     const article = await this.articlesRepo.findArticleById(articleId);
     if (!article || article.is_deleted) throw new Error("ArticleNotFound");

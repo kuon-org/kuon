@@ -559,4 +559,33 @@ export class UsersController {
       res.status(500).json({ message: error.message });
     }
   };
+
+  getCommentCount = async (req: Request, res: Response) => {
+    try {
+      const userId = String(req.params.userId);
+      const result = await this.usersService.getUserCommentCount(userId);
+      res.json({ commentCount: result });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  getArticleCount = async (req: Request, res: Response) => {
+    try {
+      const userId = String(req.params.userId);
+      const result = await this.usersService.getUserArticleCount(userId);
+      res.json({ articleCount: result });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  getAllRanking = async (req: Request, res: Response) => {
+    try {
+      const result = await this.usersService.getAllRanking();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
 }

@@ -101,8 +101,7 @@ export class UsersService {
   async get2FASettingValue(userId: string) {
     const user = await this.usersRepo.findUserById(userId);
     const security = await this.usersRepo.findUserSecurity(userId);
-    if (!user || !security) throw new Error("2FA設定が見つかりません");
-    return { email: user.email, totp_secret: security.totp_secret };
+    return { email: user?.email, totp_secret: security?.totp_secret };
   }
 
   async getIs2FAEnabled(userId: string) {
@@ -204,5 +203,34 @@ export class UsersService {
 
   async deletePickupArticle(userId: string, articleId: string) {
     return await this.articlesRepo.deletePickupArticle(userId, articleId);
+  }
+
+  async getUserCommentCount(userId: string) {
+    const result = await this.usersRepo.commentCount(userId);
+    if (!result) return 0;
+    return result._count.comments;
+  }
+
+  async getUserArticleCount(userId: string) {
+    const result = await this.usersRepo.articleCount(userId);
+    if (!result) return 0;
+    return result._count.articles;
+  }
+
+  async getAllRanking() {
+    const users = await this.usersRepo.allRanking();
+
+    return (
+      users
+        .map((user) => {
+          const { _count, ...userData } = user;
+          return {
+            ...userData,
+            contribution: _count.articles + _count.comments,
+          };
+        })
+        // 合計値の降順でソート
+        .sort((a, b) => b.contribution - a.contribution)
+    );
   }
 }

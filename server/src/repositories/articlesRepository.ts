@@ -157,6 +157,81 @@ export class ArticlesRepository {
     };
   }
 
+  async findRecommendedArticles(
+    userId: string | null,
+    page: number,
+    limit: number,
+  ) {
+    const skip = (page - 1) * limit;
+
+    let where: any = {
+      is_published: true,
+      is_deleted: false,
+      is_private: false,
+    };
+
+    if (userId) {
+      const followTags = await this.db.tag_follows.findMany({
+        where: { user_id: userId },
+        select: { tag_id: true },
+      });
+      const tagIds = followTags.map((ft) => ft.tag_id);
+
+      where.NOT = { user_id: userId };
+
+      if (tagIds.length > 0) {
+        where.article_tags = {
+          some: { tag_id: { in: tagIds } },
+        };
+      }
+    }
+
+    // 全体件数とデータを同時に取得
+    const [totalCount, articles] = await Promise.all([
+      this.db.articles.count({ where }),
+      this.db.articles.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [{ like_count: "desc" }, { created_at: "desc" }],
+        select: {
+          id: true,
+          user_id: true,
+          title: true,
+          summary: true,
+          created_at: true,
+          updated_at: true,
+          like_count: true,
+          stock_count: true,
+          view_count: true,
+          comment_count: true,
+          users: {
+            select: {
+              username: true,
+              display_name: true,
+              avatar_url: true,
+            },
+          },
+          article_tags: {
+            select: {
+              tags: {
+                select: { id: true, name: true, slug: true, avatar_url: true },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      articles,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+      limit,
+    };
+  }
+
   // 現状はピックアップ記事登録に利用
   async findAllArticlesByUserId(userId: string) {
     return this.db.articles.findMany({
