@@ -30,7 +30,7 @@ export const useUserQuery = (username?: string, userId?: string) => {
   const userQuery = useQuery<User>({
     queryKey: ["user", username],
     queryFn: async () => {
-      const res = await apiClient.get(`/users/${username}`);
+      const res = await apiClient.get<User>(`/users/${username}`);
       return res.data;
     },
     enabled: !!username, // usernameがある場合のみ実行

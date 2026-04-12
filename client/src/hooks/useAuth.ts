@@ -1,7 +1,7 @@
 // src/hooks/useAuth.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../api/client";
-import type { AxiosError } from "axios";
+import type { HttpError } from "../api/types";
 import { useState } from "react";
 import authClient from "../api/authClient";
 import { useNotify } from "./useNotify";
@@ -114,7 +114,7 @@ export const useAuthQuery = () => {
         await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       }
     },
-    onError: (error: AxiosError) => {
+    onError: (error: HttpError) => {
       setServerError(error.response?.data?.message);
     },
   });
@@ -132,7 +132,7 @@ export const useAuthQuery = () => {
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       sessionStorage.removeItem("pendingEmail");
     },
-    onError: (err: AxiosError) => {
+    onError: (err: HttpError) => {
       error(err.response?.data?.message || "認証コードが正しくありません");
     },
   });
@@ -170,7 +170,7 @@ export const useAuthQuery = () => {
       // ログイン情報を再取得
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
-    onError: (err: AxiosError) => {
+    onError: (err: HttpError) => {
       error(err.response?.data?.message || "認証コードの検証に失敗しました");
     },
   });
@@ -215,7 +215,7 @@ export const useAuthQuery = () => {
       setSuccessMessage(data.message || "プロフィールを更新しました！");
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
-    onError: (error: AxiosError) => {
+    onError: (error: HttpError) => {
       setServerError(error.response?.data?.message);
     },
   });
@@ -231,7 +231,7 @@ export const useAuthQuery = () => {
       setSuccessMessage(data.message || "ユーザ名を更新しました！");
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
-    onError: (error: AxiosError) => {
+    onError: (error: HttpError) => {
       setServerError(error.response?.data?.message);
     },
   });
@@ -283,7 +283,7 @@ export const useAuthQuery = () => {
       await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
       success("連携を解除しました");
     },
-    onError: (err: AxiosError) => {
+    onError: (err: HttpError) => {
       const message =
         (err.response?.data as any)?.error || "解除に失敗しました";
       error(message);
