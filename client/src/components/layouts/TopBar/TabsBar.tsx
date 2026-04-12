@@ -5,8 +5,8 @@ import {
   stockListRoute,
   stocksDetailsRoute,
   stocksRoute,
-  userStockRoute,
-} from "../../../router";
+} from "../../../routes";
+import { userStockRoute } from "../../../routes";
 
 const TabsBar = () => {
   const matchRoute = useMatchRoute();

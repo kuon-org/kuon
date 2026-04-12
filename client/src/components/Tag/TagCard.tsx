@@ -10,7 +10,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { useTagsQuery } from "../../hooks/useTags";
 import Loading from "../common/Loading/Loading";
-import { tagProfileRoute } from "../../router";
+import { tagProfileRoute } from "../../routes";
 type Tag = {
   id: string;
   name: string;

@@ -6,7 +6,6 @@ import {
   useInfiniteQuery,
 } from "@tanstack/react-query";
 import apiClient from "../api/client";
-import { useNavigate } from "@tanstack/react-router";
 import { useNotify } from "./useNotify";
 
 interface Tag {

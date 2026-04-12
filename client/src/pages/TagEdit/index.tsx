@@ -1,7 +1,7 @@
 import { Container } from "@mui/material";
 import Loading from "../../components/common/Loading/Loading";
 import { useTagsQuery } from "../../hooks/useTags";
-import { tagEditRoute, tagProfileRoute } from "../../router";
+import { tagEditRoute, tagProfileRoute } from "../../routes";
 import { TagEditForm } from "./TagEditForm";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { Navigate } from "@tanstack/react-router";

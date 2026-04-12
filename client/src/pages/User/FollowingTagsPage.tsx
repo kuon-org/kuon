@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "../../api/client";
-import { tagsRoute, userRoute } from "../../router";
+import { userRoute, tagsRoute } from "../../routes";
 import { useUserQuery } from "../../hooks/useUsers";
 import { TagCard } from "../../components/Tag/TagCard";
 import SearchIcon from "@mui/icons-material/Search";

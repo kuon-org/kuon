@@ -18,7 +18,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { adminRoute } from "../../../router";
+import { adminRoute } from "../../../routes";
 import { useState } from "react";
 import { KuonLogo } from "../../Logo/Kuon";
 

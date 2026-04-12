@@ -11,7 +11,7 @@ import { Link, useParams, useSearch } from "@tanstack/react-router";
 import { useStocks } from "../../hooks/useStocks";
 import { ArticleCard } from "../../components/Article/ArticleCard";
 import { StockSearchBar } from "../../components/Search/StockSearchBar";
-import { stockEditRoute } from "../../router";
+import { stockEditRoute } from "../../routes";
 
 export const StockDetail = () => {
   const { listId, username } = useParams({ strict: false });

@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Box } from "@mui/material";
 import apiClient from "../../api/client";
 import LoadingSkelton from "../common/Loading/LoadingSkelton";
-import Loading from "../common/Loading/Loading";
 
 export const PlantUMLRenderer = ({ code }: { code: string }) => {
   const { data, isLoading, isError } = useQuery({
@@ -22,7 +21,7 @@ export const PlantUMLRenderer = ({ code }: { code: string }) => {
   if (isLoading) {
     return (
       <Box sx={{ my: 2, opacity: 0.6 }}>
-        <Loading />
+        <LoadingSkelton />
       </Box>
     );
   }
