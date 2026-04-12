@@ -1,19 +1,27 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react({
       babel: {
-        plugins: [['babel-plugin-react-compiler']],
+        plugins: [["babel-plugin-react-compiler"]],
       },
     }),
   ],
+
+  build: {
+    minify: "esbuild",
+  },
+  esbuild: {
+    drop: ["console", "debugger"],
+  },
+
   server: {
     host: true,
     port: 5050,
-    allowedHosts: ['www.hiroppe.f5.si'],
+    allowedHosts: ["demo.kuon.f5.si"],
     proxy: {
       "/auth": {
         target: "http://localhost:3030",
@@ -34,8 +42,8 @@ export default defineConfig({
       },
     },
     hmr: {
-      host: 'localhost',
-      protocol: 'ws',
-    }
-  }
-})
+      host: "localhost",
+      protocol: "ws",
+    },
+  },
+});
