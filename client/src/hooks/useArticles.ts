@@ -188,6 +188,29 @@ export const useArticles = (articleId?: string) => {
     initialPageParam: 1,
   });
 
+  const recommendArticlesInfiniteQuery = useInfiniteQuery({
+    queryKey: ["recommends"],
+    queryFn: async ({ pageParam = 1 }) => {
+      const { data } = await apiClient.get<PaginatedArticles>(
+        `/articles/recommends`,
+        {
+          params: {
+            page: pageParam,
+            limit: 10,
+          },
+        },
+      );
+      return data;
+    },
+    getNextPageParam: (lastPage) => {
+      // 現在のページが総ページ数より少なければ次のページ番号を返す
+      return lastPage.currentPage < lastPage.totalPages
+        ? lastPage.currentPage + 1
+        : undefined;
+    },
+    initialPageParam: 1,
+  });
+
   const trendArticlesInifiniteQuery = useInfiniteQuery({
     queryKey: ["trends"],
     queryFn: async ({ pageParam = 1 }) => {
@@ -411,6 +434,19 @@ export const useArticles = (articleId?: string) => {
     isFetchingNextPage: articlesInfiniteQuery.isFetchingNextPage, // 追加読み込み中か
     fetchNextPage: articlesInfiniteQuery.fetchNextPage,
     /** */
+
+    recommendArticles:
+      recommendArticlesInfiniteQuery.data?.pages.flatMap(
+        (page) => page.articles,
+      ) ?? [],
+    recommendArticlesIsLoading: recommendArticlesInfiniteQuery.isLoading,
+    recommendArticlesIsError: recommendArticlesInfiniteQuery.isError,
+    recommendArticlesHasNextPage: recommendArticlesInfiniteQuery.hasNextPage,
+    recommendArticlesFetchingNextPage:
+      recommendArticlesInfiniteQuery.isFetchingNextPage,
+    recommendArticlesFetchNextPage:
+      recommendArticlesInfiniteQuery.fetchNextPage,
+
     trendArticles:
       trendArticlesInifiniteQuery.data?.pages.flatMap(
         (page) => page.articles,

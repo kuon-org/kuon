@@ -4,7 +4,7 @@ import {
   Outlet,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { Box } from "@mui/material";
+import { Box, Divider } from "@mui/material";
 
 import TopBar from "../components/layouts/TopBar/TopBar";
 import TabsBar from "../components/layouts/TopBar/TabsBar";
@@ -13,6 +13,7 @@ import RightSection from "../components/layouts/SideSection/RightSection";
 import { Footer } from "../components/layouts/Footer/Footer";
 import { NotificationManager } from "../components/common/NotificationManager";
 import { TagLists } from "../components/Tag/TagLists";
+import { Ranking } from "../components/Ranking";
 
 export interface MyRouterContext {
   user: { id: string; username: string } | null;
@@ -65,6 +66,8 @@ export const sidebarLayoutRoute = createRoute({
     <Box sx={{ display: "flex" }}>
       <LeftSection>
         <TagLists />
+        <Divider sx={{ py: 1 }} />
+        <Ranking />
       </LeftSection>
       <Box sx={{ flex: 1, py: 3, px: { sm: 0, md: 3 } }}>
         <Outlet />

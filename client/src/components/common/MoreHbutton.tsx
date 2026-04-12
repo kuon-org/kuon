@@ -1,7 +1,8 @@
 import { useState } from "react";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import { IconButton, Menu, type PopoverOrigin } from "@mui/material";
+import { Box, IconButton, Menu, type PopoverOrigin } from "@mui/material";
 import type { ReactNode, MouseEvent } from "react";
+import React from "react";
 
 interface MoreHButtonProps {
   children: ReactNode;
@@ -27,7 +28,7 @@ export const MoreHButton = ({
   const open = Boolean(anchorEl);
 
   return (
-    <>
+    <Box>
       <IconButton onClick={handleClick}>
         <MoreHorizIcon />
       </IconButton>
@@ -40,8 +41,8 @@ export const MoreHButton = ({
         anchorOrigin={anchorOrigin}
         transformOrigin={transformOrigin}
       >
-        {children}
+        {React.Children.toArray(children)}
       </Menu>
-    </>
+    </Box>
   );
 };

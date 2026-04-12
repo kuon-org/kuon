@@ -13,6 +13,7 @@ import {
 import { NavButton } from "../../components/common/NavButton";
 import { useAuthQuery } from "../../hooks/useAuth";
 import Loading from "../../components/common/Loading/Loading";
+import { useNavigate } from "@tanstack/react-router";
 
 const Login: React.FC = () => {
   const {
@@ -22,7 +23,7 @@ const Login: React.FC = () => {
     activeIdp,
     activeIdp_isLoading,
   } = useAuthQuery();
-
+  const navigate = useNavigate();
   // フォームのセットアップ
   const form = useForm({
     defaultValues: {
@@ -30,7 +31,15 @@ const Login: React.FC = () => {
       password: "",
     },
     onSubmit: async ({ value }) => {
-      login(value); // identifierとpasswordをそのまま渡す
+      login(value, {
+        onSuccess: async (data) => {
+          if (data.requires2FA) {
+            navigate({ to: "/login/2fa" });
+          } else {
+            navigate({ to: "/" });
+          }
+        },
+      }); // identifierとpasswordをそのまま渡す
     },
   });
   if (activeIdp_isLoading) return <Loading />;
