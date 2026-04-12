@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { createRoute } from "@tanstack/react-router";
+import { createRoute, redirect } from "@tanstack/react-router";
 import { layoutWithTopRoute } from "./__root";
 import Loading from "../components/common/Loading/Loading";
 
@@ -59,6 +59,11 @@ export const stocksRoute = createRoute({
       <StocksLayout />
     </Suspense>
   ),
+  beforeLoad: ({ context }) => {
+    if (!context.user) {
+      throw redirect({ to: "/" });
+    }
+  },
 });
 
 /**

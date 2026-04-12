@@ -43,6 +43,11 @@ export const articleCreateRoute = createRoute({
       <New />
     </Suspense>
   ),
+  beforeLoad: ({ context }) => {
+    if (!context.user) {
+      throw redirect({ to: "/" });
+    }
+  },
 });
 
 /**
@@ -56,6 +61,11 @@ export const articleEditRoute = createRoute({
       <Edit />
     </Suspense>
   ),
+  beforeLoad: ({ context }) => {
+    if (!context.user) {
+      throw redirect({ to: "/" });
+    }
+  },
 });
 
 /**
@@ -69,6 +79,11 @@ export const draftsRoute = createRoute({
       <Drafts />
     </Suspense>
   ),
+  beforeLoad: ({ context }) => {
+    if (!context.user) {
+      throw redirect({ to: "/" });
+    }
+  },
 });
 
 /**
@@ -82,6 +97,11 @@ export const trashRoute = createRoute({
       <Trash />
     </Suspense>
   ),
+  beforeLoad: ({ context }) => {
+    if (!context.user) {
+      throw redirect({ to: "/" });
+    }
+  },
 });
 
 /**
