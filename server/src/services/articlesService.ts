@@ -1,4 +1,5 @@
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
+import { asUUID } from "../utils/uuid/index.js";
 
 export class ArticlesService {
   constructor(private articlesRepo: ArticlesRepository) {}
@@ -31,6 +32,7 @@ export class ArticlesService {
     return await this.articlesRepo.findRecommendedArticles(userId, page, limit);
   }
   async getArticle(articleId: string, currentUserId?: string) {
+    if (!asUUID(articleId)) throw new Error("invalid articleId");
     const article = await this.articlesRepo.findArticleById(articleId);
     if (!article || article.is_deleted) throw new Error("ArticleNotFound");
 
