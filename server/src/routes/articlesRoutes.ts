@@ -40,6 +40,12 @@ articlesRouter.get("/articles", articlesCtrl.getArticles);
 
 articlesRouter.get("/articles/trends", articlesCtrl.getTrendingArticles);
 
+articlesRouter.get(
+  "/articles/recommends",
+  optionalAuth,
+  articlesCtrl.getRecommendArticles,
+);
+
 /**
  * @openapi
  * /api/articles/me:
