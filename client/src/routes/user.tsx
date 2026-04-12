@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { createRoute, redirect } from "@tanstack/react-router";
 import { layoutWithTopRoute } from "./__root";
-import Loading from "../components/common/Loading/Loading";
+import LoadingSkelton from "../components/common/Loading/LoadingSkelton";
 
 // 遅延ローディング対応
 const UserProfile = lazy(() => import("../pages/User/UserProfile"));
@@ -64,7 +64,7 @@ const StockDetail = lazy(() =>
   })),
 );
 
-const LoadingFallback = () => <Loading />;
+const LoadingFallback = () => <LoadingSkelton />;
 
 /**
  * ユーザープロフィール（親ルート）
@@ -123,7 +123,7 @@ export const userFollowingRoute = createRoute({
  */
 export const userFollowingTagsRoute = createRoute({
   getParentRoute: () => userRoute,
-  path: "following_tags",
+  path: "following-tags",
   component: () => (
     <Suspense fallback={<LoadingFallback />}>
       <FollowingTagsPage />
@@ -202,7 +202,7 @@ export const accountSettingRoute = createRoute({
  */
 export const accountCustomImageRoute = createRoute({
   getParentRoute: () => userSettingsRoute,
-  path: "account/custom_image",
+  path: "account/custom-image",
   component: () => (
     <Suspense fallback={<LoadingFallback />}>
       <AvatarUpload />
@@ -241,7 +241,7 @@ export const user2faSettingRoute = createRoute({
  */
 export const uploadedImagesRoute = createRoute({
   getParentRoute: () => userSettingsRoute,
-  path: "uploaded_images",
+  path: "uploaded-images",
   component: () => (
     <Suspense fallback={<LoadingFallback />}>
       <UploadedImages />
