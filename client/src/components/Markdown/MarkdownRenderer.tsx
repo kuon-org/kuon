@@ -1,13 +1,11 @@
-import { useMemo, useRef, useLayoutEffect } from "react";
+import { useMemo, useRef, useLayoutEffect, lazy, Suspense } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import { Box, Button, GlobalStyles, useTheme } from "@mui/material";
 import { Link } from "@tanstack/react-router";
-import { MermaidRenderer } from "./MermaidRenderer";
-import { remarkPlantUML } from "../../utils/remark/plantuml";
-import { CodeSyntaxHighlighter } from "./CodeSyntaxHighlighter";
+// import { remarkPlantUML } from "../../utils/remark/plantuml";
 import { remarkLineNumber } from "../../utils/remark/lineNumber";
 import rehypeSanitize from "rehype-sanitize";
 import { bootstrapSafeSchema } from "../../utils/rehype/bootstrapSchema";
@@ -19,8 +17,24 @@ import {
   normalizeDirectiveBracketLabelToAttrs,
 } from "../../utils/remark/admonitionDirectives";
 import remarkGemoji from "remark-gemoji";
-import { PlantUMLRenderer } from "./PlantUMLRenderer";
 import { ZoomableContent } from "../common/ZoomableContent";
+import LoadingSkelton from "../common/Loading/LoadingSkelton";
+
+const MermaidRenderer = lazy(() =>
+  import("./MermaidRenderer").then((module) => ({
+    default: module.MermaidRenderer,
+  })),
+);
+const PlantUMLRenderer = lazy(() =>
+  import("./PlantUMLRenderer").then((module) => ({
+    default: module.PlantUMLRenderer,
+  })),
+);
+const CodeSyntaxHighlighter = lazy(() =>
+  import("./CodeSyntaxHighlighter").then((module) => ({
+    default: module.CodeSyntaxHighlighter,
+  })),
+);
 
 interface MarkdownRendererProps {
   text: string;
@@ -364,11 +378,14 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
 
       code: ({ inline, className, children, node, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || "");
+        const withSuspense = (component: React.ReactNode) => (
+          <Suspense fallback={<LoadingSkelton />}>{component}</Suspense>
+        );
         if (!inline && match?.[1] === "plantuml") {
           const code = String(children ?? "").trimEnd();
           return (
             <ZoomableContent>
-              <PlantUMLRenderer code={code} />
+              {withSuspense(<PlantUMLRenderer code={code} />)}
             </ZoomableContent>
           );
         }
@@ -381,7 +398,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
 
           return (
             <ZoomableContent>
-              <MermaidRenderer key={key} code={code} />
+              {withSuspense(<MermaidRenderer key={key} code={code} />)}
             </ZoomableContent>
           );
         }
@@ -469,14 +486,14 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
             </Box>
           );
         }
-        return (
+        return withSuspense(
           <CodeSyntaxHighlighter
             inline={inline}
             className={className}
             {...props}
           >
             {children}
-          </CodeSyntaxHighlighter>
+          </CodeSyntaxHighlighter>,
         );
       },
     };

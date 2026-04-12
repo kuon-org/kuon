@@ -18,7 +18,7 @@ import {
   adminSecurityRoute,
   adminTopRoute,
   adminUserManagementRoute,
-} from "../../router";
+} from "../../routes";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { KuonLogo } from "../../components/Logo/Kuon";
 export const AdminIndex = () => {

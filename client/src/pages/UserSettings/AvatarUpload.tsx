@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { Box, Paper, Typography, Button, Avatar } from "@mui/material";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { useNavigate } from "@tanstack/react-router";
-import { accountSettingRoute } from "../../router";
+import { accountSettingRoute } from "../../routes";
 import { useNotify } from "../../hooks/useNotify";
 
 export const AvatarUpload = () => {
@@ -10,7 +10,7 @@ export const AvatarUpload = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { localAvatarUpload, localAvatarUpload_isPending } = useAuthQuery();
-  const { success, error } = useNotify();
+  const { error } = useNotify();
   const navigate = useNavigate();
   const handleBoxClick = () => {
     fileInputRef.current?.click();

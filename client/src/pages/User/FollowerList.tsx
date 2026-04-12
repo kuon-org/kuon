@@ -1,6 +1,6 @@
 import { Paper, Typography } from "@mui/material";
 import { UserList } from "../../components/UserList/UserList";
-import { userRoute } from "../../router";
+import { userRoute } from "../../routes";
 import { useUserQuery } from "../../hooks/useUsers";
 
 export const FollowerList = () => {

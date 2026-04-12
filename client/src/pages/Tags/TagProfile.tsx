@@ -9,7 +9,7 @@ import {
   Divider,
 } from "@mui/material"; // 👈 Button, Collapseを追加
 import { TagDetailCard } from "../../components/Tag/TagDetailCard";
-import { tagProfileRoute } from "../../router";
+import { tagProfileRoute } from "../../routes";
 import { useTagsQuery } from "../../hooks/useTags";
 import Loading from "../../components/common/Loading/Loading";
 import { TagArticles } from "../../components/Tag/TagArticles";

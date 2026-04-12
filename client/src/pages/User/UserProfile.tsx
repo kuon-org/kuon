@@ -1,4 +1,4 @@
-import { userRoute } from "../../router";
+import { userRoute } from "../../routes";
 import { useUserQuery } from "../../hooks/useUsers";
 import { Box, Container } from "@mui/material";
 import { UserDetailCard } from "../../components/User/UserDetailCard";

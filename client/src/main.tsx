@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { AppRouter } from "./router";
 import { queryClient } from "./utils/queryClient";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeSelectProvider } from "./hooks/useTheme";
 import "./index.css";
 import { themes } from "./styles/themes";

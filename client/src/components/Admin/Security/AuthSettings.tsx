@@ -9,14 +9,14 @@ export const AuthSettings = () => {
   const [oauthTab, setOauthTab] = useState(0);
 
   const handleMainTabChange = (
-    event: React.SyntheticEvent,
+    _event: React.SyntheticEvent,
     newValue: number,
   ) => {
     setMainTab(newValue);
   };
 
   const handleOauthTabChange = (
-    event: React.SyntheticEvent,
+    _event: React.SyntheticEvent,
     newValue: number,
   ) => {
     setOauthTab(newValue);

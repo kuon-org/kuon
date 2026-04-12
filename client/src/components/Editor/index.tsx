@@ -25,7 +25,7 @@ import { type Article } from "../../hooks/useArticles";
 import { useTagsQuery } from "../../hooks/useTags";
 import { useKey } from "../../hooks/useKey";
 import { useNotify } from "../../hooks/useNotify";
-import { draftsRoute } from "../../router";
+import { draftsRoute } from "../../routes";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { ConfirmLeaveDialog } from "../common/ConfirmLeaveDialog";
 

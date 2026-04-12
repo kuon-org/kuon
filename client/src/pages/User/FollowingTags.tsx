@@ -3,7 +3,7 @@ import { useTagsQuery } from "../../hooks/useTags";
 import { TagChip } from "../../components/common/TagChip";
 import Loading from "../../components/common/Loading/Loading";
 import { Link } from "@tanstack/react-router";
-import { userFollowingTagsRoute } from "../../router";
+import { userFollowingTagsRoute } from "../../routes";
 
 export const FollowingTags = ({
   userId,

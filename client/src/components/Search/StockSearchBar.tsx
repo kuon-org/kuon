@@ -14,8 +14,8 @@ import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import TagIcon from "@mui/icons-material/Tag";
 import PersonIcon from "@mui/icons-material/Person";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { stocksDetailsRoute, stocksRoute, userStockRoute } from "../../router";
-
+import { stocksDetailsRoute, stocksRoute } from "../../routes";
+import { userStockRoute } from "../../routes";
 interface Props {
   initialValue?: string;
 }

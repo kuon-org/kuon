@@ -6,7 +6,7 @@ import { AdvancedSearchBar } from "../../components/Search/SearchInput";
 import { SearchPagination } from "../../components/Search/SearchPagination";
 import { ArticleCard } from "../../components/Article/ArticleCard"; // 共通化したカード
 import { ArticlesSkeleton } from "../../components/common/Loading/ArticlesSkelton";
-import { searchRoute } from "../../router";
+import { searchRoute } from "../../routes";
 
 export const SearchPage = () => {
   // URLの ?q=... &page=... を取得

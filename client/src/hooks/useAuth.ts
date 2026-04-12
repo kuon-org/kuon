@@ -5,7 +5,7 @@ import type { AxiosError } from "axios";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import authClient from "../api/authClient";
-import { accountSettingRoute } from "../router";
+import { accountSettingRoute } from "../routes";
 import { useNotify } from "./useNotify";
 
 export interface AuthUser {
