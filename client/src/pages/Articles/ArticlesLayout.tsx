@@ -17,8 +17,6 @@ export const ArticleLayout = () => {
   const {
     article,
     isLoading,
-    isError,
-    error,
     mutateLike,
     isOwned,
     isLiked,
@@ -91,12 +89,7 @@ export const ArticleLayout = () => {
           justifyContent: "center",
         }}
       >
-        <Articles
-          article={article}
-          isLoading={isLoading}
-          isError={isError}
-          error={error}
-        />
+        <Articles article={article} isLoading={isLoading} />
       </Box>
 
       <RightSection sticky>
