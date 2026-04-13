@@ -9,7 +9,7 @@ import { swaggerSpec, swaggerUiMiddleware } from "./swagger.js";
 import authRouter from "./routes/authRouter.js";
 import idpRouter from "./routes/idpRouter.js";
 import { init } from "./repositories/initRepository.js";
-import commentsRouter from "./routes/commnetsRouter.js";
+import commentsRouter from "./routes/commentsRouter.js";
 import adminRouter from "./routes/adminRouter.js";
 import shareRouter from "./routes/shareRoutes.js";
 import stocksRoutes from "./routes/stocksRoutes.js";
