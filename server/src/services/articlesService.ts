@@ -1,4 +1,5 @@
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
+import generateSummary from "../utils/generateSummary/index.js";
 import { asUUID } from "../utils/uuid/index.js";
 
 export class ArticlesService {
@@ -110,7 +111,7 @@ export class ArticlesService {
         // 公開モードなら現在の内容を反映、下書きなら空文字 or 初期値
         render_content: isPublicMode ? raw_content : "",
         last_published_raw_content: isPublicMode ? raw_content : undefined,
-        summary: summary || raw_content?.substring(0, 100),
+        summary: summary || generateSummary(raw_content),
         // 🚀 ルール通り：status は下書きがあるかどうか
         status: isPublicMode ? "public" : "draft",
         // 🚀 公開設定フラグをそのまま保存
