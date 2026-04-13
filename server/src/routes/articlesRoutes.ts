@@ -38,8 +38,42 @@ const articlesCtrl = new ArticlesController(
  */
 articlesRouter.get("/articles", articlesCtrl.getArticles);
 
+/**
+ * @openapi
+ * /api/articles/trends:
+ *   get:
+ *     summary: トレンド記事一覧取得
+ *     tags:
+ *       - Articles
+ *     responses:
+ *       '200':
+ *         description: 取得成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Article'
+ */
 articlesRouter.get("/articles/trends", articlesCtrl.getTrendingArticles);
 
+/**
+ * @openapi
+ * /api/articles/recommends:
+ *   get:
+ *     summary: おすすめ記事一覧取得
+ *     tags:
+ *       - Articles
+ *     responses:
+ *       '200':
+ *         description: 取得成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Article'
+ */
 articlesRouter.get(
   "/articles/recommends",
   optionalAuth,
@@ -69,6 +103,23 @@ articlesRouter.get(
   articlesCtrl.getAllArticlesByUserId,
 );
 
+/**
+ * @openapi
+ * /api/articles/user/:userId:
+ *   get:
+ *     summary: 対象ユーザの記事一覧取得
+ *     tags:
+ *       - Articles
+ *     responses:
+ *      '200':
+ *        description: 取得成功
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/Articles'
+ */
 articlesRouter.get("/articles/user/:userId", articlesCtrl.getArticlesByUserId);
 
 /**
