@@ -667,5 +667,6 @@ usersRouter.get("/users/:userId/articles", usersCtrl.getArticleCount);
  *               type: array
  *               items: { $ref: '#/components/schemas/User' }
  */
+usersRouter.get("/users/ranking/all", usersCtrl.getAllRanking);
 
 export default usersRouter;
