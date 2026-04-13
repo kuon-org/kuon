@@ -11,18 +11,10 @@ import { TagChip } from "../../components/common/TagChip";
 interface ArticlesProps {
   article?: Article;
   isLoading: boolean;
-  isError: boolean;
-  error: unknown;
 }
 
-const Articles = ({ article, isLoading, isError, error }: ArticlesProps) => {
+const Articles = ({ article, isLoading }: ArticlesProps) => {
   if (isLoading) return <Typography>読み込み中…</Typography>;
-  if (isError)
-    return (
-      <Typography color="error">
-        エラー: {(error as Error)?.message ?? "不明なエラー"}
-      </Typography>
-    );
   if (!article) return <Typography>記事が見つかりません</Typography>;
 
   return (

@@ -159,6 +159,7 @@ export const useArticles = (articleId?: string) => {
     },
     enabled: !!articleId,
     staleTime: 1000 * 30, // キャッシュを30秒保持
+    throwOnError: true,
   });
   // const articlesQuery = useQuery({
   //     queryKey: ["articles"],

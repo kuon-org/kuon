@@ -1,10 +1,16 @@
 import { lazy, Suspense } from "react";
-import { createRoute, redirect } from "@tanstack/react-router";
+import {
+  createRoute,
+  isRedirect,
+  notFound,
+  redirect,
+} from "@tanstack/react-router";
 import { layoutWithTopRoute, plainLayoutRoute } from "./__root";
 import Loading from "../components/common/Loading/Loading";
 import { queryClient } from "../utils/queryClient";
 import apiClient from "../api/client";
 import type { Article } from "../hooks/useArticles";
+import { asUUID } from "../utils/uuid";
 
 // 遅延ローディング対応
 const New = lazy(() =>
@@ -111,30 +117,45 @@ export const articleRoute = createRoute({
   getParentRoute: () => layoutWithTopRoute,
   path: "$username/$articleId",
   loader: async ({ params }) => {
-    // コンポーネント内のuseQueryと同じKey、同じロジックでデータを取得
-    const article = await queryClient.ensureQueryData({
-      queryKey: ["article", params.articleId],
-      queryFn: async () => {
-        const { data } = await apiClient.get<Article>(
-          `/articles/${params.articleId}`,
-        );
-        return data;
-      },
-    });
+    try {
+      // 1. UUID形式チェック
+      const validatedId = asUUID(params.articleId);
 
-    // ユーザー名チェック
-    if (article.users.username !== params.username) {
-      throw redirect({
-        to: "/$username/$articleId",
-        params: {
-          username: article.users.username,
-          articleId: article.id,
+      // 2. APIフェッチ
+      const article = await queryClient.ensureQueryData({
+        queryKey: ["article", validatedId],
+        queryFn: async () => {
+          const { data } = await apiClient.get<Article>(
+            `/articles/${validatedId}`,
+          );
+          return data;
         },
-        replace: true,
       });
-    }
 
-    return { article };
+      // 3. ユーザー名チェック
+      if (article.users.username !== params.username) {
+        // ここで投げられる redirect を catch で見逃さないようにする
+        throw redirect({
+          to: "/$username/$articleId",
+          params: {
+            username: article.users.username,
+            articleId: article.id,
+          },
+          replace: true,
+        });
+      }
+
+      return { article };
+    } catch (error) {
+      console.log("Article Route:", error);
+      // 重要：リダイレクトの場合はそのまま再スローして遷移させる
+      if (isRedirect(error)) {
+        throw error;
+      }
+
+      // それ以外（asUUIDのエラー、APIの404等）は NotFoundComponent を表示
+      // throw notFound();
+    }
   },
 });
 
