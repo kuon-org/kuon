@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import {
   createRoute,
   isRedirect,
-  notFound,
+  // notFound,
   redirect,
 } from "@tanstack/react-router";
 import { layoutWithTopRoute, plainLayoutRoute } from "./__root";
