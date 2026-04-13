@@ -327,11 +327,12 @@ articlesRouter.patch(
 );
 
 /**
- * @opanapi
+ * @openapi
  * /api/articles/:articleId/rollback:
  *   post:
  *     summary: 下書き破棄
- *     tags: [Articles]
+ *     tags:
+ *       - Articles
  *     security:
  *       - CookieAuth: []
  *     parameters:
@@ -355,18 +356,19 @@ articlesRouter.post(
  * /api/articles/:articleId:
  *   delete:
  *     summary: 記事の論理削除
- *     tags: [Articles]
+ *     tags:
+ *       - Articles
  *     security:
  *       - CookieAuth: []
- *    parameters:
- *      - in: path
- *        name: articleId
- *       required: true
- *      schema:
- *        type: string
- *    responses:
- *     '200':
- *        description: 削除成功
+ *     parameters:
+ *       - in: path
+ *         name: articleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: 削除成功
  */
 articlesRouter.delete(
   "/articles/:articleId",
@@ -379,12 +381,13 @@ articlesRouter.delete(
  * /api/articles/trash/list:
  *   get:
  *     summary: ゴミ箱の記事一覧取得
- *    tags: [Articles]
- *    security:
- *      - CookieAuth: []
- *    responses:
- *     '200':
- *        description: 取得成功
+ *     tags:
+ *       - Articles
+ *     security:
+ *       - CookieAuth: []
+ *     responses:
+ *       '200':
+ *         description: 取得成功
  */
 articlesRouter.get(
   "/articles/trash/list",
@@ -396,19 +399,20 @@ articlesRouter.get(
  * @openapi
  * /api/articles/{articleId}/restore:
  *   post:
- *    summary: 記事の復元
- *   tags: [Articles]
- *  security:
- *     - CookieAuth: []
- *  parameters:
- *    - in: path
- *     name: articleId
- *    required: true
- *    schema:
- *      type: string
- *    responses:
- *      '200':
- *        description: 復元成功
+ *     summary: 記事の復元
+ *     tags:
+ *       - Articles
+ *     security:
+ *       - CookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: articleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: 復元成功
  */
 articlesRouter.post(
   "/articles/:articleId/restore",
@@ -419,22 +423,21 @@ articlesRouter.post(
 /**
  * @openapi
  * /api/articles/{articleId}/hard:
- *  delete:
- *   summary: 記事の物理削除
- *  tags: [Articles]
- *  security:
- *  - CookieAuth: []
- * parameters:
- *
- *  - in: path
- *  name: articleId
- * required: true
- * schema:
- *
- *  type: string
- *    responses:
- *  '200':
- *   description: 物理削除成功
+ *   delete:
+ *     summary: 記事の物理削除
+ *     tags:
+ *       - Articles
+ *     security:
+ *       - CookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: articleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: 物理削除成功
  */
 articlesRouter.delete(
   "/articles/:articleId/hard",

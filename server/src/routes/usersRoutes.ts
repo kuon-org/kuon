@@ -494,30 +494,178 @@ usersRouter.post(
 
 usersRouter.get("/users/:userId/following_tags", usersCtrl.getFollowingTags);
 
+/**
+ * @openapi
+ * /api/users/tags/me:
+ *   get:
+ *     summary: 自分のフォロー中のタグ一覧取得
+ *     tags:
+ *       - Users
+ *     security:
+ *       - CookieAuth: []
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: '#/components/schemas/Tag' }
+ *       '401':
+ *         description: 未ログイン
+ */
 usersRouter.get(
   "/users/tags/me",
   authenticateToken,
   usersCtrl.getMyFollowingtags,
 );
 
+/**
+ * @openapi
+ * /api/users/{userId}/pickup:
+ *   get:
+ *     summary: ユーザーのピックアップ記事一覧取得
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: '#/components/schemas/Article' }
+ */
 usersRouter.get("/users/:userId/pickup", usersCtrl.getPickupArticles);
 
+/**
+ * @openapi
+ * /api/users/pickup/create:
+ *   post:
+ *     summary: ピックアップ記事作成
+ *     tags:
+ *       - Users
+ *     security:
+ *       - CookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               articleId: { type: string }
+ *             required: [articleId]
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *       '401':
+ *         description: 未ログイン
+ */
 usersRouter.post(
   "/users/pickup/create",
   authenticateToken,
   usersCtrl.createPickupArticle,
 );
 
+/**
+ * @openapi
+ * /api/users/pickup/delete:
+ *   post:
+ *     summary: ピックアップ記事削除
+ *     tags:
+ *       - Users
+ *     security:
+ *       - CookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               articleId: { type: string }
+ *             required: [articleId]
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *       '401':
+ *         description: 未ログイン
+ */
 usersRouter.post(
   "/users/pickup/delete",
   authenticateToken,
   usersCtrl.deletePickupArticle,
 );
 
+/**
+ * @openapi
+ * /api/users/{userId}/comments:
+ *   get:
+ *     summary: ユーザーのコメント数取得
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 commentCount: { type: integer }
+ */
 usersRouter.get("/users/:userId/comments", usersCtrl.getCommentCount);
 
+/**
+ * @openapi
+ * /api/users/{userId}/articles:
+ *   get:
+ *     summary: ユーザーの記事数取得
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 articleCount: { type: integer }
+ */
 usersRouter.get("/users/:userId/articles", usersCtrl.getArticleCount);
 
-usersRouter.get("/users/ranking/all", usersCtrl.getAllRanking);
+/**
+ * @openapi
+ * /api/users/ranking/all:
+ *   get:
+ *     summary: 全ユーザーランキング取得
+ *     tags:
+ *       - Users
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: '#/components/schemas/User' }
+ */
 
 export default usersRouter;
