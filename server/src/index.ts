@@ -43,6 +43,7 @@ async function main() {
   await init();
   app.listen(3030, () => {
     console.log("Server running on http://localhost:3030");
+    console.log(process.env.NODE_ENV);
   });
 }
 
