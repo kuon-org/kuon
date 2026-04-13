@@ -12,6 +12,7 @@ export const ZoomableContent = ({
   return (
     <>
       <Box
+        component="span"
         onClick={() => setOpen(true)}
         sx={{
           cursor: "pointer",

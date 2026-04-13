@@ -1,6 +1,8 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { useAuthQuery } from "./hooks/useAuth";
 import { routeTree } from "./routes";
+import { NotFoundComponent } from "./components/Error/NotFoundComponents";
+import { GlobalErrorComponent } from "./components/Error/ErrorComponents";
 
 /**
  * 新しいrouter定義（Code Splitting版）
@@ -9,6 +11,8 @@ import { routeTree } from "./routes";
 export const router = createRouter({
   routeTree,
   context: { user: null },
+  defaultErrorComponent: GlobalErrorComponent,
+  defaultNotFoundComponent: NotFoundComponent,
 });
 
 // 型登録
