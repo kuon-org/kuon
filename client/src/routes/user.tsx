@@ -43,6 +43,11 @@ const PublicProfile = lazy(() =>
     default: mod.PublicProfile,
   })),
 );
+const Security = lazy(() =>
+  import("../pages/UserSettings/Security").then((mod) => ({
+    default: mod.Security,
+  })),
+);
 const TwoFASetting = lazy(() =>
   import("../pages/UserSettings/twoFASetting").then((mod) => ({
     default: mod.TwoFASetting,
@@ -219,6 +224,19 @@ export const publicProfileRoute = createRoute({
   component: () => (
     <Suspense fallback={<LoadingFallback />}>
       <PublicProfile />
+    </Suspense>
+  ),
+});
+
+/**
+ * セキュリティ設定
+ */
+export const securityRoute = createRoute({
+  getParentRoute: () => userSettingsRoute,
+  path: "security",
+  component: () => (
+    <Suspense fallback={<LoadingFallback />}>
+      <Security />
     </Suspense>
   ),
 });

@@ -14,11 +14,32 @@ type CreateHttpClientConfig = {
 };
 
 export function createHttpClient(config: CreateHttpClientConfig): HttpClient {
+  // リフレッシュ中のフラグ（グローバルで共有）
+  let isRefreshing = false;
+  let refreshPromise: Promise<boolean> | null = null;
+
+  async function refreshTokens(): Promise<boolean> {
+    try {
+      const res = await fetch(`${config.baseURL}/refresh`, {
+        method: "POST",
+        credentials: config.credentials ?? "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          ...config.headers,
+        },
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
   async function request<T>(
     method: string,
     url: string,
     body?: unknown,
     requestConfig?: RequestConfig,
+    isRetry = false, // リトライフラグ
   ): Promise<HttpResponse<T>> {
     const fullUrl = new URL(config.baseURL + url, window.location.origin);
 
@@ -43,9 +64,28 @@ export function createHttpClient(config: CreateHttpClientConfig): HttpClient {
     });
 
     if (!res.ok) {
-      // ===== axios interceptors.response 相当 =====
-      if (res.status === 401 && window.location.pathname !== "/login") {
-        queryClient.setQueryData(["authUser"], null);
+      // ===== 401 時の自動リフレッシュ =====
+      if (
+        res.status === 401 &&
+        !isRetry &&
+        window.location.pathname !== "/login"
+      ) {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          refreshPromise = refreshTokens().finally(() => {
+            isRefreshing = false;
+            refreshPromise = null;
+          });
+        }
+
+        const refreshSuccess = await refreshPromise;
+        if (refreshSuccess) {
+          // リフレッシュ成功したらリトライ
+          return request<T>(method, url, body, requestConfig, true);
+        } else {
+          // リフレッシュ失敗したらログアウト
+          queryClient.setQueryData(["authUser"], null);
+        }
       }
 
       const error: HttpError = {
