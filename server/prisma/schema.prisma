@@ -321,6 +321,7 @@ model users {
   user_notifications                           user_notifications[]
   user_roles                                   user_roles[]
   user_security                                user_security?
+  user_sessions                                user_sessions[]
   user_settings                                user_settings?
 
   @@schema("knowledge")
@@ -419,5 +420,24 @@ model article_pickups {
   users       users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([user_id, article_id])
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_sessions {
+  id            String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  user_id       String    @db.Uuid
+  refresh_token String    @unique
+  expires_at    DateTime  @db.Timestamp(6)
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+  ip_address    String?
+  user_agent    String?
+  device_name   String?
+  last_used_at  DateTime? @default(now()) @db.Timestamp(6)
+  users         users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([refresh_token], map: "idx_user_sessions_refresh_token")
+  @@index([user_id], map: "idx_user_sessions_user_id")
+  @@index([expires_at], map: "idx_user_sessions_expires_at")
   @@schema("knowledge")
 }

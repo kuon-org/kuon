@@ -17,7 +17,7 @@ const definition /* : any */ = {
       CookieAuth: {
         type: "apiKey",
         in: "cookie",
-        name: "token", // ← あなたのCookie名に合わせる（loginでセットしている名前）
+        name: "access_token", // ← あなたのCookie名に合わせる（loginでセットしている名前）
         description:
           "JWT を HttpOnly Cookie で送信。Try it out から送るには credentials: include が必要。",
       },

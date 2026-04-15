@@ -4,6 +4,11 @@ import ScureBase32Plugin from "@otplib/plugin-base32-scure";
 import NodeCryptoPlugin from "@otplib/plugin-crypto-node";
 import { TOTP } from "@otplib/totp";
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
+import {
+  createAccessToken,
+  createRefreshToken,
+  getRefreshTokenExpiryDate,
+} from "../utils/sessionTokens/index.js";
 export class UsersService {
   constructor(
     private usersRepo: UsersRepository,
@@ -147,6 +152,78 @@ export class UsersService {
   async updateLastLogin(userId: string) {
     return await this.usersRepo.updateLastLogin(userId);
   }
+
+  async createSessionForUser(
+    userId: string,
+    metadata?: {
+      ipAddress?: string;
+      userAgent?: string;
+      deviceName?: string;
+    },
+  ) {
+    await this.usersRepo.deleteExpiredSessionsByUser(userId);
+    const refreshToken = createRefreshToken();
+    const expiresAt = getRefreshTokenExpiryDate();
+    const session = await this.usersRepo.createUserSession(
+      userId,
+      refreshToken,
+      expiresAt,
+      metadata,
+    );
+    return {
+      accessToken: createAccessToken(userId, session.id),
+      refreshToken,
+      refreshExpiresAt: expiresAt,
+    };
+  }
+
+  async refreshSession(refreshToken: string) {
+    const session =
+      await this.usersRepo.findSessionByRefreshToken(refreshToken);
+    if (!session || session.expires_at < new Date()) {
+      throw new Error("InvalidRefreshToken");
+    }
+
+    const user = await this.getUserById(session.user_id);
+    await this.usersRepo.deleteExpiredSessionsByUser(user.id);
+    await this.usersRepo.deleteSessionByRefreshToken(refreshToken);
+
+    const newRefreshToken = createRefreshToken();
+    const expiresAt = getRefreshTokenExpiryDate();
+    const newSession = await this.usersRepo.createUserSession(
+      user.id,
+      newRefreshToken,
+      expiresAt,
+      {
+        ipAddress: session.ip_address ?? undefined,
+        userAgent: session.user_agent ?? undefined,
+        deviceName: session.device_name ?? undefined,
+      },
+    );
+
+    return {
+      accessToken: createAccessToken(user.id, newSession.id),
+      refreshToken: newRefreshToken,
+      refreshExpiresAt: expiresAt,
+    };
+  }
+
+  async revokeRefreshToken(refreshToken: string) {
+    return await this.usersRepo.deleteSessionByRefreshToken(refreshToken);
+  }
+
+  async getUserSessions(userId: string) {
+    return await this.usersRepo.getUserSessions(userId);
+  }
+
+  async deleteSessionById(sessionId: string) {
+    return await this.usersRepo.deleteSessionById(sessionId);
+  }
+
+  async deleteAllSessionsByUser(userId: string) {
+    return await this.usersRepo.deleteAllSessionsByUser(userId);
+  }
+
   async save2FASecret(userId: string, secret: string) {
     return await this.usersRepo.update2FASetting(userId, secret, true);
   }
