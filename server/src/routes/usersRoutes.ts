@@ -153,11 +153,12 @@ usersRouter.post("/register", usersCtrl.registerUser);
  *             required: [email, password]
  *     responses:
  *       '200':
- *         description: 成功（Set-Cookie で token を返す）
+ *         description: 成功（Set-Cookie で access_token と refresh_token を返す）
  *         headers:
  *           Set-Cookie:
  *             description: |
- *               token=eyJ...; HttpOnly; Path=/; SameSite=Lax; Max-Age=86400
+ *               access_token=eyJ...; HttpOnly; Path=/; SameSite=Lax; Max-Age=900000
+ *               refresh_token=...; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800000
  *             schema: { type: string }
  *       '401':
  *         description: 認証失敗
@@ -190,11 +191,12 @@ usersRouter.post("/login", usersCtrl.loginUser);
  *             required: [email, token]
  *     responses:
  *       '200':
- *         description: 二段階認証成功（Set-Cookie で token を返す）
+ *         description: 二段階認証成功（Set-Cookie で access_token と refresh_token を返す）
  *         headers:
  *           Set-Cookie:
  *             description: |
- *               token=eyJ...; HttpOnly; Path=/; SameSite=Lax; Max-Age=86400
+ *               access_token=eyJ...; HttpOnly; Path=/; SameSite=Lax; Max-Age=900000
+ *               refresh_token=...; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800000
  *             schema:
  *               type: string
  *         content:
@@ -225,6 +227,20 @@ usersRouter.post("/login/verify-2fa", usersCtrl.verifyLogin2FA);
 
 /**
  * @openapi
+ * /api/refresh:
+ *   post:
+ *     summary: リフレッシュトークンでアクセストークンを更新
+ *     tags: [Auth]
+ *     responses:
+ *       '200':
+ *         description: 成功（Set-Cookie で access_token, refresh_token を更新）
+ *       '401':
+ *         description: リフレッシュトークンが無効または期限切れ
+ */
+usersRouter.post("/refresh", usersCtrl.refreshToken);
+
+/**
+ * @openapi
  * /api/logout:
  *   post:
  *     summary: ログアウト（JWT Cookie を削除）
@@ -234,6 +250,70 @@ usersRouter.post("/login/verify-2fa", usersCtrl.verifyLogin2FA);
  *         description: 成功（Cookie の削除）
  */
 usersRouter.post("/logout", usersCtrl.logoutUser);
+
+/**
+ * @openapi
+ * /api/devices:
+ *   get:
+ *     summary: デバイス一覧取得
+ *     tags: [Users]
+ *     security:
+ *       - CookieAuth: []
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: '#/components/schemas/UserSession' }
+ *       '401':
+ *         description: 未ログイン
+ */
+usersRouter.get("/devices", authenticateToken, usersCtrl.getDevices);
+
+/**
+ * @openapi
+ * /api/logout/all:
+ *   post:
+ *     summary: すべてのデバイスからログアウト
+ *     tags: [Users]
+ *     security:
+ *       - CookieAuth: []
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *       '401':
+ *         description: 未ログイン
+ */
+usersRouter.post("/logout/all", authenticateToken, usersCtrl.logoutAllDevices);
+
+/**
+ * @openapi
+ * /api/logout/device/{sessionId}:
+ *   post:
+ *     summary: 特定のデバイスからログアウト
+ *     tags: [Users]
+ *     security:
+ *       - CookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *       '401':
+ *         description: 未ログイン
+ *       '400':
+ *         description: セッションIDが必要
+ */
+usersRouter.post(
+  "/logout/device/:sessionId",
+  authenticateToken,
+  usersCtrl.logoutDevice,
+);
 
 /**
  * @openapi

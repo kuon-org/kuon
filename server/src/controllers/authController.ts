@@ -2,6 +2,12 @@
 import { Request, Response } from "express";
 import { AuthService } from "../services/authService.js";
 import { AuthRequest } from "../middlewares/auth.js";
+import {
+  ACCESS_TOKEN_MAX_AGE_MS,
+  REFRESH_TOKEN_MAX_AGE_MS,
+  getCookieOptions,
+} from "../utils/sessionTokens/index.js";
+import { getDeviceNameFromUserAgent } from "../utils/uaParser/index.js";
 
 const BASE_URL = process.env.APP_SITE_URL ?? process.env.FRONTEND_URL;
 export class AuthController {
@@ -24,7 +30,13 @@ export class AuthController {
   callback = async (req: AuthRequest, res: Response) => {
     try {
       const providerName = String(req.params.provider);
-      let token: string;
+      const userAgent = req.get("User-Agent") ?? undefined;
+      const metadata = {
+        ipAddress: req.ip,
+        userAgent,
+        deviceName: getDeviceNameFromUserAgent(userAgent),
+      };
+      let token: { accessToken: string; refreshToken: string };
 
       if (req.method === "POST") {
         // SAMLコールバック (POST)
@@ -32,6 +44,7 @@ export class AuthController {
           providerName,
           req.body,
           req.user?.userId,
+          metadata,
         );
       } else {
         // 既存の OAuth2/OIDC コールバック (GET)
@@ -41,14 +54,19 @@ export class AuthController {
           code as string,
           state as string,
           req.user?.userId,
+          metadata,
         );
       }
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        maxAge: 86400000,
-      });
+      res.cookie(
+        "access_token",
+        token.accessToken,
+        getCookieOptions(ACCESS_TOKEN_MAX_AGE_MS),
+      );
+      res.cookie(
+        "refresh_token",
+        token.refreshToken,
+        getCookieOptions(REFRESH_TOKEN_MAX_AGE_MS),
+      );
       res.redirect(BASE_URL || "http://localhost:5050");
     } catch (err: any) {
       console.error("Auth Callback Error:", err.message);
