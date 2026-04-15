@@ -31,6 +31,35 @@ COMMENT ON COLUMN users.is_active IS '有効フラグ';
 COMMENT ON COLUMN users.last_login_at IS '最終ログイン日時';
 COMMENT ON COLUMN users.created_by IS '作成者ユーザID';
 
+-- user_sessions
+CREATE TABLE IF NOT EXISTS knowledge.user_sessions (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    user_id UUID NOT NULL REFERENCES knowledge.users(id) ON DELETE CASCADE,
+    refresh_token TEXT NOT NULL UNIQUE,
+    ip_address TEXT,
+    user_agent TEXT,
+    device_name TEXT,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    last_used_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ===== インデックス =====
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON knowledge.user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_refresh_token ON knowledge.user_sessions(refresh_token);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON knowledge.user_sessions(expires_at);
+
+COMMENT ON TABLE knowledge.user_sessions IS 'ユーザセッション情報（リフレッシュトークン管理用）';
+COMMENT ON COLUMN knowledge.user_sessions.id IS 'セッションID';
+COMMENT ON COLUMN knowledge.user_sessions.user_id IS 'ユーザID';
+COMMENT ON COLUMN knowledge.user_sessions.refresh_token IS 'リフレッシュトークン（ハッシュ化して保存することを推奨）';
+COMMENT ON COLUMN knowledge.user_sessions.ip_address IS 'ログイン時のIPアドレス';
+COMMENT ON COLUMN knowledge.user_sessions.user_agent IS 'ブラウザ・端末情報（User-Agent）';
+COMMENT ON COLUMN knowledge.user_sessions.device_name IS '任意の端末名（ユーザ設定用）';
+COMMENT ON COLUMN knowledge.user_sessions.expires_at IS 'リフレッシュトークンの有効期限';
+COMMENT ON COLUMN knowledge.user_sessions.created_at IS 'セッション作成日時';
+COMMENT ON COLUMN knowledge.user_sessions.last_used_at IS '最終利用日時（refresh時に更新）';
+
 -- local_accounts
 CREATE TABLE IF NOT EXISTS local_accounts (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
