@@ -116,10 +116,7 @@ export class UsersController {
     return {
       ipAddress: this.getClientIp(req),
       userAgent,
-      deviceName:
-        req.body?.deviceName ??
-        req.body?.device_name ??
-        getDeviceNameFromUserAgent(userAgent),
+      deviceName: getDeviceNameFromUserAgent(userAgent),
     };
   }
 
