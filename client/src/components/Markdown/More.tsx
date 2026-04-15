@@ -4,7 +4,7 @@ import {
   Box,
   Typography,
   Divider,
-} from "@mui/material"; // インポートを追加
+} from "@mui/material";
 import { MoreHButton } from "../common/MoreHbutton";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { articleEditRoute, articleLikerRoute } from "../../routes";
@@ -16,29 +16,42 @@ import { StyledListHeader } from "../common/StyledListHeader";
 import { useArticles } from "../../hooks/useArticles";
 import { useState } from "react";
 import ListIcon from "@mui/icons-material/List";
-import TocList from "./TocList"; // TocListをインポート（パスは適宜調整してください）
+import PresentToAllIcon from "@mui/icons-material/PresentToAll";
+import TocList from "./TocList";
+import { MarpSlideDialog } from "../Article/MarpSlideDialog";
 
 interface MoreProps {
   username: string;
   articleId: string;
   isOwned: boolean;
-  content?: string; // 記事本文を受け取る
+  content?: string;
 }
 
 export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
-  // contentを受け取る
   const [openToc, setOpenToc] = useState(false);
+  const [openMarp, setOpenMarp] = useState(false);
 
-  // Drawerの開閉を管理する関数
   const toggleDrawer = (newOpen: boolean) => () => {
     setOpenToc(newOpen);
   };
 
-  // 目次メニュー項目
+  // メニュークリック時にダイアログを開く
+  const handleOpenMarp = () => {
+    setOpenMarp(true);
+  };
+
   const TocMenuItem = (
     <MenuItem onClick={toggleDrawer(true)}>
-      <ListIcon />
+      <ListIcon sx={{ mr: 1 }} />
       目次を表示
+    </MenuItem>
+  );
+
+  // 2. プレゼンメニュー項目の定義
+  const MarpMenuItem = (
+    <MenuItem onClick={handleOpenMarp}>
+      <PresentToAllIcon sx={{ mr: 1 }} />
+      プレゼンテーション形式で表示
     </MenuItem>
   );
 
@@ -59,24 +72,22 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
     }
   };
 
-  // 共通のDrawerコンポーネント（コードの重複を避けるため変数化）
   const tocDrawer = (
     <SwipeableDrawer
       anchor="bottom"
       open={openToc}
       onClose={toggleDrawer(false)}
       onOpen={toggleDrawer(true)}
-      sx={{ zIndex: 1300 }} // ボトムバーより上に表示
+      sx={{ zIndex: 1300 }}
       PaperProps={{
         sx: {
           borderTopLeftRadius: "20px",
           borderTopRightRadius: "20px",
           height: "auto",
-          maxHeight: "80vh", // 画面の8割まで
+          maxHeight: "80vh",
         },
       }}
     >
-      {/* 引き出しの「つまみ」 */}
       <Box
         sx={{
           width: 40,
@@ -87,7 +98,6 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
           my: 2,
         }}
       />
-
       <Box sx={{ px: 3, pb: 3 }}>
         <Typography
           variant="h6"
@@ -96,13 +106,8 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
           目次
         </Typography>
         <Divider sx={{ mb: 2 }} />
-
         {content ? (
-          <TocList
-            content={content}
-            // クリックしたらDrawerを閉じる
-            onItemClick={() => setOpenToc(false)}
-          />
+          <TocList content={content} onItemClick={() => setOpenToc(false)} />
         ) : (
           <Typography
             sx={{ p: 2, color: "text.secondary", textAlign: "center" }}
@@ -122,6 +127,7 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
           {content && <StyledListHeader>表示オプション</StyledListHeader>}
           {content && TocMenuItem}
           {content && <Divider sx={{ my: 1 }} />}
+
           <StyledListHeader>記事の情報</StyledListHeader>
           <Link
             to={articleLikerRoute.to}
@@ -129,7 +135,7 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
             style={{ color: "inherit", textDecoration: "none" }}
           >
             <MenuItem>
-              <FavoriteIcon />
+              <FavoriteIcon sx={{ mr: 1 }} />
               いいねしたユーザ一覧
             </MenuItem>
           </Link>
@@ -137,16 +143,22 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
             component="a"
             href={`/api/articles/${articleId}.md`}
             rel="noopener noreferrer"
-            sx={{
-              color: "inherit",
-              textDecoration: "none",
-            }}
+            sx={{ color: "inherit", textDecoration: "none" }}
           >
-            <TextSnippetIcon />
+            <TextSnippetIcon sx={{ mr: 1 }} />
             Markdownで本文を見る
           </MenuItem>
+
+          {/* 表示オプションにMarpを追加 */}
+          {articleId && MarpMenuItem}
         </MoreHButton>
-        {tocDrawer} {/* Drawerを配置 */}
+        {tocDrawer}
+        {/* 3. ダイアログを配置 */}
+        <MarpSlideDialog
+          articleId={articleId}
+          open={openMarp}
+          onClose={() => setOpenMarp(false)}
+        />
       </Box>
     );
 
@@ -154,14 +166,13 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
   return (
     <Box>
       <MoreHButton>
-        {/* 編集系メニューの前に目次を追加 */}
         {content && <StyledListHeader>表示オプション</StyledListHeader>}
         {content && TocMenuItem}
         {content && <Divider sx={{ my: 1 }} />}
 
         <StyledListHeader>記事の編集</StyledListHeader>
         <MenuItem onClick={handleEdit}>
-          <ModeEditIcon />
+          <ModeEditIcon sx={{ mr: 1 }} />
           編集する
         </MenuItem>
 
@@ -172,7 +183,7 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
           style={{ color: "inherit", textDecoration: "none" }}
         >
           <MenuItem>
-            <FavoriteIcon />
+            <FavoriteIcon sx={{ mr: 1 }} />
             いいねしたユーザ一覧
           </MenuItem>
         </Link>
@@ -180,22 +191,27 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
           component="a"
           href={`/api/articles/${articleId}.md`}
           rel="noopener noreferrer"
-          sx={{
-            color: "inherit",
-            textDecoration: "none",
-          }}
+          sx={{ color: "inherit", textDecoration: "none" }}
         >
-          <TextSnippetIcon />
+          <TextSnippetIcon sx={{ mr: 1 }} />
           Markdownで本文を見る
         </MenuItem>
 
+        {/* 表示オプションにMarpを追加 */}
+        {articleId && MarpMenuItem}
         <StyledListHeader>記事の削除</StyledListHeader>
         <MenuItem onClick={handleDelete}>
-          <DeleteIcon />
+          <DeleteIcon sx={{ mr: 1 }} />
           削除する
         </MenuItem>
       </MoreHButton>
-      {tocDrawer} {/* Drawerを配置 */}
+      {tocDrawer}
+      {/* 3. ダイアログを配置 */}
+      <MarpSlideDialog
+        articleId={articleId}
+        open={openMarp}
+        onClose={() => setOpenMarp(false)}
+      />
     </Box>
   );
 };

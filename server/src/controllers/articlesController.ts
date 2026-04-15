@@ -343,4 +343,20 @@ export class ArticlesController {
       }
     });
   };
+
+  getArticleMarp = async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      const result = await this.articlesService.getArticleMarp(
+        String(req.params.articleId),
+        userId,
+      );
+      res.json(result);
+    } catch (error: any) {
+      let status = 500;
+      if (error.message === "ArticleNotFound") status = 404;
+      if (error.message === "Forbidden") status = 403;
+      res.status(status).json({ message: error.message });
+    }
+  };
 }

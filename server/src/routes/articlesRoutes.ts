@@ -151,6 +151,29 @@ articlesRouter.get(
 
 /**
  * @openapi
+ * /api/articles/marp/{articleId}:
+ *   get:
+ *      summary: 記事のMarpスライドデータ取得
+ *      tags:
+ *        - Articles
+ *      parameters:
+ *        - in: path
+ *          name: articleId
+ *          required: true
+ *          schema:
+ *            type: string
+ *      responses:
+ *        '200':
+ *        description: HTMLとCSSのセット
+ */
+articlesRouter.get(
+  "/articles/marp/:articleId",
+  optionalAuth,
+  articlesCtrl.getArticleMarp,
+);
+
+/**
+ * @openapi
  * /api/articles/{articleId}:
  *   get:
  *     summary: 記事詳細取得

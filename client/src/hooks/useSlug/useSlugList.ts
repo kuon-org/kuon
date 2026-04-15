@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { remark } from "remark";
 import remarkParse from "remark-parse";
+import remarkFrontmatter from "remark-frontmatter";
 import GithubSlugger from "github-slugger";
-import type { Root, RootContent, Heading } from "mdast";
+import type { Root, RootContent, Heading, Content } from "mdast";
 
 export interface SlugItem {
   id: string;
@@ -17,34 +18,65 @@ interface UseSlugListOptions {
 
 export const useSlugList = (
   markdownText: string,
-  options: UseSlugListOptions = {}
+  options: UseSlugListOptions = {},
 ): SlugItem[] => {
   const { minLevel = 1, maxLevel = 6 } = options;
 
   return useMemo(() => {
-    // remark-parseでMarkdownをAST(抽象構文木)に変換
-    const tree = remark().use(remarkParse).parse(markdownText) as Root;
+    // Frontmatter対応込みでAST生成
+    const tree = remark()
+      .use(remarkParse)
+      .use(remarkFrontmatter, ["yaml"])
+      .parse(markdownText) as Root;
+
     const slugs: SlugItem[] = [];
     const slugger = new GithubSlugger();
 
-    const walk = (node: RootContent | Root): void => {
+    // 見出し内テキスト抽出（ネスト対応）
+    const extractText = (nodes: Content[]): string => {
+      return nodes
+        .map((node) => {
+          if ("value" in node && typeof node.value === "string") {
+            return node.value;
+          }
+          if ("children" in node && Array.isArray(node.children)) {
+            return extractText(node.children as Content[]);
+          }
+          return "";
+        })
+        .join("");
+    };
+
+    const walk = (node: Root | RootContent): void => {
+      // YAML frontmatterは完全無視
+      if (node.type === "yaml") return;
+
+      // 区切り線 (---) も無視
+      if (node.type === "thematicBreak") return;
+
       if (node.type === "heading") {
         const heading = node as Heading;
-        if (heading.depth >= minLevel && heading.depth <= maxLevel) {
-          // 見出し内のテキストを結合（太字やリンクが含まれていても抽出）
-          const text = heading.children
-            .map((child) => ("value" in child ? child.value : ""))
-            .join("");
 
-          // rehype-slugと同じアルゴリズムでIDを生成
+        if (heading.depth >= minLevel && heading.depth <= maxLevel) {
+          const text = extractText(heading.children).trim();
+
+          // 空文字や "---" などは除外
+          if (!text || /^-+$/.test(text)) return;
+
           const id = slugger.slug(text);
 
-          slugs.push({ id, text, level: heading.depth });
+          slugs.push({
+            id,
+            text,
+            level: heading.depth,
+          });
         }
       }
-      
+
       if ("children" in node && Array.isArray(node.children)) {
-        node.children.forEach((child) => walk(child as RootContent));
+        node.children.forEach((child) => {
+          walk(child as RootContent);
+        });
       }
     };
 
