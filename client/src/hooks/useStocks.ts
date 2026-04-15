@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import apiClient from "../api/client";
 import { useNotify } from "./useNotify";
+import { useAuthQuery } from "./useAuth";
 
 // 基本的なリスト情報の型
 export interface StockList {
@@ -79,6 +80,7 @@ export const useStocks = (
 ) => {
   const queryClient = useQueryClient();
   const { success } = useNotify();
+  const { user } = useAuthQuery();
   // 自分のリスト取得
   const {
     data: lists,
@@ -92,7 +94,7 @@ export const useStocks = (
       return data;
     },
     retry: false,
-    enabled: !!queryClient.getQueryData(["authUser"]),
+    enabled: !!user,
   });
 
   const {
@@ -132,7 +134,7 @@ export const useStocks = (
         });
         return data;
       },
-      enabled: listId ? true : !!queryClient.getQueryData(["authUser"]),
+      enabled: listId ? true : !!user,
     });
 
   // 2. 記事の保存/解除 (トグル)
@@ -228,7 +230,7 @@ export const useStocks = (
       const res = await apiClient.get(`/stocks/lists/${listId}/islike`);
       return res.data.isLiked as boolean;
     },
-    enabled: !!listId && !!queryClient.getQueryData(["authUser"]),
+    enabled: !!listId && !!user,
   });
 
   const likeMutation = useMutation({

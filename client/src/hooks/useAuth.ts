@@ -79,6 +79,18 @@ export interface UserAvatar {
   updated_at: string;
 }
 
+export interface SessionDevice {
+  id: string;
+  created_at: Date | null;
+  user_id: string;
+  expires_at: Date;
+  ip_address: string | null;
+  user_agent: string | null;
+  device_name: string | null;
+  last_used_at: Date | null;
+  is_current: boolean;
+}
+
 export const useAuthQuery = () => {
   const queryClient = useQueryClient();
   const { error, success, notify } = useNotify();
@@ -308,6 +320,41 @@ export const useAuthQuery = () => {
     },
   });
 
+  const getSessionDevice = useQuery<SessionDevice[]>({
+    queryKey: ["device"],
+    queryFn: async () => {
+      const res = await apiClient.get("/devices");
+      return res.data;
+    },
+    enabled: !!authQuery.data,
+  });
+
+  const logoutAllMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post("/logout/all");
+      return res.data;
+    },
+    onSuccess: async () => {
+      await queryClient.setQueryData(["authUser"], null);
+      queryClient.removeQueries({ queryKey: ["device"] });
+      queryClient.removeQueries({ queryKey: ["uploaded_images"] });
+      queryClient.removeQueries({ queryKey: ["userAvatars"] });
+      queryClient.clear();
+      success("ログアウトしました");
+    },
+  });
+
+  const logoutSessionMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const res = await apiClient.post(`/logout/device/${sessionId}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["device"] });
+      success("無効化しました");
+    },
+  });
+
   return {
     user: authQuery.data,
     user_isLoading: authQuery.isLoading,
@@ -342,5 +389,14 @@ export const useAuthQuery = () => {
     localAvatarUpload_isPending: uploadImageMutation.isPending,
     serverError,
     successMessage,
+
+    sessionDevice: getSessionDevice.data,
+    sessionDeviceIsLoading: getSessionDevice.isLoading,
+
+    logoutAll: logoutAllMutation.mutateAsync,
+    logoutAllIsPending: logoutAllMutation.isPending,
+
+    logoutSession: logoutSessionMutation.mutateAsync,
+    logoutSessionIsPending: logoutSessionMutation.isPending,
   };
 };
