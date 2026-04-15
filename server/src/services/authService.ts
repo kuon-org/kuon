@@ -8,8 +8,12 @@ import { get } from "lodash-es";
 import { AuthRepository } from "../repositories/authRepository.js";
 import prisma from "../prisma/client.js";
 import { SAML } from "@node-saml/node-saml";
+import {
+  createAccessToken,
+  createRefreshToken,
+  getRefreshTokenExpiryDate,
+} from "../utils/sessionTokens/index.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 // userId を保持できるように拡張
 const pkceStore = new Map<string, { verifier: string; userId?: string }>();
 
@@ -64,6 +68,11 @@ export class AuthService {
     code: string,
     state: string,
     fallbackUserId?: string,
+    metadata?: {
+      ipAddress?: string;
+      userAgent?: string;
+      deviceName?: string;
+    },
   ) {
     const stored = pkceStore.get(state);
     if (!stored) throw new Error("Invalid state");
@@ -138,7 +147,7 @@ export class AuthService {
 
     await this.repo.updateLastLogin(user.id);
     pkceStore.delete(state);
-    return jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "24h" });
+    return await this.createUserSession(user.id, metadata);
   }
 
   private async fetchToken(config: any, code: string, verifier: string) {
@@ -173,6 +182,42 @@ export class AuthService {
       headers,
     });
     return res.data;
+  }
+
+  private async createUserSession(
+    userId: string,
+    metadata?: {
+      ipAddress?: string;
+      userAgent?: string;
+      deviceName?: string;
+    },
+  ) {
+    await prisma.user_sessions.deleteMany({
+      where: {
+        user_id: userId,
+        expires_at: { lt: new Date() },
+      },
+    });
+
+    const refreshToken = createRefreshToken();
+    const expiresAt = getRefreshTokenExpiryDate();
+
+    const session = await prisma.user_sessions.create({
+      data: {
+        user_id: userId,
+        refresh_token: refreshToken,
+        expires_at: expiresAt,
+        ip_address: metadata?.ipAddress,
+        user_agent: metadata?.userAgent,
+        device_name: metadata?.deviceName,
+      },
+    });
+
+    return {
+      accessToken: createAccessToken(userId, session.id),
+      refreshToken,
+      refreshExpiresAt: expiresAt,
+    };
   }
 
   private getAvatarUrl(raw: any, mapping: any): string | null {
@@ -301,6 +346,11 @@ export class AuthService {
     providerName: string,
     body: any,
     fallbackUserId?: string,
+    metadata?: {
+      ipAddress?: string;
+      userAgent?: string;
+      deviceName?: string;
+    },
   ) {
     // RelayState から state を取得し、保存されていた userId を復元
     const state = body.RelayState;
@@ -331,7 +381,7 @@ export class AuthService {
       currentUserId,
     );
     pkceStore.delete(state);
-    return jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "24h" });
+    return await this.createUserSession(user.id, metadata);
   }
 
   private formatCert(cert: string): string {

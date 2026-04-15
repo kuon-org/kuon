@@ -1,7 +1,11 @@
 import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
 import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
 import { generate2FASecret } from "../utils/2fa/index.js";
+import {
+  ACCESS_TOKEN_MAX_AGE_MS,
+  REFRESH_TOKEN_MAX_AGE_MS,
+  getCookieOptions,
+} from "../utils/sessionTokens/index.js";
 import { TOTP } from "@otplib/totp";
 import qrcode from "qrcode";
 import NodeCryptoPlugin from "@otplib/plugin-crypto-node";
@@ -12,7 +16,7 @@ import fs from "fs";
 import { UsersService } from "../services/usersService.js";
 import { UploadImagesService } from "../services/uploadImagesService.js";
 import { TagsService } from "../services/tagsService.js";
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+import { getDeviceNameFromUserAgent } from "../utils/uaParser/index.js";
 
 export class UsersController {
   constructor(
@@ -107,8 +111,21 @@ export class UsersController {
     }
   };
 
+  private getSessionMetadata(req: Request) {
+    const userAgent = req.get("User-Agent") ?? undefined;
+    return {
+      ipAddress: req.ip,
+      userAgent,
+      deviceName:
+        req.body?.deviceName ??
+        req.body?.device_name ??
+        getDeviceNameFromUserAgent(userAgent),
+    };
+  }
+
   loginUser = async (req: Request, res: Response) => {
     const { identifier, password } = req.body;
+    const metadata = this.getSessionMetadata(req);
 
     try {
       const user = await this.usersService.loginUser(identifier, password);
@@ -123,17 +140,21 @@ export class UsersController {
         });
       }
       await this.usersService.updateLastLogin(user.id);
-      // 🔹 通常ログイン（JWT発行）
-      const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
-        expiresIn: "24h",
-      });
+      const session = await this.usersService.createSessionForUser(
+        user.id,
+        metadata,
+      );
 
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 24 * 60 * 60 * 1000, // 24時間
-      });
+      res.cookie(
+        "access_token",
+        session.accessToken,
+        getCookieOptions(ACCESS_TOKEN_MAX_AGE_MS),
+      );
+      res.cookie(
+        "refresh_token",
+        session.refreshToken,
+        getCookieOptions(REFRESH_TOKEN_MAX_AGE_MS),
+      );
 
       res.json({
         message: "ログインに成功しました",
@@ -158,20 +179,26 @@ export class UsersController {
 
   verifyLogin2FA = async (req: Request, res: Response) => {
     const { email, token } = req.body;
+    const metadata = this.getSessionMetadata(req);
     try {
       const user = await this.usersService.verifyLogin2FA(email, token);
       console.log(user);
       await this.usersService.updateLastLogin(user.id);
-      // 🔹 成功したら JWT 発行
-      const jwtToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
-        expiresIn: "24h",
-      });
-      res.cookie("token", jwtToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 24 * 60 * 60 * 1000,
-      });
+      const session = await this.usersService.createSessionForUser(
+        user.id,
+        metadata,
+      );
+
+      res.cookie(
+        "access_token",
+        session.accessToken,
+        getCookieOptions(ACCESS_TOKEN_MAX_AGE_MS),
+      );
+      res.cookie(
+        "refresh_token",
+        session.refreshToken,
+        getCookieOptions(REFRESH_TOKEN_MAX_AGE_MS),
+      );
 
       res.json({
         success: true,
@@ -186,14 +213,91 @@ export class UsersController {
   };
 
   logoutUser = async (req: Request, res: Response) => {
-    // クッキー名を指定して削除（ログイン時に指定したオプションと同じにするのが安全）
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
+    const refreshToken = req.cookies.refresh_token;
+    if (refreshToken) {
+      await this.usersService.revokeRefreshToken(refreshToken);
+    }
+
+    res.clearCookie("access_token", getCookieOptions(0));
+    res.clearCookie("refresh_token", getCookieOptions(0));
 
     res.status(200).json({ message: "ログアウトしました" });
+  };
+
+  getDevices = async (req: AuthRequest, res: Response) => {
+    try {
+      if (!isAuthenticated(req)) {
+        return res.status(401).json({ message: "未ログインです" });
+      }
+      const sessions = await this.usersService.getUserSessions(req.user.userId);
+      const result = sessions.map(({ refresh_token, ...s }) => ({
+        ...s,
+        is_current: s.id === req.user.sessionId,
+      }));
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "デバイス一覧の取得に失敗しました" });
+    }
+  };
+
+  logoutAllDevices = async (req: AuthRequest, res: Response) => {
+    try {
+      if (!isAuthenticated(req)) {
+        return res.status(401).json({ message: "未ログインです" });
+      }
+      await this.usersService.deleteAllSessionsByUser(req.user.userId);
+      res.clearCookie("access_token", getCookieOptions(0));
+      res.clearCookie("refresh_token", getCookieOptions(0));
+      res.json({ message: "すべてのデバイスからログアウトしました" });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "すべてのデバイスからのログアウトに失敗しました" });
+    }
+  };
+
+  logoutDevice = async (req: AuthRequest, res: Response) => {
+    try {
+      if (!isAuthenticated(req)) {
+        return res.status(401).json({ message: "未ログインです" });
+      }
+      const sessionId = String(req.params.sessionId);
+      if (!sessionId) {
+        return res.status(400).json({ message: "セッションIDが必要です" });
+      }
+      await this.usersService.deleteSessionById(sessionId);
+      res.json({ message: "指定されたデバイスからログアウトしました" });
+    } catch (error) {
+      res.status(500).json({ message: "デバイスのログアウトに失敗しました" });
+    }
+  };
+
+  refreshToken = async (req: Request, res: Response) => {
+    const refreshToken = req.cookies.refresh_token;
+    if (!refreshToken) {
+      return res
+        .status(401)
+        .json({ message: "リフレッシュトークンが必要です" });
+    }
+
+    try {
+      const session = await this.usersService.refreshSession(refreshToken);
+      res.cookie(
+        "access_token",
+        session.accessToken,
+        getCookieOptions(ACCESS_TOKEN_MAX_AGE_MS),
+      );
+      res.cookie(
+        "refresh_token",
+        session.refreshToken,
+        getCookieOptions(REFRESH_TOKEN_MAX_AGE_MS),
+      );
+      res.json({ message: "トークンを更新しました" });
+    } catch (error: any) {
+      res.clearCookie("access_token", getCookieOptions(0));
+      res.clearCookie("refresh_token", getCookieOptions(0));
+      res.status(401).json({ message: "リフレッシュトークンが無効です" });
+    }
   };
 
   changePassword = async (req: Request, res: Response) => {
