@@ -114,13 +114,21 @@ export class UsersController {
   private getSessionMetadata(req: Request) {
     const userAgent = req.get("User-Agent") ?? undefined;
     return {
-      ipAddress: req.ip,
+      ipAddress: this.getClientIp(req),
       userAgent,
       deviceName:
         req.body?.deviceName ??
         req.body?.device_name ??
         getDeviceNameFromUserAgent(userAgent),
     };
+  }
+
+  private getClientIp(req: Request) {
+    return (
+      (req.headers["cf-connecting-ip"] as string) ||
+      (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+      req.ip
+    );
   }
 
   loginUser = async (req: Request, res: Response) => {

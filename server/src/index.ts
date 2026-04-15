@@ -15,6 +15,18 @@ import shareRouter from "./routes/shareRoutes.js";
 import stocksRoutes from "./routes/stocksRoutes.js";
 import pumlRouter from "./routes/plantumlRouter.js";
 const app = express();
+// リバプロ設定
+const trustProxy = process.env.TRUST_PROXY;
+if (trustProxy === "true") {
+  console.log("Proxy enabled", trustProxy);
+  app.set("trust proxy", true);
+} else if (trustProxy === "false" || !trustProxy) {
+  console.log("Proxy not enabled:", trustProxy);
+  app.set("trust proxy", false);
+} else if (!isNaN(Number(trustProxy))) {
+  console.log("Proxy enabled Hop:", trustProxy);
+  app.set("trust proxy", Number(trustProxy));
+}
 app.use(express.json());
 app.use(cookieParser());
 app.use(
