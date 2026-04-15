@@ -121,9 +121,13 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
   }, [text]);
 
   const normalized = useMemo(() => {
-    // 1) 1行省略形を複数行へ（使わないなら省略可）
     let s = normalizeDirectiveBracketLabelToAttrs(text);
-    // 2) ディレクティブ行の [Label] -> {label="..."} へ（★重要）
+
+    const marpFrontmatter = s.match(/^---[\s\S]*?---/);
+    if (marpFrontmatter && /marp\s*:\s*true/.test(marpFrontmatter[0])) {
+      s = s.replace(/^---[\s\S]*?---\s*/, "");
+    }
+
     return s;
   }, [text]);
 

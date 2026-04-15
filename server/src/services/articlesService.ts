@@ -1,7 +1,7 @@
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
 import generateSummary from "../utils/generateSummary/index.js";
 import { asUUID } from "../utils/uuid/index.js";
-
+import { Marp } from "@marp-team/marp-core";
 export class ArticlesService {
   constructor(private articlesRepo: ArticlesRepository) {}
 
@@ -202,5 +202,20 @@ export class ArticlesService {
     if (!existing || existing.user_id !== userId)
       throw new Error("Unauthorized");
     return await this.articlesRepo.hardDeleteArticle(articleId);
+  }
+
+  async getArticleMarp(articleId: string, currentUserId?: string) {
+    // 既存の getArticle メソッドを利用して記事を取得（権限チェックも含まれる）
+    const article = await this.getArticle(articleId, currentUserId);
+    // Marpのインスタンス化（HTML出力を許可する設定）
+    const marp = new Marp({
+      html: true,
+      container: { tag: "div", id: "marp-container" },
+    });
+    if (!article || !article.render_content) throw new Error("ArticleNotFound");
+    // Markdownをレンダリング
+    const { html, css } = marp.render(article.render_content);
+
+    return { html, css, title: article.title };
   }
 }

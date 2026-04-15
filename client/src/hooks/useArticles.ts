@@ -416,6 +416,15 @@ export const useArticles = (articleId?: string) => {
     },
   });
 
+  const getMarp = useQuery({
+    queryKey: ["marp", articleId],
+    queryFn: async () => {
+      const res = await apiClient.get(`/articles/marp/${articleId}`);
+      return res.data;
+    },
+    enabled: !!articleId,
+  });
+
   return {
     // 記事関連
     createArticle: createArticleMutation.mutateAsync,
@@ -492,5 +501,10 @@ export const useArticles = (articleId?: string) => {
     trash_isLoading: trashArticlesQuery.isLoading,
     restoreArticle: restoreMutation.mutate,
     hardDeleteArticle: hardDeleteMutation.mutate,
+
+    // スライド(Marp)取得
+    marp: getMarp.data,
+    marpIsLoading: getMarp.isLoading,
+    marpIsError: getMarp.isError,
   };
 };
