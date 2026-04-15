@@ -10,6 +10,7 @@ import { Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   accountSettingRoute,
   publicProfileRoute,
+  securityRoute,
   uploadedImagesRoute,
   user2faSettingRoute,
 } from "../../routes";
@@ -54,6 +55,12 @@ export const UserSettings = () => {
             selected={isSelected(publicProfileRoute.to)}
           >
             <ListItemText>公開用プロフィール</ListItemText>
+          </ListItemButton>
+          <ListItemButton
+            onClick={() => navigate({ to: securityRoute.to })}
+            selected={isSelected(securityRoute.to)}
+          >
+            <ListItemText>セキュリティ</ListItemText>
           </ListItemButton>
           <ListItemButton
             onClick={() => navigate({ to: user2faSettingRoute.to })}

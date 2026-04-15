@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../api/client";
 import { useNotify } from "./useNotify";
+import { useAuthQuery } from "./useAuth";
 
 export interface Tag {
   id: string;
@@ -48,6 +49,7 @@ export interface UserFollowingTags {
 export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
   const queryClient = useQueryClient();
   const { notify, error } = useNotify();
+  const { user } = useAuthQuery();
   // 🏷 タグ一覧取得
   const tagsQuery = useQuery<Tags[]>({
     queryKey: ["tags"],
@@ -63,6 +65,7 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
       const { data } = await apiClient.get(`/tags/${slug}`);
       return data;
     },
+    enabled: !!slug,
   });
 
   // ➕ タグの作成・更新 (Upsert)
@@ -98,7 +101,7 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
       const { data } = await apiClient.get("/users/tags/me");
       return data;
     },
-    enabled: !!queryClient.getQueryData(["authUser"]),
+    enabled: !!user,
   });
 
   const getIsFollowing = useQuery({
@@ -107,7 +110,7 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
       const { data } = await apiClient.get(`/tags/${slug}/isFollowing`);
       return data;
     },
-    enabled: !!queryClient.getQueryData(["authUser"]),
+    enabled: !!user && !!slug,
   });
 
   const followMutation = useMutation({
