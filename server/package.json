@@ -11,6 +11,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@marp-team/marp-core": "^4.3.0",
     "@node-saml/node-saml": "^5.1.0",
     "@otplib/plugin-base32-scure": "^13.3.0",
     "@otplib/plugin-crypto-node": "^13.3.0",
