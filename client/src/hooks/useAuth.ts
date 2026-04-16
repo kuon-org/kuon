@@ -1,7 +1,7 @@
 // src/hooks/useAuth.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../api/client";
-import type { HttpError } from "../api/types";
+import type { HttpError } from "../api/FetchHttpClient";
 import { useState } from "react";
 import authClient from "../api/authClient";
 import { useNotify } from "./useNotify";
