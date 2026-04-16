@@ -1,6 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 
-export const queryClient = new QueryClient({
+const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // API の性質に合わせて調整
@@ -11,3 +11,5 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+export default queryClient;
