@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { layoutWithTopRoute, plainLayoutRoute } from "./__root";
 import Loading from "../components/common/Loading/Loading";
-import { queryClient } from "../utils/queryClient";
+import queryClient from "../utils/queryClient";
 import apiClient from "../api/client";
 import type { Article } from "../hooks/useArticles";
 import { asUUID } from "../utils/uuid";

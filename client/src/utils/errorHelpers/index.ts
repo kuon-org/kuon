@@ -1,4 +1,4 @@
-import type { HttpError } from "../../api/types";
+import type { HttpError } from "../../api/FetchHttpClient";
 
 /**
  * HttpErrorかどうかを判定する
