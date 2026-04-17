@@ -750,18 +750,57 @@ usersRouter.get("/users/:userId/articles", usersCtrl.getArticleCount);
 usersRouter.get("/users/ranking/all", usersCtrl.getAllRanking);
 
 /**
- * APIキー管理エンドポイント
+ * @openapi
+ * /api/users/settings/api-keys:
+ *   get:
+ *     summary: ユーザのAPIキー一覧取得
+ *     tags:
+ *       - Users
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
  */
 usersRouter.get(
   "/users/settings/api-keys",
   authenticateToken,
   usersCtrl.getApiKeys,
 );
+/**
+ * @openapi
+ * /api/users/settings/api-keys:
+ *   post:
+ *     summary: APIキー作成
+ *     tags:
+ *       - Users
+ *     responses:
+ *       '201':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ */
 usersRouter.post(
   "/users/settings/api-keys",
   authenticateToken,
   usersCtrl.createApiKey,
 );
+
+/**
+ * @openapi
+ * /api/users/settings/api-keys/{keyId}:
+ *   post:
+ *     summary: APIキー失効
+ *     tags:
+ *       - Users
+ *     responses:
+ *       '200':
+ *         description: 成功
+ */
 usersRouter.delete(
   "/users/settings/api-keys/:apiKeyId",
   authenticateToken,
