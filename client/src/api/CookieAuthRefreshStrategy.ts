@@ -15,7 +15,13 @@ class CookieAuthRefreshStrategy implements AuthRefreshStrategy {
         method: "POST",
         credentials: this.credentials,
       });
-      return res.ok;
+
+      // 200 / 204 のみ成功扱い
+      if (res.status === 200 || res.status === 204) {
+        return true;
+      }
+
+      return false;
     } catch {
       return false;
     }
