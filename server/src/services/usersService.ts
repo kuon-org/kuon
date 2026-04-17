@@ -180,29 +180,29 @@ export class UsersService {
   async refreshSession(refreshToken: string) {
     const session =
       await this.usersRepo.findSessionByRefreshToken(refreshToken);
+
     if (!session || session.expires_at < new Date()) {
       throw new Error("InvalidRefreshToken");
     }
 
     const user = await this.getUserById(session.user_id);
-    await this.usersRepo.deleteExpiredSessionsByUser(user.id);
-    await this.usersRepo.deleteSessionByRefreshToken(refreshToken);
 
+    // 期限切れ掃除は残してOK
+    await this.usersRepo.deleteExpiredSessionsByUser(user.id);
+
+    // 新しいトークン生成
     const newRefreshToken = createRefreshToken();
     const expiresAt = getRefreshTokenExpiryDate();
-    const newSession = await this.usersRepo.createUserSession(
-      user.id,
+
+    // 🔥 セッション更新 (削除しない)
+    await this.usersRepo.updateSessionRefreshToken(
+      session.id,
       newRefreshToken,
       expiresAt,
-      {
-        ipAddress: session.ip_address ?? undefined,
-        userAgent: session.user_agent ?? undefined,
-        deviceName: session.device_name ?? undefined,
-      },
     );
 
     return {
-      accessToken: createAccessToken(user.id, newSession.id),
+      accessToken: createAccessToken(user.id, session.id), // 同じsession id
       refreshToken: newRefreshToken,
       refreshExpiresAt: expiresAt,
     };

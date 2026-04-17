@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../prisma/client.js";
+import crypto from "crypto";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret";
 
@@ -9,7 +10,6 @@ interface JwtPayload {
   sid: string;
 }
 
-// ExpressのRequest型を拡張
 export interface AuthRequest extends Request {
   user?: {
     userId: string;
@@ -60,21 +60,38 @@ export const authenticateToken = async (
   res: Response,
   next: NextFunction,
 ) => {
+  const apiKey = req.header("x-api-key");
+
+  if (apiKey) {
+    const key = await validateApiKey(apiKey);
+
+    if (!key) {
+      return res.status(401).json({ message: "無効なAPIキーです" });
+    }
+
+    req.user = {
+      userId: key.user_id,
+      sessionId: "apikey",
+    };
+
+    return next();
+  }
+
   const accessToken = req.cookies.access_token;
 
+  // ❌ cookie削除しない
   if (!accessToken) {
-    clearAuthCookies(res);
     return res.status(401).json({ message: "認証が必要です" });
   }
 
   try {
     const decoded = jwt.verify(accessToken, JWT_SECRET) as JwtPayload;
 
-    // session存在チェック（logout反映）
     const session = await prisma.user_sessions.findUnique({
       where: { id: decoded.sid },
     });
 
+    // session無効 → cookie削除
     if (!session || session.expires_at < new Date()) {
       clearAuthCookies(res);
       return res.status(401).json({ message: "セッションが無効です" });
@@ -86,11 +103,15 @@ export const authenticateToken = async (
     };
 
     return next();
-  } catch {
+  } catch (err: any) {
+    // 期限切れ → cookie削除しない
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "アクセストークン期限切れ" });
+    }
+
+    // 改ざんなど → cookie削除
     clearAuthCookies(res);
-    return res
-      .status(401)
-      .json({ message: "トークンの有効期限が切れています" });
+    return res.status(401).json({ message: "トークンが無効です" });
   }
 };
 
@@ -123,10 +144,12 @@ export const optionalAuth = async (
         return next();
       }
 
+      // session無効時のみ削除
       clearAuthCookies(res);
     } catch (err: any) {
+      // 期限切れは何もしない
       if (err.name !== "TokenExpiredError") {
-        return next();
+        clearAuthCookies(res);
       }
     }
   }
@@ -146,4 +169,26 @@ export const optionalAuth = async (
   }
 
   next();
+};
+
+const validateApiKey = async (apiKey: string) => {
+  const hash = crypto.createHash("sha256").update(apiKey).digest("hex");
+
+  console.log("call APIKey Authflow:", apiKey);
+
+  const key = await prisma.user_api_keys.findUnique({
+    where: { api_key_hash: apiKey },
+  });
+
+  if (!key) return null;
+  if (!key.is_active) return null;
+  if (key.revoked_at) return null;
+  if (key.expires_at && key.expires_at < new Date()) return null;
+
+  await prisma.user_api_keys.update({
+    where: { id: key.id },
+    data: { last_used_at: new Date() },
+  });
+
+  return key;
 };
