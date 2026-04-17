@@ -44,6 +44,7 @@ import {
   user2faSettingRoute,
   uploadedImagesRoute,
   securityRoute,
+  apiKeySettingsRoute,
 } from "./user";
 
 import {
@@ -106,6 +107,7 @@ export const routeTree = baseRootRoute.addChildren([
       publicProfileRoute,
       securityRoute,
       user2faSettingRoute,
+      apiKeySettingsRoute,
       uploadedImagesRoute,
     ]),
     draftsRoute,
