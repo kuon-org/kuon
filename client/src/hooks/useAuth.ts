@@ -91,6 +91,21 @@ export interface SessionDevice {
   is_current: boolean;
 }
 
+// --- APIキー関連の型 ---
+export interface UserApiKey {
+  id: string;
+  name: string;
+  prefix: string;
+  is_active: boolean;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface CreateApiKeyResponse extends UserApiKey {
+  rawKey: string; // 作成時のみ返却される生キー
+}
+
 export const useAuthQuery = () => {
   const queryClient = useQueryClient();
   const { error, success, notify } = useNotify();
@@ -355,6 +370,54 @@ export const useAuthQuery = () => {
     },
   });
 
+  // --- APIキー一覧の取得 ---
+  const getApiKeysQuery = useQuery({
+    queryKey: ["user-api-keys"],
+    queryFn: async () => {
+      const res = await apiClient.get<UserApiKey[]>("/users/settings/api-keys");
+      return res.data;
+    },
+    // ログイン中のみ有効にする
+    enabled: !!authQuery.data,
+  });
+
+  // --- APIキーの作成 ---
+  const createApiKeyMutation = useMutation({
+    mutationFn: async (data: { name: string; expiresAt: string | null }) => {
+      const res = await apiClient.post<CreateApiKeyResponse>(
+        "/users/settings/api-keys",
+        data,
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-api-keys"] });
+      success(
+        "APIキーを作成しました。一度しか表示されないため、必ず控えてください。",
+      );
+    },
+    onError: (err: HttpError) => {
+      error(err.response?.data.message || "APIキーの作成に失敗しました");
+    },
+  });
+
+  // --- APIキーの削除（失効） ---
+  const revokeApiKeyMutation = useMutation({
+    mutationFn: async (apiKeyId: string) => {
+      const res = await apiClient.delete(
+        `/users/settings/api-keys/${apiKeyId}`,
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-api-keys"] });
+      success("APIキーを失効させました");
+    },
+    onError: (err: HttpError) => {
+      error(err.response?.data.message || "APIキーの削除に失敗しました");
+    },
+  });
+
   return {
     user: authQuery.data,
     user_isLoading: authQuery.isLoading,
@@ -398,5 +461,12 @@ export const useAuthQuery = () => {
 
     logoutSession: logoutSessionMutation.mutateAsync,
     logoutSessionIsPending: logoutSessionMutation.isPending,
+
+    apiKeys: getApiKeysQuery.data,
+    apiKeys_isLoading: getApiKeysQuery.isLoading,
+    createApiKey: createApiKeyMutation.mutateAsync, // rawKeyを受け取るためにmutateAsyncが便利
+    createApiKey_isPending: createApiKeyMutation.isPending,
+    revokeApiKey: revokeApiKeyMutation.mutate,
+    revokeApiKey_isPending: revokeApiKeyMutation.isPending,
   };
 };

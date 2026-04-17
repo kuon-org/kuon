@@ -53,6 +53,11 @@ const TwoFASetting = lazy(() =>
     default: mod.TwoFASetting,
   })),
 );
+const APIKeySettings = lazy(() =>
+  import("../pages/UserSettings/APIKeySettings").then((mod) => ({
+    default: mod.APIKeySettings,
+  })),
+);
 const UploadedImages = lazy(() =>
   import("../pages/UserSettings/UploadedImages").then((mod) => ({
     default: mod.UploadedImages,
@@ -250,6 +255,19 @@ export const user2faSettingRoute = createRoute({
   component: () => (
     <Suspense fallback={<LoadingFallback />}>
       <TwoFASetting />
+    </Suspense>
+  ),
+});
+
+/**
+ * APIキー設定
+ */
+export const apiKeySettingsRoute = createRoute({
+  getParentRoute: () => userSettingsRoute,
+  path: "api-key-settings",
+  component: () => (
+    <Suspense fallback={<LoadingFallback />}>
+      <APIKeySettings />
     </Suspense>
   ),
 });
