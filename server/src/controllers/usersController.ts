@@ -697,4 +697,61 @@ export class UsersController {
       res.status(500).json({ message: error.message });
     }
   };
+
+  getApiKeys = async (req: AuthRequest, res: Response) => {
+    try {
+      if (!isAuthenticated(req))
+        return res.status(401).json({ message: "未ログインです" });
+      const keys = await this.usersService.getUserApiKeys(req.user.userId);
+      // ハッシュ値を除外してレスポンス
+      const result = keys.map(({ api_key_hash, ...k }) => k);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  createApiKey = async (req: AuthRequest, res: Response) => {
+    try {
+      if (!isAuthenticated(req))
+        return res.status(401).json({ message: "未ログインです" });
+
+      const { name, expiresAt } = req.body; // expiresAt を受け取る
+
+      if (!name) {
+        return res
+          .status(400)
+          .json({ message: "APIキーの名称を入力してください" });
+      }
+
+      // セキュリティ上のバリデーション（例：過去の日付は不可）
+      if (expiresAt && new Date(expiresAt) <= new Date()) {
+        return res
+          .status(400)
+          .json({ message: "有効期限には未来の日時を指定してください" });
+      }
+
+      const result = await this.usersService.createApiKey(
+        req.user.userId,
+        name,
+        expiresAt || null,
+      );
+
+      res.status(201).json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  revokeApiKey = async (req: AuthRequest, res: Response) => {
+    try {
+      if (!isAuthenticated(req))
+        return res.status(401).json({ message: "未ログインです" });
+      const apiKeyId = String(req.params.apiKeyId);
+      await this.usersService.revokeApiKey(req.user.userId, apiKeyId);
+      res.json({ message: "APIキーを削除しました" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
 }
