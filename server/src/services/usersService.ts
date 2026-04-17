@@ -9,6 +9,7 @@ import {
   createRefreshToken,
   getRefreshTokenExpiryDate,
 } from "../utils/sessionTokens/index.js";
+import crypto from "crypto";
 export class UsersService {
   constructor(
     private usersRepo: UsersRepository,
@@ -309,5 +310,41 @@ export class UsersService {
         // 合計値の降順でソート
         .sort((a, b) => b.contribution - a.contribution)
     );
+  }
+
+  async getUserApiKeys(userId: string) {
+    return await this.usersRepo.findApiKeysByUserId(userId);
+  }
+
+  /**
+   * APIキーを生成し、ハッシュ化したものをDBへ、生キーを一度だけ返す
+   */
+  /**
+   * APIキーを生成
+   * @param expiresAt 具体的な日付、または null（無期限）
+   */
+  async createApiKey(userId: string, name: string, expiresAt: string | null) {
+    const rawKey = `ku_${crypto.randomBytes(32).toString("hex")}`;
+    const hash = crypto.createHash("sha256").update(rawKey).digest("hex");
+    const prefix = rawKey.substring(0, 7);
+
+    // 有効期限のパース
+    const expiryDate = expiresAt ? new Date(expiresAt) : null;
+
+    const apiKey = await this.usersRepo.createApiKey({
+      user_id: userId,
+      name,
+      api_key_hash: hash,
+      prefix,
+      expires_at: expiryDate,
+      created_by: userId,
+    });
+
+    // クライアントには一度だけ生のキーを返す
+    return { ...apiKey, rawKey };
+  }
+
+  async revokeApiKey(userId: string, apiKeyId: string) {
+    return await this.usersRepo.deleteApiKey(apiKeyId, userId);
   }
 }
