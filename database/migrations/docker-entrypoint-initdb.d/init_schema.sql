@@ -474,6 +474,50 @@ COMMENT ON COLUMN user_security.user_id IS 'ユーザID';
 COMMENT ON COLUMN user_security.totp_secret IS 'TOTPシークレット';
 COMMENT ON COLUMN user_security.is_2fa_enabled IS '2FA有効化フラグ';
 
+-- user_api_keys
+CREATE TABLE IF NOT EXISTS knowledge.user_api_keys (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    user_id UUID NOT NULL REFERENCES knowledge.users(id) ON DELETE CASCADE,
+
+    name VARCHAR(100) NOT NULL,              -- 管理用名称（例: CI用, CLI用）
+    api_key_hash TEXT NOT NULL UNIQUE,       -- APIキーのハッシュ値（平文は保存しない）
+    prefix VARCHAR(20) NOT NULL,             -- 表示用プレフィックス (例: sk_xxxxx)
+
+    scopes JSONB DEFAULT '[]'::jsonb,        -- 権限スコープ ["read","write"]
+    is_active BOOLEAN DEFAULT TRUE,          -- 有効フラグ
+
+    last_used_at TIMESTAMP,                  -- 最終利用日時
+    expires_at TIMESTAMP,                    -- 有効期限（NULLなら無期限）
+
+    created_at TIMESTAMP DEFAULT NOW(),
+    revoked_at TIMESTAMP,                    -- 失効日時
+    created_by UUID                          -- 作成者
+);
+
+COMMENT ON TABLE knowledge.user_api_keys IS 'ユーザAPIキー';
+COMMENT ON COLUMN knowledge.user_api_keys.id IS 'APIキーID';
+COMMENT ON COLUMN knowledge.user_api_keys.user_id IS 'ユーザID';
+COMMENT ON COLUMN knowledge.user_api_keys.name IS 'APIキー管理名';
+COMMENT ON COLUMN knowledge.user_api_keys.api_key_hash IS 'APIキーのハッシュ値';
+COMMENT ON COLUMN knowledge.user_api_keys.prefix IS '表示用プレフィックス';
+COMMENT ON COLUMN knowledge.user_api_keys.scopes IS '権限スコープ(JSON配列)';
+COMMENT ON COLUMN knowledge.user_api_keys.is_active IS '有効フラグ';
+COMMENT ON COLUMN knowledge.user_api_keys.last_used_at IS '最終利用日時';
+COMMENT ON COLUMN knowledge.user_api_keys.expires_at IS '有効期限';
+COMMENT ON COLUMN knowledge.user_api_keys.created_at IS '作成日時';
+COMMENT ON COLUMN knowledge.user_api_keys.revoked_at IS '失効日時';
+COMMENT ON COLUMN knowledge.user_api_keys.created_by IS '作成者ユーザID';
+
+-- index
+CREATE INDEX IF NOT EXISTS idx_user_api_keys_user_id
+    ON knowledge.user_api_keys(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_user_api_keys_active
+    ON knowledge.user_api_keys(is_active);
+
+CREATE INDEX IF NOT EXISTS idx_user_api_keys_expires
+    ON knowledge.user_api_keys(expires_at);
+
 -- user_avatars
 CREATE TABLE IF NOT EXISTS knowledge.user_avatars (
     id uuid NOT NULL DEFAULT uuidv7(),
