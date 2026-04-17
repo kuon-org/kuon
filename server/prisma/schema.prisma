@@ -314,6 +314,7 @@ model users {
   stock_lists                                  stock_lists[]
   tag_follows                                  tag_follows[]
   upload_images                                upload_images[]
+  user_api_keys                                user_api_keys[]
   user_avatars                                 user_avatars[]
   user_follows_user_follows_followee_idTousers user_follows[]       @relation("user_follows_followee_idTousers")
   user_follows_user_follows_follower_idTousers user_follows[]       @relation("user_follows_follower_idTousers")
@@ -439,5 +440,27 @@ model user_sessions {
   @@index([refresh_token], map: "idx_user_sessions_refresh_token")
   @@index([user_id], map: "idx_user_sessions_user_id")
   @@index([expires_at], map: "idx_user_sessions_expires_at")
+  @@schema("knowledge")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_api_keys {
+  id           String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  user_id      String    @db.Uuid
+  name         String    @db.VarChar(100)
+  api_key_hash String    @unique
+  prefix       String    @db.VarChar(20)
+  scopes       Json?     @default("[]")
+  is_active    Boolean?  @default(true)
+  last_used_at DateTime? @db.Timestamp(6)
+  expires_at   DateTime? @db.Timestamp(6)
+  created_at   DateTime? @default(now()) @db.Timestamp(6)
+  revoked_at   DateTime? @db.Timestamp(6)
+  created_by   String?   @db.Uuid
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([is_active], map: "idx_user_api_keys_active")
+  @@index([expires_at], map: "idx_user_api_keys_expires")
+  @@index([user_id], map: "idx_user_api_keys_user_id")
   @@schema("knowledge")
 }

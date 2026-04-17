@@ -158,7 +158,19 @@ export class UsersRepository {
       },
     });
   }
-
+  async updateSessionRefreshToken(
+    sessionId: string,
+    refreshToken: string,
+    expiresAt: Date,
+  ) {
+    return await prisma.user_sessions.update({
+      where: { id: sessionId },
+      data: {
+        refresh_token: refreshToken,
+        expires_at: expiresAt,
+      },
+    });
+  }
   async deleteExpiredSessionsByUser(userId: string) {
     return prisma.user_sessions.deleteMany({
       where: {
