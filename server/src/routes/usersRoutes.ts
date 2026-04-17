@@ -749,4 +749,23 @@ usersRouter.get("/users/:userId/articles", usersCtrl.getArticleCount);
  */
 usersRouter.get("/users/ranking/all", usersCtrl.getAllRanking);
 
+/**
+ * APIキー管理エンドポイント
+ */
+usersRouter.get(
+  "/users/settings/api-keys",
+  authenticateToken,
+  usersCtrl.getApiKeys,
+);
+usersRouter.post(
+  "/users/settings/api-keys",
+  authenticateToken,
+  usersCtrl.createApiKey,
+);
+usersRouter.delete(
+  "/users/settings/api-keys/:apiKeyId",
+  authenticateToken,
+  usersCtrl.revokeApiKey,
+);
+
 export default usersRouter;

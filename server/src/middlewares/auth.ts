@@ -171,24 +171,43 @@ export const optionalAuth = async (
   next();
 };
 
+/**
+ * APIキーの検証
+ */
 const validateApiKey = async (apiKey: string) => {
+  // 1. 入力されたAPIキーをハッシュ化（Service層での保存時と同じロジック）
   const hash = crypto.createHash("sha256").update(apiKey).digest("hex");
 
-  console.log("call APIKey Authflow:", apiKey);
-
+  // 2. ハッシュ値でデータベースを検索
   const key = await prisma.user_api_keys.findUnique({
-    where: { api_key_hash: apiKey },
+    where: { api_key_hash: hash },
   });
 
+  // 3. 存在確認
   if (!key) return null;
-  if (!key.is_active) return null;
-  if (key.revoked_at) return null;
-  if (key.expires_at && key.expires_at < new Date()) return null;
 
-  await prisma.user_api_keys.update({
-    where: { id: key.id },
-    data: { last_used_at: new Date() },
-  });
+  // 4. 有効状態・失効状態のチェック
+  // is_activeがfalse、またはrevoked_atに値がある場合は無効
+  if (!key.is_active || key.revoked_at) {
+    return null;
+  }
+
+  // 5. 有効期限チェック
+  // expires_atが設定されており、かつ現在時刻を過ぎている場合は無効
+  if (key.expires_at && key.expires_at < new Date()) {
+    return null;
+  }
+
+  // 6. 最終利用日時の更新
+  // 認証成功のタイミングで記録（レスポンスを待たせないようエラーハンドリングのみして実行）
+  prisma.user_api_keys
+    .update({
+      where: { id: key.id },
+      data: { last_used_at: new Date() },
+    })
+    .catch((err) => {
+      console.error("Failed to update last_used_at:", err);
+    });
 
   return key;
 };

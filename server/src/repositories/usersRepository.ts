@@ -496,4 +496,40 @@ export class UsersRepository {
       take: 10, // 上位10名
     });
   }
+
+  // --- api_keys ---
+  /**
+   * ユーザーに紐づくAPIキー一覧を取得する
+   */
+  async findApiKeysByUserId(userId: string) {
+    return prisma.user_api_keys.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: "desc" },
+    });
+  }
+
+  /**
+   * 新しいAPIキーを保存する
+   */
+  async createApiKey(data: {
+    user_id: string;
+    name: string;
+    api_key_hash: string;
+    prefix: string;
+    expires_at: Date | null; // 追加
+    created_by: string; // DDLに合わせて追加
+  }) {
+    return prisma.user_api_keys.create({
+      data,
+    });
+  }
+
+  /**
+   * APIキーを削除（無効化）する
+   */
+  async deleteApiKey(id: string, userId: string) {
+    return prisma.user_api_keys.delete({
+      where: { id, user_id: userId },
+    });
+  }
 }
