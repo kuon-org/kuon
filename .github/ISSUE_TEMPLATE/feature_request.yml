@@ -1,0 +1,45 @@
+name: 機能要望
+description: 新機能や改善案を提案します
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        機能提案ありがとうございます。
+        背景や目的も含めて記載してください。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 解決したい課題
+      description: 現在どんな問題があるか
+      placeholder: |
+        例)
+        ユーザー一覧の検索が完全一致のみで使いづらい
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 提案内容
+      description: どのような機能を追加・改善したいか
+      placeholder: |
+        部分一致検索を追加したい
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 代替案
+      description: 他に検討した方法があれば記載
+      placeholder: フィルタ条件を増やす案も検討した
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 補足情報
+      description: 関連Issue・参考資料・スクリーンショットなど
