@@ -1,0 +1,73 @@
+name: バグ報告
+description: バグや不具合を報告します
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        バグ報告ありがとうございます。
+        再現手順や環境情報をできるだけ詳しく記載してください。
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 概要
+      description: どのような問題が発生しているか
+      placeholder: 例) ログイン時に500エラーが発生する
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 問題を再現するための手順
+      placeholder: |
+        1. ログイン画面へ移動
+        2. メールアドレスを入力
+        3. ログインボタンを押下
+        4. エラー発生
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待される動作
+      placeholder: 正常にログインできる
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の動作
+      placeholder: Internal Server Error が表示される
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: 実行環境
+      description: OS / Browser / Version など
+      placeholder: "Windows 11 / Chrome 136"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: ログ・スクリーンショット
+      description: エラーログや画像など
+      render: shell
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: 確認事項
+      options:
+        - label: 既存Issueを確認しました
+          required: true
