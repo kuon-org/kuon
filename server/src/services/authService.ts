@@ -1,5 +1,3 @@
-// src/services/authService.ts
-import axios from "axios";
 import * as pkce from "pkce-challenge";
 import jwt from "jsonwebtoken";
 import fs from "node:fs/promises";
@@ -93,10 +91,14 @@ export class AuthService {
         throw new Error("id_token not found in OIDC response");
       rawUserInfo = jwt.decode(tokenData.id_token);
     } else {
-      const res = await axios.get(config.user_info_url, {
+      const res = await fetch(config.user_info_url, {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
-      rawUserInfo = res.data;
+      if (!res.ok) {
+        throw new Error(`Failed to fetch user info: ${res.status}`);
+      }
+      const data = await res.json();
+      rawUserInfo = data;
     }
 
     const idpUser = {
@@ -178,10 +180,15 @@ export class AuthService {
       params.set("client_secret", config.client_secret);
     }
 
-    const res = await axios.post(config.token_url, params.toString(), {
+    const res = await fetch(config.token_url, {
+      method: "POST",
       headers,
+      body: params.toString(),
     });
-    return res.data;
+    if (!res.ok) {
+      throw new Error(`Token endpoint returned ${res.status}`);
+    }
+    return await res.json();
   }
 
   private async createUserSession(
@@ -236,12 +243,15 @@ export class AuthService {
   }
 
   private async downloadAvatar(userId: string, url: string, provider: string) {
-    const res = await axios.get(url, { responseType: "arraybuffer" });
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Failed to download avatar: ${res.status}`);
+    }
     const ext = path.extname(new URL(url).pathname) || ".png";
     const fileName = `${userId}_${provider}${ext}`;
     const filePath = path.join(this.AVATAR_DIR, fileName);
     await fs.mkdir(this.AVATAR_DIR, { recursive: true });
-    await fs.writeFile(filePath, res.data);
+    await fs.writeFile(filePath, Buffer.from(await res.arrayBuffer()));
     return `/uploads/avatars/${fileName}`;
   }
 
