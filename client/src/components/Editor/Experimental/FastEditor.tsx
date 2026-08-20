@@ -61,22 +61,19 @@ const FastEditor = forwardRef<FastEditorRef, FastEditorProps>(
         window.clearTimeout(timerRef.current);
       }
       timerRef.current = window.setTimeout(() => {
-        // 可能なら idle で
-        const run = () => onChange(lastMdRef.current);
-        if ("requestIdleCallback" in window) {
-          (window as any).requestIdleCallback(run, { timeout: 250 });
-        } else {
-          run();
-        }
+        onChange(lastMdRef.current);
         timerRef.current = null;
       }, debounceMs);
     };
 
     const flush = () => {
-      if (timerRef.current !== null) {
-        window.clearTimeout(timerRef.current);
-        timerRef.current = null;
+      if (timerRef.current === null) {
+        return;
       }
+
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+
       const md = coreRef.current?.getValue() ?? "";
       onChange(md);
     };

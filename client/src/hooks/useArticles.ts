@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import apiClient from "../api/client";
 import { useNotify } from "./useNotify";
+import { useNavigate } from "@tanstack/react-router";
 
 interface Tag {
   id: string;
@@ -120,12 +121,20 @@ interface PaginatedArticles {
 export const useArticles = (articleId?: string) => {
   const queryClient = useQueryClient();
   const { error, success } = useNotify();
+  const navigate = useNavigate();
   const createArticleMutation = useMutation({
     mutationFn: async (newArticle: CreateArticleData) => {
       const res = await apiClient.post("/articles/create", newArticle);
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      navigate({
+        to: "/drafts/$articleId/edit",
+        params: {
+          articleId: data.id,
+        },
+        replace: true,
+      });
       queryClient.invalidateQueries({ queryKey: ["articles"] });
       queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
     },

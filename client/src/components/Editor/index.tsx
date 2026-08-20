@@ -134,7 +134,11 @@ export default function ArticleEditor({
     ],
   );
   const handleBack = () => {
-    router.history.back();
+    if (window.history.length > 1) {
+      router.history.back();
+      return;
+    }
+    navigate({ to: "/" });
   };
   useKey(
     "s",
