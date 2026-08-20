@@ -478,8 +478,13 @@ export class ArticlesRepository {
 
   // 🚀 物理削除 (DBから完全に消去)
   async hardDeleteArticle(articleId: string) {
-    return this.db.articles.delete({
-      where: { id: articleId },
+    return this.db.$transaction(async (tx) => {
+      await tx.article_tags.deleteMany({
+        where: { article_id: articleId },
+      });
+      await tx.articles.delete({
+        where: { id: articleId },
+      });
     });
   }
   async incrementViewCount(articleId: string) {
