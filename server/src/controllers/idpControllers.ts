@@ -1,7 +1,6 @@
 import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
 import { IdpConfigurationsService } from "../services/idpConfigurationsService.js";
 import { Request, Response } from "express";
-import axios from "axios";
 export class IdpController {
   constructor(private idpService: IdpConfigurationsService) {}
 
@@ -44,8 +43,11 @@ export class IdpController {
         return res.status(400).json({ message: "issuer_hostが必要です" });
 
       const discoveryUrl = `${String(issuer_host).replace(/\/$/, "")}/.well-known/openid-configuration`;
-      const { data } = await axios.get(discoveryUrl);
-      console.log(data);
+      const response = await fetch(discoveryUrl);
+      if (!response.ok) {
+        throw new Error(`Discovery request failed: ${response.status}`);
+      }
+      const data = await response.json();
       res.json({
         auth_url: data.authorization_endpoint,
         token_url: data.token_endpoint,
