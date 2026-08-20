@@ -1,3 +1,6 @@
+import generateSummary from "../utils/generateSummary/index.js";
+import { asUUID } from "../utils/uuid/index.js";
+import { Marp } from "@marp-team/marp-core";
 export class ArticlesService {
     constructor(articlesRepo) {
         this.articlesRepo = articlesRepo;
@@ -5,7 +8,23 @@ export class ArticlesService {
     async getPublishedArticleList(page, limit, q) {
         return await this.articlesRepo.findAllPublishedArticles(page, limit, q);
     }
+    // articlesService.ts 内に追加
+    async getTrendingArticleList(page, limit, weights) {
+        // デフォルトの重み付け設定
+        const safeWeights = {
+            like: Number(weights?.like ?? 10),
+            view: Number(weights?.view ?? 1),
+            stock: Number(weights?.stock ?? 20),
+            comment: Number(weights?.comment ?? 15),
+        };
+        return await this.articlesRepo.findTrendingArticles(safeWeights, page, limit);
+    }
+    async getRecommendArticleList(userId, page, limit) {
+        return await this.articlesRepo.findRecommendedArticles(userId, page, limit);
+    }
     async getArticle(articleId, currentUserId) {
+        if (!asUUID(articleId))
+            throw new Error("invalid articleId");
         const article = await this.articlesRepo.findArticleById(articleId);
         if (!article || article.is_deleted)
             throw new Error("ArticleNotFound");
@@ -22,8 +41,12 @@ export class ArticlesService {
         // is_privateさえfalseなら閲覧を許可する
         return article;
     }
+    // /articles/meで利用中
     async getAllArticlesByUserId(userId) {
         return await this.articlesRepo.findAllArticlesByUserId(userId);
+    }
+    async getArticlesByUserId(userId, page, limit, q) {
+        return await this.articlesRepo.findArticlesByUserId(userId, page, limit, q);
     }
     async getArticleLikeUserWithCount(articleId) {
         const likeRecords = await this.articlesRepo.getArticleLikeUserByArticleId(articleId);
@@ -62,7 +85,7 @@ export class ArticlesService {
             // 公開モードなら現在の内容を反映、下書きなら空文字 or 初期値
             render_content: isPublicMode ? raw_content : "",
             last_published_raw_content: isPublicMode ? raw_content : undefined,
-            summary: summary || raw_content?.substring(0, 100),
+            summary: summary || generateSummary(raw_content),
             // 🚀 ルール通り：status は下書きがあるかどうか
             status: isPublicMode ? "public" : "draft",
             // 🚀 公開設定フラグをそのまま保存
@@ -77,7 +100,7 @@ export class ArticlesService {
         if (existing.user_id !== userId)
             throw new Error("Forbidden");
         const { tagIds, raw_content, status, is_published, is_private, ...otherData } = payload;
-        const updateData = { ...otherData };
+        const updateData = { ...otherData, updated_at: new Date() };
         // 🚀 「保存して公開（更新）」ボタンが押された場合
         if (status === "public") {
             updateData.raw_content = raw_content;
@@ -134,5 +157,19 @@ export class ArticlesService {
         if (!existing || existing.user_id !== userId)
             throw new Error("Unauthorized");
         return await this.articlesRepo.hardDeleteArticle(articleId);
+    }
+    async getArticleMarp(articleId, currentUserId) {
+        // 既存の getArticle メソッドを利用して記事を取得（権限チェックも含まれる）
+        const article = await this.getArticle(articleId, currentUserId);
+        // Marpのインスタンス化（HTML出力を許可する設定）
+        const marp = new Marp({
+            html: true,
+            container: { tag: "div", id: "marp-container" },
+        });
+        if (!article || !article.render_content)
+            throw new Error("ArticleNotFound");
+        // Markdownをレンダリング
+        const { html, css } = marp.render(article.render_content);
+        return { html, css, title: article.title };
     }
 }

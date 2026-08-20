@@ -2,8 +2,13 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/authController.js";
 import { authenticateToken, optionalAuth } from "../middlewares/auth.js";
+import express from "express";
+import { AuthService } from "../services/authService.js";
+import { AuthRepository } from "../repositories/authRepository.js";
 const authRouter = Router();
-const authController = new AuthController();
+const authRepository = new AuthRepository();
+const authSercice = new AuthService(authRepository);
+const authController = new AuthController(authSercice);
 /**
  * @opanapi
  * /auth/{provider}/login:
@@ -21,11 +26,11 @@ const authController = new AuthController();
  *       '200':
  *         description: パラメータの外部認証機構へリダイレクト
  */
-authRouter.get("/auth/:provider/login", authController.login);
+authRouter.get("/auth/:provider/login", optionalAuth, authController.login);
 /**
  * @opanapi
  * /auth/{provider}/callback:
- *   get:
+ *   all:
  *     summary: 外部Idpからのコールバック
  *     tags: [Auth]
  *     parameters:
@@ -39,7 +44,7 @@ authRouter.get("/auth/:provider/login", authController.login);
  *       '200':
  *         description: ログイン成功
  */
-authRouter.get("/auth/:provider/callback", optionalAuth, authController.callback);
+authRouter.all("/auth/:provider/callback", express.urlencoded({ extended: false }), optionalAuth, authController.callback);
 /**
  * @openapi
  * /auth/avatar/select:

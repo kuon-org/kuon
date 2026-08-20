@@ -5,23 +5,41 @@ import jwt from "jsonwebtoken";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { get } from "lodash-es";
-import { AuthRepository } from "../repositories/authRepository.js";
 import prisma from "../prisma/client.js";
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+import { SAML } from "@node-saml/node-saml";
+import { createAccessToken, createRefreshToken, getRefreshTokenExpiryDate, } from "../utils/sessionTokens/index.js";
+// userId を保持できるように拡張
 const pkceStore = new Map();
 export class AuthService {
-    constructor() {
-        this.repo = new AuthRepository();
+    constructor(repo) {
+        this.repo = repo;
         this.AVATAR_DIR = "public/uploads/avatars";
     }
-    async generateAuthUrl(providerName) {
+    async generateAuthUrl(providerName, currentUserId) {
         const record = await this.repo.findProviderByName(providerName);
         if (!record || !record.idp_configurations)
             throw new Error("Provider not found");
         const config = record.idp_configurations.config;
         const { code_verifier, code_challenge } = await pkce.default();
         const state = crypto.randomUUID();
-        pkceStore.set(state, { verifier: code_verifier });
+        // pkceStore に userId も保存
+        pkceStore.set(state, { verifier: code_verifier, userId: currentUserId });
+        console.log("Timing generateAuthUrl currentUserId:", currentUserId);
+        if (record.provider_type === "SAML") {
+            const saml = await this.getSamlInstance(providerName);
+            // 第1引数の state は RelayState として IdP に送られ、戻ってくる
+            const authUrl = await saml.getAuthorizeUrlAsync(state, undefined, {});
+            // --- デバッグ開始 ---
+            console.log("---------- SAML DEBUG START ----------");
+            console.log("Target URL (Keycloak SSO):", config.entry_point);
+            console.log("Generated Auth URL:", authUrl);
+            // URLからSAMLRequestパラメータを抽出してデコードするためのヒント
+            const urlParams = new URL(authUrl).searchParams;
+            console.log("SAMLRequest (Raw):", urlParams.get("SAMLRequest"));
+            console.log("---------- SAML DEBUG END ----------");
+            // --- デバッグ終了 ---
+            return { url: authUrl };
+        }
         const url = new URL(config.auth_url);
         url.searchParams.set("response_type", "code");
         url.searchParams.set("client_id", config.client_id);
@@ -32,17 +50,17 @@ export class AuthService {
         url.searchParams.set("code_challenge_method", "S256");
         return { url: url.toString() };
     }
-    async handleCallback(providerName, code, state, currentUserId) {
+    async handleCallback(providerName, code, state, fallbackUserId, metadata) {
         const stored = pkceStore.get(state);
         if (!stored)
             throw new Error("Invalid state");
+        // pkceStore に保存されていた userId を優先的に使用
+        const currentUserId = stored.userId || fallbackUserId;
         const record = await this.repo.findProviderByName(providerName);
         if (!record || !record.idp_configurations)
             throw new Error("Provider not found");
         const config = record.idp_configurations.config;
-        // 1. トークン取得 (結果はそのまま token_data として保存可能)
         const tokenData = await this.fetchToken(config, code, stored.verifier);
-        // 2. ユーザー情報の取得元を切り替え
         let rawUserInfo;
         if (record.provider_type?.toUpperCase() === "OIDC") {
             if (!tokenData.id_token)
@@ -55,38 +73,42 @@ export class AuthService {
             });
             rawUserInfo = res.data;
         }
-        // 3. マッピング
         const idpUser = {
             id: String(get(rawUserInfo, config.mapping.id)),
             username: get(rawUserInfo, config.mapping.username),
             name: get(rawUserInfo, config.mapping.display_name),
         };
-        // 4. ユーザー特定/作成 (tokenDataを丸ごと渡す)
         let user = await this.findOrCreateUser(record.id, idpUser, tokenData, currentUserId);
         if (user.is_active === false) {
-            // pkceStoreのゴミ掃除をしてからエラーを投げる
             pkceStore.delete(state);
-            throw new Error("このアカウントは無効化されています。管理者に問い合わせてください。");
+            throw new Error("このアカウントは無効化されています。");
         }
-        // 5. アバター処理
         const remoteAvatarUrl = this.getAvatarUrl(rawUserInfo, config.mapping);
         if (remoteAvatarUrl) {
             const localPath = await this.downloadAvatar(user.id, remoteAvatarUrl, providerName);
             await prisma.$transaction(async (tx) => {
-                const current = await tx.user_avatars.findFirst({ where: { user_id: user.id, is_selected: true } });
+                const current = await tx.user_avatars.findFirst({
+                    where: { user_id: user.id, is_selected: true },
+                });
                 const shouldSelect = !current || !user.avatar_url;
                 await this.repo.upsertAvatar(tx, {
-                    userId: user.id, serviceName: providerName,
-                    avatarUrl: localPath, sourceUrl: remoteAvatarUrl, isSelected: shouldSelect
+                    userId: user.id,
+                    serviceName: providerName,
+                    avatarUrl: localPath,
+                    sourceUrl: remoteAvatarUrl,
+                    isSelected: shouldSelect,
                 });
                 if (shouldSelect) {
-                    user = await tx.users.update({ where: { id: user.id }, data: { avatar_url: localPath } });
+                    user = await tx.users.update({
+                        where: { id: user.id },
+                        data: { avatar_url: localPath },
+                    });
                 }
             });
         }
         await this.repo.updateLastLogin(user.id);
         pkceStore.delete(state);
-        return jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "24h" });
+        return await this.createUserSession(user.id, metadata);
     }
     async fetchToken(config, code, verifier) {
         const params = new URLSearchParams();
@@ -96,10 +118,52 @@ export class AuthService {
         params.set("client_id", config.client_id);
         params.set("client_secret", config.client_secret);
         params.set("code_verifier", verifier);
+        const headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Accept: "application/json",
+        };
+        if (config.auth_method === "header") {
+            // Twitterなどの Basic 認証パターン
+            const basicAuth = Buffer.from(`${config.client_id}:${config.client_secret}`).toString("base64");
+            headers["Authorization"] = `Basic ${basicAuth}`;
+            // Header認証の場合、Bodyに client_id を含めても良いですが、
+            // Twitterは厳格なので Secret は Body に含めないのが安全です
+            params.set("client_id", config.client_id);
+        }
+        else {
+            // GitHubなどの Body 認証パターン
+            params.set("client_id", config.client_id);
+            params.set("client_secret", config.client_secret);
+        }
         const res = await axios.post(config.token_url, params.toString(), {
-            headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+            headers,
         });
-        return res.data; // access_token, refresh_token, id_token, expires_in 等が含まれる
+        return res.data;
+    }
+    async createUserSession(userId, metadata) {
+        await prisma.user_sessions.deleteMany({
+            where: {
+                user_id: userId,
+                expires_at: { lt: new Date() },
+            },
+        });
+        const refreshToken = createRefreshToken();
+        const expiresAt = getRefreshTokenExpiryDate();
+        const session = await prisma.user_sessions.create({
+            data: {
+                user_id: userId,
+                refresh_token: refreshToken,
+                expires_at: expiresAt,
+                ip_address: metadata?.ipAddress,
+                user_agent: metadata?.userAgent,
+                device_name: metadata?.deviceName,
+            },
+        });
+        return {
+            accessToken: createAccessToken(userId, session.id),
+            refreshToken,
+            refreshExpiresAt: expiresAt,
+        };
     }
     getAvatarUrl(raw, mapping) {
         let url = get(raw, mapping.avatar_path);
@@ -107,7 +171,9 @@ export class AuthService {
             return null;
         if (mapping.avatar_template) {
             const id = get(raw, mapping.id);
-            url = mapping.avatar_template.replace("{id}", id).replace("{avatar}", url);
+            url = mapping.avatar_template
+                .replace("{id}", id)
+                .replace("{avatar}", url);
         }
         if (mapping.avatar_replace) {
             url = url.replace(mapping.avatar_replace.from, mapping.avatar_replace.to);
@@ -126,10 +192,11 @@ export class AuthService {
     async findOrCreateUser(providerId, idpUser, tokenData, currentUserId) {
         const identity = await this.repo.findIdentity(providerId, idpUser.id);
         if (identity)
-            return this.repo.findUserById(identity.user_id).then(u => u);
+            return this.repo.findUserById(identity.user_id).then((u) => u);
         if (currentUserId) {
+            console.log("既存ユーザあり、紐づけ:", currentUserId);
             await this.repo.linkIdentity(currentUserId, providerId, idpUser.id, tokenData);
-            return this.repo.findUserById(currentUserId).then(u => u);
+            return this.repo.findUserById(currentUserId).then((u) => u);
         }
         let baseUsername = idpUser.username || `user_${Math.random().toString(36).slice(2, 7)}`;
         let username = baseUsername;
@@ -137,20 +204,90 @@ export class AuthService {
         while (await this.repo.findUserByUsername(username)) {
             username = `${baseUsername}_${count++}`;
         }
-        return this.repo.createUserWithIdentity({ username, display_name: idpUser.name || username }, { provider_id: providerId, provider_uid: idpUser.id, token_data: tokenData });
+        return this.repo.createUserWithIdentity({ username, display_name: idpUser.name || username }, {
+            provider_id: providerId,
+            provider_uid: idpUser.id,
+            token_data: tokenData,
+        });
     }
     async switchAvatar(userId, avatarId) {
         return this.repo.setSelectedAvatar(userId, avatarId);
     }
     async unlinkService(userId, providerName) {
-        const identityCount = await prisma.user_identities.count({ where: { user_id: userId } });
+        const identityCount = await prisma.user_identities.count({
+            where: { user_id: userId },
+        });
         if (identityCount <= 1)
             throw new Error("最後の連携手段を解除することはできません。");
         const files = await fs.readdir(this.AVATAR_DIR).catch(() => []);
-        const targetFiles = files.filter(f => f.startsWith(`${userId}_${providerName}`));
+        const targetFiles = files.filter((f) => f.startsWith(`${userId}_${providerName}`));
         for (const file of targetFiles) {
             await fs.unlink(path.join(this.AVATAR_DIR, file)).catch(() => { });
         }
         return this.repo.deleteIdentityAndAvatar(userId, providerName);
+    }
+    async getSamlInstance(providerName) {
+        const record = await this.repo.findProviderByName(providerName);
+        if (!record || record.idp_configurations == null)
+            throw new Error("Invalid SAML provider");
+        const config = record.idp_configurations.config;
+        return new SAML({
+            // --- 必須・基本設定 ---
+            issuer: config.issuer,
+            callbackUrl: config.redirect_uri,
+            entryPoint: config.entry_point,
+            idpCert: this.formatCert(config.cert),
+            // --- 詳細設定 (フロントから送信された値を使用) ---
+            // 許容する時刻のズレ (秒 -> ミリ秒に変換)
+            acceptedClockSkewMs: (config.clockSkewSeconds || 0) * 1000,
+            // Requestの有効期限 (ミリ秒)
+            requestIdExpirationPeriodMs: config.requestIdExpirationMs || 28800000,
+            // 署名の検証設定
+            wantAssertionsSigned: config.wantAssertionsSigned ?? true,
+            wantAuthnResponseSigned: config.wantAuthnResponseSigned ?? false,
+            // AuthnContextの無効化 (Azure AD等で RequestedAuthnContext が原因でエラーになる場合に使用)
+            disableRequestedAuthnContext: config.disableRequestedAuthnContext ?? false,
+            // アルゴリズム系 (デフォルト sha256)
+            signatureAlgorithm: config.signature_algorithm || "sha256",
+            digestAlgorithm: config.signature_algorithm || "sha256",
+            // Identifier Format
+            identifierFormat: config.identifier_format ||
+                "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+        });
+    }
+    async handleSamlCallback(providerName, body, fallbackUserId, metadata) {
+        // RelayState から state を取得し、保存されていた userId を復元
+        const state = body.RelayState;
+        const stored = pkceStore.get(state);
+        if (!stored)
+            throw new Error("Invalid SAML state (RelayState)");
+        const currentUserId = stored.userId || fallbackUserId;
+        console.log("Timing handleSamlCallback", currentUserId);
+        const saml = await this.getSamlInstance(providerName);
+        const { profile } = await saml.validatePostResponseAsync(body);
+        if (!profile)
+            throw new Error("SAML verification failed");
+        const record = await this.repo.findProviderByName(providerName);
+        const config = record.idp_configurations.config;
+        const idpUser = {
+            id: String(get(profile, config.mapping?.id) || profile.nameID),
+            username: get(profile, config.mapping?.username),
+            name: get(profile, config.mapping?.display_name),
+        };
+        const tokenDataForDb = JSON.parse(JSON.stringify(profile));
+        const user = await this.findOrCreateUser(record.id, idpUser, tokenDataForDb, currentUserId);
+        pkceStore.delete(state);
+        return await this.createUserSession(user.id, metadata);
+    }
+    formatCert(cert) {
+        if (!cert)
+            return "";
+        // 1. 全ての改行とスペースを削除して、純粋な Base64 文字列のみを取り出す
+        const cleanCert = cert
+            .replace(/-----BEGIN CERTIFICATE-----/g, "")
+            .replace(/-----END CERTIFICATE-----/g, "")
+            .replace(/\s+/g, ""); // 空白、改行、タブをすべて削除
+        // 2. 改めて PEM 形式に包み直す (64文字ごとの改行はライブラリがやってくれるので不要な場合が多いですが、念のため)
+        return `-----BEGIN CERTIFICATE-----\n${cleanCert}\n-----END CERTIFICATE-----`;
     }
 }

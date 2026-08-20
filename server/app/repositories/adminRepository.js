@@ -22,7 +22,7 @@ export class AdminRepository {
     async toggleUserActiveStatus(userId) {
         const user = await prisma.users.findUnique({
             where: { id: userId },
-            select: { is_active: true }
+            select: { is_active: true },
         });
         if (!user)
             throw new Error("UserNotFound");
@@ -30,7 +30,7 @@ export class AdminRepository {
             where: { id: userId },
             data: {
                 is_active: !user.is_active,
-                updated_at: new Date()
+                updated_at: new Date(),
             },
         });
     }

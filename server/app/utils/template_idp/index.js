@@ -1,11 +1,11 @@
-import { DISCORD_TEMPLATE, TWITTER_TEMPLATE } from "../../init";
+import { DISCORD_TEMPLATE, TWITTER_TEMPLATE } from "../../init.js";
 export const DiscordTemplate = (data) => {
     return {
         ...DISCORD_TEMPLATE,
         config: {
             ...DISCORD_TEMPLATE.config,
-            ...data // ←ここでdataをconfigにまとめて入れる
-        }
+            ...data, // ←ここでdataをconfigにまとめて入れる
+        },
     };
 };
 export const TwitterTemplate = (data) => {
@@ -13,7 +13,7 @@ export const TwitterTemplate = (data) => {
         ...TWITTER_TEMPLATE,
         config: {
             ...TWITTER_TEMPLATE.config,
-            ...data // ←ここでdataをconfigにまとめて入れる
-        }
+            ...data, // ←ここでdataをconfigにまとめて入れる
+        },
     };
 };

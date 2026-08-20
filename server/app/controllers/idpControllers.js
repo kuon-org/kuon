@@ -1,5 +1,5 @@
 import { isAuthenticated } from "../middlewares/auth.js";
-import axios from 'axios';
+import axios from "axios";
 export class IdpController {
     constructor(idpService) {
         this.idpService = idpService;
@@ -50,7 +50,9 @@ export class IdpController {
                 });
             }
             catch (error) {
-                res.status(500).json({ message: "Discoveryに失敗しました。URLを確認してください。" });
+                res
+                    .status(500)
+                    .json({ message: "Discoveryに失敗しました。URLを確認してください。" });
             }
         };
         this.upsertIdp = async (req, res) => {

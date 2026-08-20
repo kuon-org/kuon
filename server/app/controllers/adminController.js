@@ -14,7 +14,9 @@ export class AdminController {
                 res.status(200).json(users);
             }
             catch (error) {
-                res.status(500).json({ message: error instanceof Error ? error.message : 'エラーが発生しました' });
+                res.status(500).json({
+                    message: error instanceof Error ? error.message : "エラーが発生しました",
+                });
             }
         };
         this.toggleUserActive = async (req, res) => {
@@ -30,7 +32,9 @@ export class AdminController {
                 res.status(200).json(result);
             }
             catch (error) {
-                res.status(500).json({ message: error instanceof Error ? error.message : 'エラーが発生しました' });
+                res.status(500).json({
+                    message: error instanceof Error ? error.message : "エラーが発生しました",
+                });
             }
         };
     }

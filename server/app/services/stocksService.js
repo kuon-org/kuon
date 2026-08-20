@@ -57,12 +57,12 @@ export class StocksService {
         if (targetList.isStored) {
             // すでに保存されているなら削除
             await this.stockRepo.removeItem(stockListId, articleId);
-            return { isStored: false, message: "リストから削除しました" };
+            return { isStored: false, message: `${targetList.name}から解除しました` };
         }
         else {
             // 保存されていないなら追加
             await this.stockRepo.addItem(stockListId, articleId);
-            return { isStored: true, message: "リストに追加しました" };
+            return { isStored: true, message: `${targetList.name}に保存しました` };
         }
     }
     async toggleDefaultStock(userId, articleId) {
@@ -76,11 +76,14 @@ export class StocksService {
         // 3. 既存のトグルロジックを実行
         if (defaultList.isStored) {
             await this.stockRepo.removeItem(defaultList.id, articleId);
-            return { isStored: false, message: "デフォルトリストから解除しました" };
+            return {
+                isStored: false,
+                message: `${defaultList.name}から解除しました`,
+            };
         }
         else {
             await this.stockRepo.addItem(defaultList.id, articleId);
-            return { isStored: true, message: "デフォルトリストに保存しました" };
+            return { isStored: true, message: `${defaultList.name}に保存しました` };
         }
     }
     async getIsLiked(listId, userId) {

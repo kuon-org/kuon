@@ -7,14 +7,13 @@ ENV TZ=Asia/Tokyo
 COPY app/package*.json ./
 RUN npm install --omit=dev
 
-# ===== Expressサーバファイルをコピー =====
+# ===== ファイルをコピー =====
 COPY app/ .
-
-# ===== Reactビルド成果物をコピー =====
 COPY dist ../dist
+COPY ./prisma ./prisma
 
-# ===== Prismaクライアント生成（必要に応じて） =====
-RUN npx prisma generate || true
+# ===== Prismaクライアント生成 =====
+RUN npx prisma generate --schema=./prisma/schema.prisma
 
 EXPOSE 9040
 CMD ["node", "index.js"]

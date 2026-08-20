@@ -40,6 +40,48 @@ articlesRouter.get("/articles", articlesCtrl.getArticles);
 
 /**
  * @openapi
+ * /api/articles/trends:
+ *   get:
+ *     summary: トレンド記事一覧取得
+ *     tags:
+ *       - Articles
+ *     responses:
+ *       '200':
+ *         description: 取得成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Article'
+ */
+articlesRouter.get("/articles/trends", articlesCtrl.getTrendingArticles);
+
+/**
+ * @openapi
+ * /api/articles/recommends:
+ *   get:
+ *     summary: おすすめ記事一覧取得
+ *     tags:
+ *       - Articles
+ *     responses:
+ *       '200':
+ *         description: 取得成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Article'
+ */
+articlesRouter.get(
+  "/articles/recommends",
+  optionalAuth,
+  articlesCtrl.getRecommendArticles,
+);
+
+/**
+ * @openapi
  * /api/articles/me:
  *   get:
  *     summary: ログインユーザの記事一覧取得
@@ -58,8 +100,27 @@ articlesRouter.get("/articles", articlesCtrl.getArticles);
 articlesRouter.get(
   "/articles/me",
   authenticateToken,
-  articlesCtrl.getArticlesByUserId,
+  articlesCtrl.getAllArticlesByUserId,
 );
+
+/**
+ * @openapi
+ * /api/articles/user/:userId:
+ *   get:
+ *     summary: 対象ユーザの記事一覧取得
+ *     tags:
+ *       - Articles
+ *     responses:
+ *      '200':
+ *        description: 取得成功
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/Articles'
+ */
+articlesRouter.get("/articles/user/:userId", articlesCtrl.getArticlesByUserId);
 
 /**
  * @openapi
@@ -86,6 +147,29 @@ articlesRouter.get(
   "/articles/:articleId.md",
   optionalAuth,
   articlesCtrl.getArticleMarkdown,
+);
+
+/**
+ * @openapi
+ * /api/articles/marp/{articleId}:
+ *   get:
+ *      summary: 記事のMarpスライドデータ取得
+ *      tags:
+ *        - Articles
+ *      parameters:
+ *        - in: path
+ *          name: articleId
+ *          required: true
+ *          schema:
+ *            type: string
+ *      responses:
+ *        '200':
+ *        description: HTMLとCSSのセット
+ */
+articlesRouter.get(
+  "/articles/marp/:articleId",
+  optionalAuth,
+  articlesCtrl.getArticleMarp,
 );
 
 /**
@@ -317,11 +401,12 @@ articlesRouter.patch(
 );
 
 /**
- * @opanapi
+ * @openapi
  * /api/articles/:articleId/rollback:
  *   post:
  *     summary: 下書き破棄
- *     tags: [Articles]
+ *     tags:
+ *       - Articles
  *     security:
  *       - CookieAuth: []
  *     parameters:
@@ -345,18 +430,19 @@ articlesRouter.post(
  * /api/articles/:articleId:
  *   delete:
  *     summary: 記事の論理削除
- *     tags: [Articles]
+ *     tags:
+ *       - Articles
  *     security:
  *       - CookieAuth: []
- *    parameters:
- *      - in: path
- *        name: articleId
- *       required: true
- *      schema:
- *        type: string
- *    responses:
- *     '200':
- *        description: 削除成功
+ *     parameters:
+ *       - in: path
+ *         name: articleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: 削除成功
  */
 articlesRouter.delete(
   "/articles/:articleId",
@@ -369,12 +455,13 @@ articlesRouter.delete(
  * /api/articles/trash/list:
  *   get:
  *     summary: ゴミ箱の記事一覧取得
- *    tags: [Articles]
- *    security:
- *      - CookieAuth: []
- *    responses:
- *     '200':
- *        description: 取得成功
+ *     tags:
+ *       - Articles
+ *     security:
+ *       - CookieAuth: []
+ *     responses:
+ *       '200':
+ *         description: 取得成功
  */
 articlesRouter.get(
   "/articles/trash/list",
@@ -386,19 +473,20 @@ articlesRouter.get(
  * @openapi
  * /api/articles/{articleId}/restore:
  *   post:
- *    summary: 記事の復元
- *   tags: [Articles]
- *  security:
- *     - CookieAuth: []
- *  parameters:
- *    - in: path
- *     name: articleId
- *    required: true
- *    schema:
- *      type: string
- *    responses:
- *      '200':
- *        description: 復元成功
+ *     summary: 記事の復元
+ *     tags:
+ *       - Articles
+ *     security:
+ *       - CookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: articleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: 復元成功
  */
 articlesRouter.post(
   "/articles/:articleId/restore",
@@ -409,22 +497,21 @@ articlesRouter.post(
 /**
  * @openapi
  * /api/articles/{articleId}/hard:
- *  delete:
- *   summary: 記事の物理削除
- *  tags: [Articles]
- *  security:
- *  - CookieAuth: []
- * parameters:
- *
- *  - in: path
- *  name: articleId
- * required: true
- * schema:
- *
- *  type: string
- *    responses:
- *  '200':
- *   description: 物理削除成功
+ *   delete:
+ *     summary: 記事の物理削除
+ *     tags:
+ *       - Articles
+ *     security:
+ *       - CookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: articleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: 物理削除成功
  */
 articlesRouter.delete(
   "/articles/:articleId/hard",

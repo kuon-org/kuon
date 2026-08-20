@@ -30,8 +30,53 @@ export class ArticlesController {
       res.status(500).json({ message: error.message });
     }
   };
+  getTrendingArticles = async (req: Request, res: Response) => {
+    try {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
 
-  getArticlesByUserId = async (req: AuthRequest, res: Response) => {
+      // スライダー等の比重設定を取得
+      const weights = {
+        like: req.query.like ? parseFloat(req.query.like as string) : undefined,
+        view: req.query.view ? parseFloat(req.query.view as string) : undefined,
+        stock: req.query.stock
+          ? parseFloat(req.query.stock as string)
+          : undefined,
+        comment: req.query.comment
+          ? parseFloat(req.query.comment as string)
+          : undefined,
+      };
+
+      const result = await this.articlesService.getTrendingArticleList(
+        page,
+        limit,
+        weights,
+      );
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  getRecommendArticles = async (req: AuthRequest, res: Response) => {
+    try {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
+      const userId = req.user?.userId ?? null;
+
+      const result = await this.articlesService.getRecommendArticleList(
+        userId,
+        page,
+        limit,
+      );
+
+      res.status(200).json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  getAllArticlesByUserId = async (req: AuthRequest, res: Response) => {
     try {
       if (!isAuthenticated(req))
         return res.status(401).json({ message: "未ログインです" });
@@ -39,6 +84,25 @@ export class ArticlesController {
         req.user.userId,
       );
       res.json(articles);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  getArticlesByUserId = async (req: Request, res: Response) => {
+    try {
+      const userId = String(req.params.userId);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
+      const q = req.query.q as string; // 検索クエリ文字列を取得
+
+      const result = await this.articlesService.getArticlesByUserId(
+        userId,
+        page,
+        limit,
+        q,
+      );
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -278,5 +342,21 @@ export class ArticlesController {
         res.status(500).json({ message: "DB登録エラー" });
       }
     });
+  };
+
+  getArticleMarp = async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      const result = await this.articlesService.getArticleMarp(
+        String(req.params.articleId),
+        userId,
+      );
+      res.json(result);
+    } catch (error: any) {
+      let status = 500;
+      if (error.message === "ArticleNotFound") status = 404;
+      if (error.message === "Forbidden") status = 403;
+      res.status(status).json({ message: error.message });
+    }
   };
 }

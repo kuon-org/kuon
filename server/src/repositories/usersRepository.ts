@@ -137,6 +137,80 @@ export class UsersRepository {
     });
   }
 
+  async createUserSession(
+    userId: string,
+    refreshToken: string,
+    expiresAt: Date,
+    metadata?: {
+      ipAddress?: string;
+      userAgent?: string;
+      deviceName?: string;
+    },
+  ) {
+    return prisma.user_sessions.create({
+      data: {
+        user_id: userId,
+        refresh_token: refreshToken,
+        expires_at: expiresAt,
+        ip_address: metadata?.ipAddress,
+        user_agent: metadata?.userAgent,
+        device_name: metadata?.deviceName,
+      },
+    });
+  }
+  async updateSessionRefreshToken(
+    sessionId: string,
+    refreshToken: string,
+    expiresAt: Date,
+  ) {
+    return await prisma.user_sessions.update({
+      where: { id: sessionId },
+      data: {
+        refresh_token: refreshToken,
+        expires_at: expiresAt,
+      },
+    });
+  }
+  async deleteExpiredSessionsByUser(userId: string) {
+    return prisma.user_sessions.deleteMany({
+      where: {
+        user_id: userId,
+        expires_at: { lt: new Date() },
+      },
+    });
+  }
+
+  async findSessionByRefreshToken(refreshToken: string) {
+    return prisma.user_sessions.findUnique({
+      where: { refresh_token: refreshToken },
+    });
+  }
+
+  async deleteSessionByRefreshToken(refreshToken: string) {
+    return prisma.user_sessions.deleteMany({
+      where: { refresh_token: refreshToken },
+    });
+  }
+
+  async getUserSessions(userId: string) {
+    return prisma.user_sessions.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: "desc" },
+    });
+  }
+
+  async deleteSessionById(sessionId: string) {
+    return prisma.user_sessions.delete({
+      where: { id: sessionId },
+    });
+  }
+
+  async deleteAllSessionsByUser(userId: string) {
+    return prisma.user_sessions.deleteMany({
+      where: { user_id: userId },
+    });
+  }
+
   // --- security ---
   async findUserSecurity(userId: string): Promise<user_security | null> {
     return prisma.user_security.findUnique({ where: { user_id: userId } });
@@ -350,6 +424,112 @@ export class UsersRepository {
     return await prisma.users.update({
       where: { id: userId },
       data: { last_login_at: new Date() },
+    });
+  }
+
+  async followingTags(userId: string) {
+    return await prisma.tag_follows.findMany({
+      where: { user_id: userId },
+      include: {
+        tags: true,
+      },
+    });
+  }
+
+  async commentCount(userId: string) {
+    return await prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        _count: {
+          select: {
+            comments: {
+              where: { is_deleted: false },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async articleCount(userId: string) {
+    return await prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        _count: {
+          select: {
+            articles: {
+              where: {
+                is_deleted: false,
+                is_published: true,
+                is_private: false,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async allRanking() {
+    return await prisma.users.findMany({
+      where: {
+        is_active: true, // アクティブなユーザーのみ
+      },
+      select: {
+        id: true,
+        username: true,
+        display_name: true,
+        avatar_url: true,
+        _count: {
+          select: {
+            articles: {
+              where: {
+                is_deleted: false,
+                is_published: true,
+                is_private: false,
+              },
+            },
+            comments: { where: { is_deleted: false } },
+          },
+        },
+      },
+      take: 10, // 上位10名
+    });
+  }
+
+  // --- api_keys ---
+  /**
+   * ユーザーに紐づくAPIキー一覧を取得する
+   */
+  async findApiKeysByUserId(userId: string) {
+    return prisma.user_api_keys.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: "desc" },
+    });
+  }
+
+  /**
+   * 新しいAPIキーを保存する
+   */
+  async createApiKey(data: {
+    user_id: string;
+    name: string;
+    api_key_hash: string;
+    prefix: string;
+    expires_at: Date | null; // 追加
+    created_by: string; // DDLに合わせて追加
+  }) {
+    return prisma.user_api_keys.create({
+      data,
+    });
+  }
+
+  /**
+   * APIキーを削除（無効化）する
+   */
+  async deleteApiKey(id: string, userId: string) {
+    return prisma.user_api_keys.delete({
+      where: { id, user_id: userId },
     });
   }
 }

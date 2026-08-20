@@ -16,6 +16,7 @@ services:
       - ./database/migrations/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     ports:
       - "${DB_PORT}:${DB_PORT}"
+    restart: always
 
   kuon-app:
     build:
@@ -28,7 +29,9 @@ services:
       - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
       - db
-    command: ["npm", "run", "start"]
+    volumes:
+      - ./server/public/uploads:/app/public/uploads
+    restart: always
 
 volumes:
   db-data:

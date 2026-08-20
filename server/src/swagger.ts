@@ -8,7 +8,8 @@ const definition /* : any */ = {
   info: {
     title: "Kuon API",
     version: "1.0.0",
-    description: "オンプレホスティングナレッジ共有アプリ Kuon の API ドキュメント",
+    description:
+      "オンプレホスティングナレッジ共有アプリ Kuon の API ドキュメント",
   },
   servers: [{ url: "http://localhost:3030", description: "ローカル" }],
   components: {
@@ -16,9 +17,15 @@ const definition /* : any */ = {
       CookieAuth: {
         type: "apiKey",
         in: "cookie",
-        name: "token", // ← あなたのCookie名に合わせる（loginでセットしている名前）
+        name: "access_token", // ← あなたのCookie名に合わせる（loginでセットしている名前）
         description:
           "JWT を HttpOnly Cookie で送信。Try it out から送るには credentials: include が必要。",
+      },
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+        description: "JWT Bearer token",
       },
     },
     schemas: {
@@ -32,6 +39,71 @@ const definition /* : any */ = {
         },
         required: ["id", "username"],
       },
+      StockList: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          name: { type: "string" },
+          description: { type: "string" },
+          isPublic: { type: "boolean" },
+          userId: { type: "string", format: "uuid" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      StockListDetail: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          name: { type: "string" },
+          description: { type: "string" },
+          isPublic: { type: "boolean" },
+          userId: { type: "string", format: "uuid" },
+          articles: {
+            type: "array",
+            items: { $ref: "#/components/schemas/Article" },
+          },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      Article: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          title: { type: "string" },
+          summary: { type: "string" },
+          userId: { type: "string", format: "uuid" },
+          isPublished: { type: "boolean" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      Tag: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          name: { type: "string" },
+          slug: { type: "string" },
+          description: { type: "string" },
+          avatar_url: { type: "string" },
+        },
+      },
+      IdpProvider: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          provider_name: { type: "string" },
+          isActive: { type: "boolean" },
+        },
+      },
+      IdpConfiguration: {
+        type: "object",
+        properties: {
+          provider_name: { type: "string" },
+          config: { type: "object" },
+        },
+      },
     },
   },
   // すべてのエンドポイントで CookieAuth を要求にしたい場合は有効化
@@ -40,10 +112,7 @@ const definition /* : any */ = {
 
 const options: Options = {
   definition,
-  apis: [
-    "./src/routes/**/*.ts",
-    "./src/routes/**/*.js",
-  ],
+  apis: ["./src/routes/**/*.ts", "./src/routes/**/*.js"],
 };
 
 export const swaggerSpec = swaggerJSDoc(options);
@@ -59,5 +128,8 @@ export const swaggerUiMiddleware = () => {
       },
     },
   };
-  return [swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOpts)] as const;
+  return [
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, swaggerUiOpts),
+  ] as const;
 };

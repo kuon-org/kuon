@@ -12,12 +12,15 @@ export class ShareController {
                 if (!article)
                     throw new Error("ArticleNotFound");
                 // OGP情報生成
-                const ogTitle = article.title ?? "記事タイトル";
-                const ogDesc = article.summary ?? "記事の概要がここに表示されます。";
+                const ogTitle = article.title;
+                const ogDesc = article.summary;
                 const ogImage = article.users?.avatar_url
                     ? `${BASE_URL}${article.users.avatar_url}`
                     : `${BASE_URL}/default-ogp.png`; // 画像がない場合の代替
                 const ogUrl = `${BASE_URL}/share/${articleId}`;
+                const redirect_url = process.env.NODE_ENV === "development"
+                    ? `http://localhost:5050/${article.users.username}/${articleId}`
+                    : `/${article.users.username}/${articleId}`;
                 // HTML返却（SNSクローラ用 + JSリダイレクト）
                 res.send(`<!DOCTYPE html>
 <html lang="ja">
@@ -31,7 +34,7 @@ export class ShareController {
   <title>${ogTitle}</title>
   <script>
     // 数秒後にSPAのルートにリダイレクト
-    window.location.href = "/${article.users.username}/${articleId}";
+    window.location.href = "${redirect_url}";
   </script>
 </head>
 <body>

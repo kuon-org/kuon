@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import prisma from "../prisma/client.js";
 import { parseSearchQuery } from "../utils/searchParser/index.js";
+import { TrendWeights } from "../types/Articles/TrendWeights.js";
 
 export class ArticlesRepository {
   private db: PrismaClient;
@@ -33,11 +34,18 @@ export class ArticlesRepository {
           is_private: true,
           is_deleted: true,
           users: {
-            select: { username: true, display_name: true, avatar_url: true },
+            select: {
+              username: true,
+              display_name: true,
+              avatar_url: true,
+              bio: true,
+            },
           },
           article_tags: {
             select: {
-              tags: { select: { id: true, name: true, slug: true } },
+              tags: {
+                select: { id: true, name: true, slug: true, avatar_url: true },
+              },
             },
           },
         },
@@ -53,6 +61,178 @@ export class ArticlesRepository {
     };
   }
 
+  async findTrendingArticles(
+    weights: TrendWeights,
+    page: number,
+    limit: number,
+  ) {
+    const skip = (page - 1) * limit;
+
+    // 1. スコア計算とページネーションを適用した記事IDの取得
+    // $queryRaw 内の変数は Prisma によって適切にパラメータ化されます
+    const articlesWithScore = await this.db.$queryRaw<any[]>`
+    SELECT 
+      id,
+      (
+        (like_count * ${weights.like}) + 
+        (view_count * ${weights.view}) + 
+        (stock_count * ${weights.stock}) + 
+        (comment_count * ${weights.comment})
+      ) as trend_score
+    FROM knowledge.articles
+    WHERE is_published = TRUE 
+      AND is_deleted = FALSE 
+      AND is_private = FALSE
+    ORDER BY trend_score DESC
+    LIMIT ${limit} OFFSET ${skip}
+  `;
+
+    // 2. 全体件数の取得（totalPagesの計算に必要）
+    const totalCount = await this.db.articles.count({
+      where: {
+        is_published: true,
+        is_deleted: false,
+        is_private: false,
+      },
+    });
+
+    if (articlesWithScore.length === 0) {
+      return {
+        articles: [],
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        limit,
+      };
+    }
+
+    const targetIds = articlesWithScore.map((a) => a.id);
+
+    // 3. 詳細情報の取得 (既存の findAllPublishedArticles の select と合わせる)
+    const articles = await this.db.articles.findMany({
+      where: { id: { in: targetIds } },
+      select: {
+        id: true,
+        user_id: true,
+        title: true,
+        summary: true,
+        created_at: true,
+        updated_at: true,
+        like_count: true,
+        stock_count: true,
+        view_count: true,
+        comment_count: true,
+        is_published: true,
+        is_private: true,
+        is_deleted: true,
+        users: {
+          select: {
+            username: true,
+            display_name: true,
+            avatar_url: true,
+            bio: true,
+          },
+        },
+        article_tags: {
+          select: {
+            tags: {
+              select: { id: true, name: true, slug: true, avatar_url: true },
+            },
+          },
+        },
+      },
+    });
+
+    // スコア順を維持するための並び替え
+    const sortedArticles = targetIds
+      .map((id) => articles.find((art) => art.id === id))
+      .filter(Boolean);
+
+    return {
+      articles: sortedArticles,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+      limit,
+    };
+  }
+
+  async findRecommendedArticles(
+    userId: string | null,
+    page: number,
+    limit: number,
+  ) {
+    const skip = (page - 1) * limit;
+
+    let where: any = {
+      is_published: true,
+      is_deleted: false,
+      is_private: false,
+    };
+
+    if (userId) {
+      const followTags = await this.db.tag_follows.findMany({
+        where: { user_id: userId },
+        select: { tag_id: true },
+      });
+      const tagIds = followTags.map((ft) => ft.tag_id);
+
+      where.NOT = { user_id: userId };
+
+      if (tagIds.length > 0) {
+        where.article_tags = {
+          some: { tag_id: { in: tagIds } },
+        };
+      }
+    }
+
+    // 全体件数とデータを同時に取得
+    const [totalCount, articles] = await Promise.all([
+      this.db.articles.count({ where }),
+      this.db.articles.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [{ like_count: "desc" }, { created_at: "desc" }],
+        select: {
+          id: true,
+          user_id: true,
+          title: true,
+          summary: true,
+          created_at: true,
+          updated_at: true,
+          like_count: true,
+          stock_count: true,
+          view_count: true,
+          comment_count: true,
+          users: {
+            select: {
+              username: true,
+              display_name: true,
+              avatar_url: true,
+            },
+          },
+          article_tags: {
+            select: {
+              tags: {
+                select: { id: true, name: true, slug: true, avatar_url: true },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      articles,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+      limit,
+    };
+  }
+
+  // 現状はピックアップ記事登録に利用
   async findAllArticlesByUserId(userId: string) {
     return this.db.articles.findMany({
       where: { user_id: userId, is_deleted: false },
@@ -75,11 +255,74 @@ export class ArticlesRepository {
         users: { select: { username: true } },
         article_tags: {
           select: {
-            tags: { select: { id: true, name: true, slug: true } },
+            tags: {
+              select: { id: true, name: true, slug: true, avatar_url: true },
+            },
           },
         },
       },
     });
+  }
+
+  async findArticlesByUserId(
+    userId: string,
+    page: number,
+    limit: number,
+    q?: string,
+  ) {
+    const skip = (page - 1) * limit;
+
+    // 1. 公開済み・未削除・非公開でない記事をベースにする
+    const where = this.buildPrismaWhere(q);
+
+    // 2. userId での絞り込みを追加（既存の where オブジェクトを拡張）
+    where.user_id = userId;
+
+    const [totalCount, articles] = await Promise.all([
+      this.db.articles.count({ where }),
+      this.db.articles.findMany({
+        where,
+        orderBy: { created_at: "desc" },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          user_id: true,
+          title: true,
+          summary: true,
+          created_at: true,
+          updated_at: true,
+          like_count: true,
+          stock_count: true,
+          is_published: true,
+          is_private: true,
+          is_deleted: true,
+          users: {
+            select: {
+              username: true,
+              display_name: true,
+              avatar_url: true,
+              bio: true,
+            },
+          },
+          article_tags: {
+            select: {
+              tags: {
+                select: { id: true, name: true, slug: true, avatar_url: true },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      articles,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+      limit,
+    };
   }
 
   async findDeletedArticlesByUserId(userId: string) {
@@ -104,7 +347,9 @@ export class ArticlesRepository {
         users: { select: { username: true } },
         article_tags: {
           select: {
-            tags: { select: { id: true, name: true, slug: true } },
+            tags: {
+              select: { id: true, name: true, slug: true, avatar_url: true },
+            },
           },
         },
       },
@@ -129,11 +374,18 @@ export class ArticlesRepository {
         is_private: true,
         is_deleted: true,
         users: {
-          select: { username: true, display_name: true, avatar_url: true },
+          select: {
+            username: true,
+            display_name: true,
+            avatar_url: true,
+            bio: true,
+          },
         },
         article_tags: {
           select: {
-            tags: { select: { id: true, name: true, slug: true } },
+            tags: {
+              select: { id: true, name: true, slug: true, avatar_url: true },
+            },
           },
         },
       },
@@ -234,6 +486,63 @@ export class ArticlesRepository {
     return this.db.articles.update({
       where: { id: articleId },
       data: { view_count: { increment: 1 } },
+    });
+  }
+
+  async findPickupArticles(userId: string) {
+    return this.db.article_pickups.findMany({
+      where: { user_id: userId },
+      select: {
+        articles: {
+          select: {
+            id: true,
+            user_id: true,
+            title: true,
+            summary: true,
+            created_at: true,
+            updated_at: true,
+            like_count: true,
+            stock_count: true,
+            view_count: true,
+            comment_count: true,
+            is_published: true,
+            is_private: true,
+            is_deleted: true,
+            users: {
+              select: {
+                username: true,
+                display_name: true,
+                avatar_url: true,
+                bio: true,
+              },
+            },
+            article_tags: {
+              select: {
+                tags: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    avatar_url: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async createPickupArticle(userId: string, articleId: string) {
+    return this.db.article_pickups.create({
+      data: { user_id: userId, article_id: articleId },
+    });
+  }
+
+  async deletePickupArticle(userId: string, articleId: string) {
+    return this.db.article_pickups.delete({
+      where: { user_id_article_id: { user_id: userId, article_id: articleId } },
     });
   }
 

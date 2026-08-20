@@ -5,14 +5,20 @@ import { UsersService } from "../services/usersService.js";
 import { UsersController } from "../controllers/usersController.js";
 import { UploadImagesRepository } from "../repositories/uploadImagesRepository.js";
 import { UploadImagesService } from "../services/uploadImagesService.js";
+import { TagsRepository } from "../repositories/tagsRepository.js";
+import { TagsService } from "../services/tagsService.js";
+import { ArticlesRepository } from "../repositories/articlesRepository.js";
 const usersRouter = Router();
 // インスタンス化
 const usersRepo = new UsersRepository();
-const usersService = new UsersService(usersRepo);
+const articlesRepos = new ArticlesRepository();
+const usersService = new UsersService(usersRepo, articlesRepos);
 // UploadImagesServiceが必要なため、こちらもインスタンス化
 const uploadImagesRepo = new UploadImagesRepository();
 const uploadImagesService = new UploadImagesService(uploadImagesRepo);
-const usersCtrl = new UsersController(usersService, uploadImagesService);
+const tagsRepo = new TagsRepository();
+const tagsService = new TagsService(tagsRepo);
+const usersCtrl = new UsersController(usersService, tagsService, uploadImagesService);
 /**
  * @openapi
  * /api/users:
@@ -132,11 +138,12 @@ usersRouter.post("/register", usersCtrl.registerUser);
  *             required: [email, password]
  *     responses:
  *       '200':
- *         description: 成功（Set-Cookie で token を返す）
+ *         description: 成功（Set-Cookie で access_token と refresh_token を返す）
  *         headers:
  *           Set-Cookie:
  *             description: |
- *               token=eyJ...; HttpOnly; Path=/; SameSite=Lax; Max-Age=86400
+ *               access_token=eyJ...; HttpOnly; Path=/; SameSite=Lax; Max-Age=900000
+ *               refresh_token=...; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800000
  *             schema: { type: string }
  *       '401':
  *         description: 認証失敗
@@ -168,11 +175,12 @@ usersRouter.post("/login", usersCtrl.loginUser);
  *             required: [email, token]
  *     responses:
  *       '200':
- *         description: 二段階認証成功（Set-Cookie で token を返す）
+ *         description: 二段階認証成功（Set-Cookie で access_token と refresh_token を返す）
  *         headers:
  *           Set-Cookie:
  *             description: |
- *               token=eyJ...; HttpOnly; Path=/; SameSite=Lax; Max-Age=86400
+ *               access_token=eyJ...; HttpOnly; Path=/; SameSite=Lax; Max-Age=900000
+ *               refresh_token=...; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800000
  *             schema:
  *               type: string
  *         content:
@@ -202,6 +210,19 @@ usersRouter.post("/login", usersCtrl.loginUser);
 usersRouter.post("/login/verify-2fa", usersCtrl.verifyLogin2FA);
 /**
  * @openapi
+ * /api/refresh:
+ *   post:
+ *     summary: リフレッシュトークンでアクセストークンを更新
+ *     tags: [Auth]
+ *     responses:
+ *       '200':
+ *         description: 成功（Set-Cookie で access_token, refresh_token を更新）
+ *       '401':
+ *         description: リフレッシュトークンが無効または期限切れ
+ */
+usersRouter.post("/refresh", usersCtrl.refreshToken);
+/**
+ * @openapi
  * /api/logout:
  *   post:
  *     summary: ログアウト（JWT Cookie を削除）
@@ -211,6 +232,63 @@ usersRouter.post("/login/verify-2fa", usersCtrl.verifyLogin2FA);
  *         description: 成功（Cookie の削除）
  */
 usersRouter.post("/logout", usersCtrl.logoutUser);
+/**
+ * @openapi
+ * /api/devices:
+ *   get:
+ *     summary: デバイス一覧取得
+ *     tags: [Users]
+ *     security:
+ *       - CookieAuth: []
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: '#/components/schemas/UserSession' }
+ *       '401':
+ *         description: 未ログイン
+ */
+usersRouter.get("/devices", authenticateToken, usersCtrl.getDevices);
+/**
+ * @openapi
+ * /api/logout/all:
+ *   post:
+ *     summary: すべてのデバイスからログアウト
+ *     tags: [Users]
+ *     security:
+ *       - CookieAuth: []
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *       '401':
+ *         description: 未ログイン
+ */
+usersRouter.post("/logout/all", authenticateToken, usersCtrl.logoutAllDevices);
+/**
+ * @openapi
+ * /api/logout/device/{sessionId}:
+ *   post:
+ *     summary: 特定のデバイスからログアウト
+ *     tags: [Users]
+ *     security:
+ *       - CookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *       '401':
+ *         description: 未ログイン
+ *       '400':
+ *         description: セッションIDが必要
+ */
+usersRouter.post("/logout/device/:sessionId", authenticateToken, usersCtrl.logoutDevice);
 /**
  * @openapi
  * /api/users/{userId}/password:
@@ -419,4 +497,205 @@ usersRouter.get("/users/settings/idpinfo", authenticateToken, usersCtrl.getUserI
  *         description: 画像URL
  */
 usersRouter.post("/users/settings/upload_avatar", authenticateToken, usersCtrl.uploadLocalAvatar);
+usersRouter.get("/users/:userId/following_tags", usersCtrl.getFollowingTags);
+/**
+ * @openapi
+ * /api/users/tags/me:
+ *   get:
+ *     summary: 自分のフォロー中のタグ一覧取得
+ *     tags:
+ *       - Users
+ *     security:
+ *       - CookieAuth: []
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: '#/components/schemas/Tag' }
+ *       '401':
+ *         description: 未ログイン
+ */
+usersRouter.get("/users/tags/me", authenticateToken, usersCtrl.getMyFollowingtags);
+/**
+ * @openapi
+ * /api/users/{userId}/pickup:
+ *   get:
+ *     summary: ユーザーのピックアップ記事一覧取得
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: '#/components/schemas/Article' }
+ */
+usersRouter.get("/users/:userId/pickup", usersCtrl.getPickupArticles);
+/**
+ * @openapi
+ * /api/users/pickup/create:
+ *   post:
+ *     summary: ピックアップ記事作成
+ *     tags:
+ *       - Users
+ *     security:
+ *       - CookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               articleId: { type: string }
+ *             required: [articleId]
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *       '401':
+ *         description: 未ログイン
+ */
+usersRouter.post("/users/pickup/create", authenticateToken, usersCtrl.createPickupArticle);
+/**
+ * @openapi
+ * /api/users/pickup/delete:
+ *   post:
+ *     summary: ピックアップ記事削除
+ *     tags:
+ *       - Users
+ *     security:
+ *       - CookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               articleId: { type: string }
+ *             required: [articleId]
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *       '401':
+ *         description: 未ログイン
+ */
+usersRouter.post("/users/pickup/delete", authenticateToken, usersCtrl.deletePickupArticle);
+/**
+ * @openapi
+ * /api/users/{userId}/comments:
+ *   get:
+ *     summary: ユーザーのコメント数取得
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 commentCount: { type: integer }
+ */
+usersRouter.get("/users/:userId/comments", usersCtrl.getCommentCount);
+/**
+ * @openapi
+ * /api/users/{userId}/articles:
+ *   get:
+ *     summary: ユーザーの記事数取得
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 articleCount: { type: integer }
+ */
+usersRouter.get("/users/:userId/articles", usersCtrl.getArticleCount);
+/**
+ * @openapi
+ * /api/users/ranking/all:
+ *   get:
+ *     summary: 全ユーザーランキング取得
+ *     tags:
+ *       - Users
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: '#/components/schemas/User' }
+ */
+usersRouter.get("/users/ranking/all", usersCtrl.getAllRanking);
+/**
+ * @openapi
+ * /api/users/settings/api-keys:
+ *   get:
+ *     summary: ユーザのAPIキー一覧取得
+ *     tags:
+ *       - Users
+ *     responses:
+ *       '200':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ */
+usersRouter.get("/users/settings/api-keys", authenticateToken, usersCtrl.getApiKeys);
+/**
+ * @openapi
+ * /api/users/settings/api-keys:
+ *   post:
+ *     summary: APIキー作成
+ *     tags:
+ *       - Users
+ *     responses:
+ *       '201':
+ *         description: 成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ */
+usersRouter.post("/users/settings/api-keys", authenticateToken, usersCtrl.createApiKey);
+/**
+ * @openapi
+ * /api/users/settings/api-keys/{keyId}:
+ *   post:
+ *     summary: APIキー失効
+ *     tags:
+ *       - Users
+ *     responses:
+ *       '200':
+ *         description: 成功
+ */
+usersRouter.delete("/users/settings/api-keys/:apiKeyId", authenticateToken, usersCtrl.revokeApiKey);
 export default usersRouter;

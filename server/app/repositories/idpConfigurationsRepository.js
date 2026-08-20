@@ -14,19 +14,18 @@ export class IdpConfigurationRepository {
             orderBy: { created_at: "asc" },
         });
     }
-    ;
     async getAllProviders() {
         return this.db.identity_providers.findMany({
             include: {
-                idp_configurations: true
+                idp_configurations: true,
             },
-            orderBy: { created_at: "asc" }
+            orderBy: { created_at: "asc" },
         });
     }
     async getConfiguration(provider_name) {
         return this.db.identity_providers.findUnique({
             where: { provider_name },
-            include: { idp_configurations: true }
+            include: { idp_configurations: true },
         });
     }
     async upsertIdp(provider_name, data) {
@@ -88,10 +87,10 @@ export class IdpConfigurationRepository {
                 where: { provider_id: identityProvider.id },
                 data: {
                     is_active: {
-                        set: !((await tx.idp_configurations.findUnique({
+                        set: !(await tx.idp_configurations.findUnique({
                             where: { provider_id: identityProvider.id },
                             select: { is_active: true },
-                        }))?.is_active)
+                        }))?.is_active,
                     },
                     updated_at: new Date(),
                 },
