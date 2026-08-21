@@ -28,18 +28,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ========================================
-      # Checkout develop
-      # ========================================
       - name: Checkout develop
         uses: actions/checkout@v4
         with:
           ref: develop
-          path: develop
 
-      # ========================================
-      # Setup Node.js
-      # ========================================
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -49,57 +42,33 @@ jobs:
       # Build client
       # ========================================
       - name: Install client dependencies
-        working-directory: develop/client
+        working-directory: client
         run: npm ci
 
       - name: Build client
-        working-directory: develop/client
+        working-directory: client
         run: npm run build
-
-      # ========================================
-      # Checkout app branch
-      # ========================================
-      - name: Checkout app branch
-        uses: actions/checkout@v4
-        with:
-          ref: app
-          path: app
-
-      # ========================================
-      # Copy server source
-      #
-      # app/server/src/index.ts is production-specific,
-      # so keep it and copy everything else from develop.
-      # ========================================
-      - name: Sync server source
-        run: |
-          rsync -av \
-            --exclude='index.ts' \
-            develop/server/src/ \
-            app/server/src/
-
-      # ========================================
-      # Copy client build
-      # ========================================
-      - name: Sync client build
-        run: |
-          rm -rf app/server/dist
-          cp -r develop/client/dist app/server/dist
 
       # ========================================
       # Build server
       # ========================================
       - name: Install server dependencies
-        working-directory: app/server
+        working-directory: server
         run: npm ci
 
       - name: Generate Prisma Client
-        working-directory: app/server
-        run: npx prisma generate --schema=./prisma/schema.prisma
+        working-directory: server
+        run: npx --yes prisma@7.2.0 generate --schema=./prisma/schema.prisma
 
       - name: Build server
-        working-directory: app/server
+        working-directory: server
         run: npm run build
+
+      # The server serves the SPA from server/dist, so merge the client
+      # build into the same runtime directory after the server build.
+      - name: Copy client build into server runtime
+        run: |
+          cp -r client/dist/. server/dist/
 
       # ========================================
       # Login to GitHub Container Registry
@@ -115,7 +84,7 @@ jobs:
       # Build Docker image
       # ========================================
       - name: Build Docker image
-        working-directory: app/server
+        working-directory: server
         run: |
           docker build \
             -t ghcr.io/hiroppe0409/kuon:${IMAGE_TAG} \
