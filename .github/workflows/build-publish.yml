@@ -33,36 +33,43 @@ jobs:
         with:
           ref: develop
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+          run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      # ========================================
+      # Checks
+      # ========================================
+      - name: Lint client
+        run: pnpm --filter client lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
       # ========================================
       # Build client
       # ========================================
-      - name: Install client dependencies
-        working-directory: client
-        run: npm ci
-
       - name: Build client
-        working-directory: client
-        run: npm run build
+        run: pnpm --filter client build
 
       # ========================================
       # Build server
       # ========================================
-      - name: Install server dependencies
-        working-directory: server
-        run: npm ci
-
       - name: Generate Prisma Client
-        working-directory: server
-        run: npx --yes prisma@7.2.0 generate --schema=./prisma/schema.prisma
+        run: pnpm --filter server exec prisma generate --schema=./prisma/schema.prisma
 
       - name: Build server
-        working-directory: server
-        run: npm run build
+        run: pnpm --filter server build
 
       # The server serves the SPA from server/dist, so merge the client
       # build into the same runtime directory after the server build.
