@@ -8,7 +8,9 @@ const BASE_URL =
   "http://localhost:3030";
 
 const toAbsoluteUrl = (url: string) =>
-  /^https?:\/\//i.test(url) ? url : `${BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+  /^https?:\/\//i.test(url)
+    ? url
+    : `${BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 
 export class ShareController {
   constructor(private articleService: ArticlesService) {}
@@ -23,9 +25,8 @@ export class ShareController {
       const avatarUrl = article.users?.avatar_url
         ? toAbsoluteUrl(article.users.avatar_url)
         : undefined;
-
       const image = await renderArticleOgp({
-        title: article.title,
+        title: article.title ?? "",
         userName: article.users?.username ?? "",
         avatarUrl,
       });
