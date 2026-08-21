@@ -3,6 +3,7 @@ FROM node:20
 WORKDIR /app
 
 ENV TZ=Asia/Tokyo
+ENV NODE_ENV=production
 
 # Install only production dependencies from the source package definition.
 COPY package*.json ./
