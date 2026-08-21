@@ -31,6 +31,35 @@ COMMENT ON COLUMN users.is_active IS '有効フラグ';
 COMMENT ON COLUMN users.last_login_at IS '最終ログイン日時';
 COMMENT ON COLUMN users.created_by IS '作成者ユーザID';
 
+-- user_sessions
+CREATE TABLE IF NOT EXISTS knowledge.user_sessions (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    user_id UUID NOT NULL REFERENCES knowledge.users(id) ON DELETE CASCADE,
+    refresh_token TEXT NOT NULL UNIQUE,
+    ip_address TEXT,
+    user_agent TEXT,
+    device_name TEXT,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    last_used_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ===== インデックス =====
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON knowledge.user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_refresh_token ON knowledge.user_sessions(refresh_token);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON knowledge.user_sessions(expires_at);
+
+COMMENT ON TABLE knowledge.user_sessions IS 'ユーザセッション情報（リフレッシュトークン管理用）';
+COMMENT ON COLUMN knowledge.user_sessions.id IS 'セッションID';
+COMMENT ON COLUMN knowledge.user_sessions.user_id IS 'ユーザID';
+COMMENT ON COLUMN knowledge.user_sessions.refresh_token IS 'リフレッシュトークン（ハッシュ化して保存することを推奨）';
+COMMENT ON COLUMN knowledge.user_sessions.ip_address IS 'ログイン時のIPアドレス';
+COMMENT ON COLUMN knowledge.user_sessions.user_agent IS 'ブラウザ・端末情報（User-Agent）';
+COMMENT ON COLUMN knowledge.user_sessions.device_name IS '任意の端末名（ユーザ設定用）';
+COMMENT ON COLUMN knowledge.user_sessions.expires_at IS 'リフレッシュトークンの有効期限';
+COMMENT ON COLUMN knowledge.user_sessions.created_at IS 'セッション作成日時';
+COMMENT ON COLUMN knowledge.user_sessions.last_used_at IS '最終利用日時（refresh時に更新）';
+
 -- local_accounts
 CREATE TABLE IF NOT EXISTS local_accounts (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
@@ -444,6 +473,50 @@ COMMENT ON TABLE user_security IS 'ユーザのセキュリティ設定';
 COMMENT ON COLUMN user_security.user_id IS 'ユーザID';
 COMMENT ON COLUMN user_security.totp_secret IS 'TOTPシークレット';
 COMMENT ON COLUMN user_security.is_2fa_enabled IS '2FA有効化フラグ';
+
+-- user_api_keys
+CREATE TABLE IF NOT EXISTS knowledge.user_api_keys (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    user_id UUID NOT NULL REFERENCES knowledge.users(id) ON DELETE CASCADE,
+
+    name VARCHAR(100) NOT NULL,              -- 管理用名称（例: CI用, CLI用）
+    api_key_hash TEXT NOT NULL UNIQUE,       -- APIキーのハッシュ値（平文は保存しない）
+    prefix VARCHAR(20) NOT NULL,             -- 表示用プレフィックス (例: sk_xxxxx)
+
+    scopes JSONB DEFAULT '[]'::jsonb,        -- 権限スコープ ["read","write"]
+    is_active BOOLEAN DEFAULT TRUE,          -- 有効フラグ
+
+    last_used_at TIMESTAMP,                  -- 最終利用日時
+    expires_at TIMESTAMP,                    -- 有効期限（NULLなら無期限）
+
+    created_at TIMESTAMP DEFAULT NOW(),
+    revoked_at TIMESTAMP,                    -- 失効日時
+    created_by UUID                          -- 作成者
+);
+
+COMMENT ON TABLE knowledge.user_api_keys IS 'ユーザAPIキー';
+COMMENT ON COLUMN knowledge.user_api_keys.id IS 'APIキーID';
+COMMENT ON COLUMN knowledge.user_api_keys.user_id IS 'ユーザID';
+COMMENT ON COLUMN knowledge.user_api_keys.name IS 'APIキー管理名';
+COMMENT ON COLUMN knowledge.user_api_keys.api_key_hash IS 'APIキーのハッシュ値';
+COMMENT ON COLUMN knowledge.user_api_keys.prefix IS '表示用プレフィックス';
+COMMENT ON COLUMN knowledge.user_api_keys.scopes IS '権限スコープ(JSON配列)';
+COMMENT ON COLUMN knowledge.user_api_keys.is_active IS '有効フラグ';
+COMMENT ON COLUMN knowledge.user_api_keys.last_used_at IS '最終利用日時';
+COMMENT ON COLUMN knowledge.user_api_keys.expires_at IS '有効期限';
+COMMENT ON COLUMN knowledge.user_api_keys.created_at IS '作成日時';
+COMMENT ON COLUMN knowledge.user_api_keys.revoked_at IS '失効日時';
+COMMENT ON COLUMN knowledge.user_api_keys.created_by IS '作成者ユーザID';
+
+-- index
+CREATE INDEX IF NOT EXISTS idx_user_api_keys_user_id
+    ON knowledge.user_api_keys(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_user_api_keys_active
+    ON knowledge.user_api_keys(is_active);
+
+CREATE INDEX IF NOT EXISTS idx_user_api_keys_expires
+    ON knowledge.user_api_keys(expires_at);
 
 -- user_avatars
 CREATE TABLE IF NOT EXISTS knowledge.user_avatars (
