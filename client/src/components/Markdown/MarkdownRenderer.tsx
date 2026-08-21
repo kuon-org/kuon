@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
-import { Box, Button, GlobalStyles, useTheme } from "@mui/material";
+import { Box, GlobalStyles, useTheme } from "@mui/material";
 import { Link } from "@tanstack/react-router";
 // import { remarkPlantUML } from "../../utils/remark/plantuml";
 import { remarkLineNumber } from "../../utils/remark/lineNumber";
@@ -19,6 +19,7 @@ import {
 import remarkGemoji from "remark-gemoji";
 import { ZoomableContent } from "../common/ZoomableContent";
 import LoadingSkelton from "../common/Loading/LoadingSkelton";
+import { DrawioRenderer } from "./DrawioRenderer";
 
 const MermaidRenderer = lazy(() =>
   import("./MermaidRenderer").then((module) => ({
@@ -38,7 +39,7 @@ const CodeSyntaxHighlighter = lazy(() =>
 
 interface MarkdownRendererProps {
   text: string;
-  onEditDrawio?: (base64: string) => void;
+  onEditDrawio?: (data: string) => void;
 }
 
 // ★ 追加：アドモニションの見た目（Material Symbols + MUIテーマ）
@@ -408,7 +409,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
         }
 
         if (!inline && match?.[1] === "drawio") {
-          const base64 = String(children ?? "")
+          const data = String(children ?? "")
             .trim()
             .replace(/\s/g, "");
           return (
@@ -423,34 +424,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
                 },
               }}
             >
-              <Box sx={{ p: 2, textAlign: "start" }}>
-                <ZoomableContent>
-                  <img
-                    src={`data:image/svg+xml;base64,${base64}`}
-                    style={{ maxWidth: "100%", height: "auto" }}
-                    alt="drawio"
-                  />
-                </ZoomableContent>
-              </Box>
-              {onEditDrawio && (
-                <Button
-                  className="edit-btn"
-                  variant="outlined"
-                  color="inherit"
-                  size="small"
-                  sx={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                    zIndex: 10,
-                    opacity: 0,
-                    transition: "opacity 0.2s ease-in-out",
-                  }}
-                  onClick={() => onEditDrawio(base64)}
-                >
-                  編集
-                </Button>
-              )}
+              <DrawioRenderer data={data} onEdit={onEditDrawio} />
             </Box>
           );
         }
@@ -546,7 +520,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
 
       <div
         className="markdown-scroll-container bs-scope"
-        data-bs-theme={bsTheme} // ★ MUIのmodeと同期
+        data-bs-theme={bsTheme}
       >
         <ReactMarkdown
           children={normalized}
@@ -561,7 +535,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           ]}
           rehypePlugins={[
             rehypeRaw,
-            rehypeBootstrapPlugin, // ★ サニタイズの「前」に移動して属性を整える
+            rehypeBootstrapPlugin,
             rehypeSlug,
             [rehypeSanitize, bootstrapSafeSchema],
           ]}
