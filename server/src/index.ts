@@ -6,15 +6,24 @@ import tagsRouter from "./routes/tagsRoutes.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { swaggerSpec, swaggerUiMiddleware } from "./swagger.js";
-import authRouter from "./routes/authRouter.js";
-import idpRouter from "./routes/idpRouter.js";
+import authRouter from "./authRouter.js";
+import idpRouter from "./idpRouter.js";
 import { init } from "./repositories/initRepository.js";
-import commentsRouter from "./routes/commentsRouter.js";
-import adminRouter from "./routes/adminRouter.js";
-import shareRouter from "./routes/shareRoutes.js";
-import stocksRoutes from "./routes/stocksRoutes.js";
-import pumlRouter from "./routes/plantumlRouter.js";
+import commentsRouter from "./commentsRouter.js";
+import adminRouter from "./adminRouter.js";
+import shareRouter from "./shareRoutes.js";
+import stocksRoutes from "./stocksRoutes.js";
+import pumlRouter from "./plantumlRouter.js";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.resolve(__dirname, "../dist");
+const uploadsPath = path.resolve(__dirname, "../public/uploads");
+
 const app = express();
+
 // リバプロ設定
 const trustProxy = process.env.TRUST_PROXY;
 if (trustProxy === "true") {
@@ -27,6 +36,7 @@ if (trustProxy === "true") {
   console.log("Proxy enabled Hop:", trustProxy);
   app.set("trust proxy", Number(trustProxy));
 }
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(
@@ -50,11 +60,20 @@ app.get("/api-docs.json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);
 });
-app.use("/uploads", express.static("public/uploads"));
+
+app.use("/uploads", express.static(uploadsPath));
+app.use(express.static(distPath));
+
+// SPAのルーティング対応
+app.get("{/*path}", (_req, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
+});
+
 async function main() {
   await init();
-  app.listen(3030, () => {
-    console.log("Server running on http://localhost:3030");
+  const port = Number(process.env.SERVER_PORT ?? 3030);
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
     console.log(process.env.NODE_ENV);
   });
 }
