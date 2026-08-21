@@ -1,10 +1,12 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development npx tsx watch src/index.ts"
+    "dev": "cross-env NODE_ENV=development npx tsx watch src/index.ts",
+    "build": "tsc --pretty",
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
