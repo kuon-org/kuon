@@ -5,9 +5,23 @@ on:
     branches:
       - develop
 
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Docker image tag
+        required: true
+        type: choice
+        default: develop
+        options:
+          - develop
+          - latest
+
 permissions:
   contents: read
   packages: write
+
+env:
+  IMAGE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.image_tag || 'develop' }}
 
 jobs:
   build-publish:
@@ -104,7 +118,7 @@ jobs:
         working-directory: app/server
         run: |
           docker build \
-            -t ghcr.io/hiroppe0409/kuon:develop \
+            -t ghcr.io/hiroppe0409/kuon:${IMAGE_TAG} \
             .
 
       # ========================================
@@ -112,4 +126,4 @@ jobs:
       # ========================================
       - name: Push Docker image
         run: |
-          docker push ghcr.io/hiroppe0409/kuon:develop
+          docker push ghcr.io/hiroppe0409/kuon:${IMAGE_TAG}
