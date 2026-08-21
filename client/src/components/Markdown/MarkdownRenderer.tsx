@@ -507,12 +507,12 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           // 念のため明示的に背景/枠へCSS変数を適用（競合時の保険）
           ".bs-scope .card": {
             backgroundColor: "var(--bs-card-bg) !important",
-            color: "var(--bs-card-color !important",
+            color: "var(--bs-card-color) !important",
             borderColor: "var(--bs-card-border-color) !important",
           },
           ".bs-scope .card-header, .bs-scope .card-footer": {
             backgroundColor: "var(--bs-card-cap-bg) !important",
-            color: "var(--bs-card-cap-color) !important",
+            color: "var(--bs-card-color) !important",
             borderColor: "var(--bs-card-border-color) !important",
           },
         })}
