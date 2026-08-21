@@ -1,0 +1,19 @@
+{
+  "name": "kuon",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.15.1",
+  "scripts": {
+    "dev": "pnpm -r --parallel --if-present dev",
+    "dev:client": "pnpm --filter client dev",
+    "dev:server": "pnpm --filter server dev",
+    "build": "pnpm run build:client && pnpm run build:server",
+    "build:client": "pnpm --filter client build",
+    "build:server": "pnpm --filter server build",
+    "lint": "pnpm --filter client lint",
+    "typecheck": "pnpm --filter client exec tsc --noEmit && pnpm --filter server typecheck",
+    "check": "pnpm run lint && pnpm run typecheck",
+    "clean": "pnpm --filter client exec rm -rf dist && pnpm --filter server exec rm -rf dist",
+    "format": "pnpm --filter client exec prettier --write ."
+  }
+}
