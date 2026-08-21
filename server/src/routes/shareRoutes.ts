@@ -10,7 +10,7 @@ const shareCtrl = new ShareController(articleService);
 
 /**
  * @openapi
- * /api/share/{articleId}:
+ * /share/{articleId}:
  *   get:
  *     summary: 記事シェアページ (OGP用)
  *     tags:
@@ -31,5 +31,6 @@ const shareCtrl = new ShareController(articleService);
  *         description: 記事が見つからない
  */
 shareRouter.get("/share/:articleId", shareCtrl.sharePage);
+shareRouter.get("/share/:articleId/image", shareCtrl.shareImage);
 
 export default shareRouter;
