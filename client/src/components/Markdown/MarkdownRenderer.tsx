@@ -39,12 +39,13 @@ const CodeSyntaxHighlighter = lazy(() =>
 
 interface MarkdownRendererProps {
   text: string;
-  onEditDrawio?: (base64: string) => void;
+  onEditDrawio?: (data: string) => void;
 }
 
+// ★ 追加：アドモニションの見た目（Material Symbols + MUIテーマ）
 const admonitionStyleMap = {
   note: {
-    iconName: "info",
+    iconName: "info", // ℹ️
     borderColor: "info.light",
     color: (theme: any) => theme.palette.info.main,
     bg: (theme: any) =>
@@ -54,7 +55,7 @@ const admonitionStyleMap = {
     title: "Note",
   },
   tip: {
-    iconName: "lightbulb",
+    iconName: "lightbulb", // 💡
     borderColor: "success.light",
     color: (theme: any) => theme.palette.success.main,
     bg: (theme: any) =>
@@ -64,7 +65,7 @@ const admonitionStyleMap = {
     title: "Tip",
   },
   warning: {
-    iconName: "warning",
+    iconName: "warning", // ⚠️
     borderColor: "warning.light",
     color: (theme: any) => theme.palette.warning.main,
     bg: (theme: any) =>
@@ -74,7 +75,7 @@ const admonitionStyleMap = {
     title: "Warning",
   },
   important: {
-    iconName: "feedback",
+    iconName: "feedback", // ！
     borderColor: "secondary.light",
     color: (theme: any) => theme.palette.secondary.main,
     bg: (theme: any) =>
@@ -84,7 +85,7 @@ const admonitionStyleMap = {
     title: "Important",
   },
   caution: {
-    iconName: "report",
+    iconName: "report", // 報告/危険
     borderColor: "error.light",
     color: (theme: any) => theme.palette.error.main,
     bg: (theme: any) =>
@@ -98,7 +99,7 @@ const admonitionStyleMap = {
 const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const theme = useTheme();
+  const theme = useTheme(); // ★ MUIテーマを取得
   const isDark = theme.palette.mode === "dark";
   const bsTheme = isDark ? "dark" : "light";
 
@@ -134,6 +135,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
   const components = useMemo(() => {
     return {
       blockquote: ({ children, node, ...props }: any) => {
+        // ★ dataは node.properties を優先して安全に取得（rehypeの段階で渡ってくる）
         const propsData = (node as any)?.properties || {};
         const dataAd =
           propsData["data-admonition"] || (props as any)["data-admonition"];
@@ -196,6 +198,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
                 >
                   {style.iconName}
                 </span>
+                {/* ユーザー要望: アイコン + NOTE これはノートの本文 のように1行見出し表示 */}
                 <strong>{title}</strong>
               </Box>
               <div>{children}</div>
@@ -203,6 +206,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           );
         }
 
+        // 従来の blockquote
         return (
           <Box
             component="blockquote"
@@ -214,9 +218,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
               py: 1.5,
               borderLeft: "4px solid",
               bgcolor: (theme) =>
-                theme.palette.mode === "dark"
-                  ? "background.paper"
-                  : "grey.300",
+                theme.palette.mode === "dark" ? "background.paper" : "grey.300",
               borderRadius: 1,
               "& > :first-of-type": { mt: 0 },
               "& > :last-child": { mb: 0 },
@@ -238,6 +240,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           </p>
         );
       },
+      // 既存 a レンダラ差し替え（抜粋）
       a: ({ href, children, node }: any) => {
         const props = node?.properties || {};
 
@@ -259,6 +262,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           role: props.role,
         };
 
+        // Bootstrap Data API
         if (bsToggle) {
           return (
             <a
@@ -271,10 +275,12 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           );
         }
 
+        // hrefが無い場合
         if (!finalHref) {
           return <span className={cleanProps.className}>{children}</span>;
         }
 
+        // Anchor link
         if (finalHref.startsWith("#")) {
           return (
             <a
@@ -308,6 +314,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           );
         }
 
+        // SPA内部リンク
         if (finalHref.startsWith("/")) {
           return (
             <Link to={finalHref as any} {...cleanProps}>
@@ -316,6 +323,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           );
         }
 
+        // 外部リンク
         return (
           <a {...cleanProps} target="_blank" rel="noopener noreferrer">
             {children}
@@ -378,7 +386,6 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
         const withSuspense = (component: React.ReactNode) => (
           <Suspense fallback={<LoadingSkelton />}>{component}</Suspense>
         );
-
         if (!inline && match?.[1] === "plantuml") {
           const code = String(children ?? "").trimEnd();
           return (
@@ -387,9 +394,11 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
             </ZoomableContent>
           );
         }
-
         if (!inline && match?.[1] === "mermaid") {
+          // children は配列/改行を含むことがあるので安定化
           const code = String(children ?? "").trimEnd();
+
+          // ★ node.position が取れるなら key にして再マウントを抑えやすい（任意）
           const key = node?.position?.start?.offset ?? undefined;
 
           return (
@@ -403,7 +412,6 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           const data = String(children ?? "")
             .trim()
             .replace(/\s/g, "");
-
           return (
             <Box
               sx={{
@@ -416,16 +424,14 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
                 },
               }}
             >
-              <DrawioRenderer
-                data={data}
-                onEdit={onEditDrawio}
-              />
+              <DrawioRenderer data={data} onEdit={onEditDrawio} />
             </Box>
           );
         }
-
         if (!inline && match?.[1] === "svg") {
           const svgContent = String(children ?? "").trim();
+
+          // 最低限のサニタイズ（scriptタグの混入防止）
           const isPotentiallyUnsafe = /<script/i.test(svgContent);
 
           return (
@@ -458,7 +464,6 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
             </Box>
           );
         }
-
         return withSuspense(
           <CodeSyntaxHighlighter
             inline={inline}
@@ -476,24 +481,33 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
     <>
       <GlobalStyles
         styles={(t) => ({
+          // Markdown内のBootstrapエリアを限定スコープ化
           ".bs-scope": {
+            // MUI準拠でBootstrap CSS変数を上書き
             "--bs-body-bg": t.palette.background.default,
             "--bs-body-color": t.palette.text.primary,
             "--bs-border-color": t.palette.divider,
+
             "--bs-card-bg": t.palette.background.paper,
             "--bs-card-color": t.palette.text.primary,
             "--bs-card-border-color": t.palette.divider,
             "--bs-card-cap-bg": t.palette.action.hover,
             "--bs-card-cap-color": t.palette.text.secondary,
+
             "--bs-link-color": t.palette.primary.main,
             "--bs-link-hover-color": t.palette.primary.dark,
+
             "--bs-heading-color": t.palette.text.primary,
             "--bs-secondary-color": t.palette.text.secondary,
+
+            // ユーザー環境で強制したい時の保険（iOS/一部ブラウザ配色ヒント）
             colorScheme: isDark ? "dark" : "light",
           },
+
+          // 念のため明示的に背景/枠へCSS変数を適用（競合時の保険）
           ".bs-scope .card": {
             backgroundColor: "var(--bs-card-bg) !important",
-            color: "var(--bs-card-color) !important",
+            color: "var(--bs-card-color !important",
             borderColor: "var(--bs-card-border-color) !important",
           },
           ".bs-scope .card-header, .bs-scope .card-footer": {
@@ -507,7 +521,6 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
       <div
         className="markdown-scroll-container bs-scope"
         data-bs-theme={bsTheme}
-        ref={containerRef}
       >
         <ReactMarkdown
           children={normalized}
@@ -518,6 +531,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
             remarkGfm,
             remarkGemoji,
             remarkAdmonitions,
+            // [remarkPlantUML, { plantumlUri: "/api/plantuml" }],
           ]}
           rehypePlugins={[
             rehypeRaw,
