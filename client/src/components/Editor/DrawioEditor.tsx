@@ -84,7 +84,13 @@ export const DrawioEditor = ({
         const xml = typeof msg.xml === "string" ? msg.xml : "";
         if (!xml) return;
 
-        onSave(encodeDrawio(xml));
+        const match = xml.match(/<mxGraphModel[\s\S]*<\/mxGraphModel>/);
+        if (!match) {
+          console.error("Draw.io export did not contain mxGraphModel XML.");
+          return;
+        }
+
+        onSave(encodeDrawio(match[0]));
 
         if (closeAfterExportRef.current) {
           onClose();
