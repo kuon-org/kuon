@@ -23,9 +23,9 @@ const fromBase64 = (value: string) => {
 };
 
 /**
- * Encodes a Draw.io diagram XML into the standard compressed diagram payload.
+ * Encodes a Draw.io mxGraphModel XML into the standard compressed diagram payload.
  *
- * XML -> encodeURIComponent -> Deflate Raw -> Base64
+ * mxGraphModel XML -> encodeURIComponent -> Deflate Raw -> Base64
  */
 export const encodeDrawio = (xml: string) => {
   const encoded = encodeURIComponent(xml);
@@ -33,9 +33,9 @@ export const encodeDrawio = (xml: string) => {
 };
 
 /**
- * Decodes a standard Draw.io compressed diagram payload back into XML.
+ * Decodes a standard Draw.io compressed diagram payload back into mxGraphModel XML.
  *
- * Base64 -> Inflate Raw -> decodeURIComponent -> XML
+ * Base64 -> Inflate Raw -> decodeURIComponent -> mxGraphModel XML
  */
 export const decodeDrawio = (value: string) => {
   const compressed = fromBase64(value.trim().replace(/\s/g, ""));
@@ -44,7 +44,7 @@ export const decodeDrawio = (value: string) => {
 };
 
 /**
- * Wraps a compressed diagram payload in an mxfile envelope accepted by Draw.io.
+ * Wraps a compressed mxGraphModel payload in an mxfile envelope accepted by Draw.io.
  */
 export const createDrawioLoadXml = (compressedData: string) =>
   `<mxfile><diagram name="Page-1">${compressedData}</diagram></mxfile>`;
