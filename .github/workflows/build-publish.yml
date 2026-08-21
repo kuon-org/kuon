@@ -79,6 +79,10 @@ jobs:
         working-directory: app/server
         run: npm ci
 
+      - name: Generate Prisma Client
+        working-directory: app/server
+        run: npx prisma generate --schema=./prisma/schema.prisma
+
       - name: Build server
         working-directory: app/server
         run: npm run build
