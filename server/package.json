@@ -1,10 +1,12 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development npx tsx watch src/index.ts"
+    "dev": "cross-env NODE_ENV=development npx tsx watch src/index.ts",
+    "build": "tsc --pretty",
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +27,7 @@
     "jsonwebtoken": "^9.0.3",
     "lodash-es": "^4.17.23",
     "multer": "^2.0.2",
-    "otplib": "^13.3.0",
+    "otplib": "^13.0.0",
     "pkce-challenge": "^6.0.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",
