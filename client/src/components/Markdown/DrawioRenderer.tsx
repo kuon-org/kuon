@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Box } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { createDrawioLoadXml } from "../../utils/drawio";
 import { ZoomableContent } from "../common/ZoomableContent";
 
@@ -58,7 +58,6 @@ export const DrawioRenderer = ({ data, onEdit }: DrawioRendererProps) => {
             format: "svg",
             border: 0,
             fit: 1,
-            transparent: true,
           }),
           DRAWIO_ORIGIN,
         );
@@ -78,7 +77,15 @@ export const DrawioRenderer = ({ data, onEdit }: DrawioRendererProps) => {
   }, [data]);
 
   return (
-    <Box sx={{ my: 2, position: "relative" }}>
+    <Box
+      sx={{
+        my: 2,
+        position: "relative",
+        "&:hover .edit-btn": {
+          opacity: 1,
+        },
+      }}
+    >
       <Box
         sx={{
           position: "absolute",
@@ -111,21 +118,23 @@ export const DrawioRenderer = ({ data, onEdit }: DrawioRendererProps) => {
       )}
 
       {onEdit && (
-        <Box
-          component="button"
-          type="button"
+        <Button
+          className="edit-btn"
+          variant="outlined"
+          color="inherit"
+          size="small"
           onClick={() => onEdit(data)}
           sx={{
             position: "absolute",
             top: 8,
             right: 8,
+            zIndex: 10,
             opacity: 0,
             transition: "opacity 0.2s ease-in-out",
-            "&:hover": { opacity: 1 },
           }}
         >
           編集
-        </Box>
+        </Button>
       )}
     </Box>
   );
