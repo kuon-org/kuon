@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
-import { Box, Button, GlobalStyles, useTheme } from "@mui/material";
+import { Box, GlobalStyles, useTheme } from "@mui/material";
 import { Link } from "@tanstack/react-router";
 // import { remarkPlantUML } from "../../utils/remark/plantuml";
 import { remarkLineNumber } from "../../utils/remark/lineNumber";
@@ -512,7 +512,7 @@ const MarkdownRenderer = ({ text, onEditDrawio }: MarkdownRendererProps) => {
           },
           ".bs-scope .card-header, .bs-scope .card-footer": {
             backgroundColor: "var(--bs-card-cap-bg) !important",
-            color: "var(--bs-card-color) !important",
+            color: "var(--bs-card-cap-color) !important",
             borderColor: "var(--bs-card-border-color) !important",
           },
         })}
