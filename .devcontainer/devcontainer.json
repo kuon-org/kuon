@@ -4,7 +4,7 @@
     "dockerfile": "Dockerfile"
   },
   "forwardPorts": [5050, 3030],
-  "postCreateCommand": "npm install --prefix client && npm install --prefix server",
+  "postCreateCommand": "corepack enable && pnpm install",
   "customizations": {
     "vscode": {
       "extensions": [
