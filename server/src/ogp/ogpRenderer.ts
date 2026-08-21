@@ -18,7 +18,10 @@ const loadFont = async (): Promise<ArrayBuffer> => {
   try {
     await access(localPath);
     const data = await readFile(localPath);
-    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+    return data.buffer.slice(
+      data.byteOffset,
+      data.byteOffset + data.byteLength,
+    );
   } catch {
     const response = await fetch(FONT_URL);
     if (!response.ok) {
@@ -60,17 +63,13 @@ export const renderArticleOgp = async ({
     avatarUrl ? toDataUri(avatarUrl) : Promise.resolve(undefined),
   ]);
 
-  const svg = await satori(
-    ArticleOgpTemplate({ title, userName, avatarSrc }),
-    {
-      width: 1200,
-      height: 630,
-      fonts: [
-        { name: "Noto Sans JP", data: font, weight: 400, style: "normal" },
-        { name: "Noto Sans JP", data: font, weight: 700, style: "normal" },
-      ],
-    },
-  );
-
+  const svg = await satori(ArticleOgpTemplate({ title, userName, avatarSrc }), {
+    width: 1200,
+    height: 630,
+    fonts: [
+      { name: "Noto Sans JP", data: font, weight: 400, style: "normal" },
+      { name: "Noto Sans JP", data: font, weight: 700, style: "normal" },
+    ],
+  });
   return new Resvg(svg).render().asPng();
 };
