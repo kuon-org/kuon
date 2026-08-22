@@ -1,0 +1,63 @@
+name: Publish Development Log
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  publish-development-log:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Publish development log to Kuon
+        env:
+          KUON_API_KEY: ${{ secrets.KUON_API_KEY }}
+          KUON_DOMAIN: https://demo.kuon.f5.si
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          python <<'PY'
+          import os
+          import sys
+
+          body = os.environ.get("PR_BODY", "")
+          start_marker = "<!-- DEVELOPMENT_LOG_START -->"
+          end_marker = "<!-- DEVELOPMENT_LOG_END -->"
+
+          if start_marker not in body or end_marker not in body:
+              print("Development log block was not found. Skipping publication.")
+              sys.exit(0)
+
+          content = body.split(start_marker, 1)[1].split(end_marker, 1)[0].strip()
+
+          if not content:
+              print("Development log is empty. Skipping publication.")
+              sys.exit(0)
+
+          with open("development-log.md", "w", encoding="utf-8") as f:
+              f.write(content)
+          PY
+
+          PAYLOAD=$(jq -n \
+            --arg title "$PR_TITLE" \
+            --rawfile raw_content development-log.md \
+            '{
+              title: $title,
+              raw_content: $raw_content,
+              tagIds: [],
+              status: "public",
+              is_private: false,
+              is_published: true
+            }')
+
+          curl --fail-with-body --silent --show-error \
+            -X POST "$KUON_DOMAIN/api/articles/create" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $KUON_API_KEY" \
+            --data "$PAYLOAD"
