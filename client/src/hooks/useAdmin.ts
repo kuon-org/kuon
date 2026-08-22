@@ -50,13 +50,6 @@ export const useAdminQuery = (provider_name?: string) => {
             return data as { provider_name: string, display_name: string, is_active: boolean }[];
         }
     });
-    const getServerSettingsQuery = useQuery<ServerSetting[]>({
-        queryKey: ["serverSettings"],
-        queryFn: async () => {
-            const { data } = await apiClient.get("/admin/settings/server");
-            return data;
-        },
-    });
 
     const idpConfMutation = useMutation({
         mutationFn: async (values: { provider_name: string;[key: string]: any }) => {
@@ -71,16 +64,6 @@ export const useAdminQuery = (provider_name?: string) => {
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["idpConf", provider_name] });
         }
-    });
-
-    const serverSettingMutation = useMutation({
-        mutationFn: async (setting: { key: string; value: string }) => {
-            const { data } = await apiClient.put("/admin/settings/server", setting);
-            return data as ServerSetting;
-        },
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["serverSettings"] });
-        },
     });
 
     // 追加: Discovery 取得関数
@@ -133,11 +116,7 @@ export const useAdminQuery = (provider_name?: string) => {
         user_toggle_active: toggleUserActive.mutate,
         user_toggle_active_isPending: toggleUserActive.isPending,
         deleteIdpConf: idpDeleteMutation.mutateAsync, // mutateAsyncにしてawaitできるようにする
-        deleteIdp_isPending: idpDeleteMutation.isPending,
-        settings: getServerSettingsQuery.data,
-        settings_isLoading: getServerSettingsQuery.isLoading,
-        updateServerSetting: serverSettingMutation.mutateAsync,
-        updateServerSetting_isPending: serverSettingMutation.isPending,
+        deleteIdp_isPending: idpDeleteMutation.isPending
     }
 }
 
