@@ -9,6 +9,7 @@ import { swaggerSpec, swaggerUiMiddleware } from "./swagger.js";
 import authRouter from "./routes/authRouter.js";
 import idpRouter from "./routes/idpRouter.js";
 import { init } from "./repositories/initRepository.js";
+import { runMigrations } from "./database/migrationRunner.js";
 import commentsRouter from "./routes/commentsRouter.js";
 import adminRouter from "./routes/adminRouter.js";
 import shareRouter from "./routes/shareRoutes.js";
@@ -68,12 +69,13 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(distPath));
 
   // SPAのルーティング対応
-  app.get("{/*path}", (_req, res) => {
+  app.get("/{*path}", (_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
 
 async function main() {
+  await runMigrations();
   await init();
   const port = Number(process.env.SERVER_PORT ?? 3030);
   app.listen(port, () => {
@@ -82,4 +84,7 @@ async function main() {
   });
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error("❌ Server startup failed:", error);
+  process.exit(1);
+});
