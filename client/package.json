@@ -17,6 +17,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
+    "@mui/system": "^9.3.0",
     "@mui/x-data-grid": "^8.27.1",
     "@reduxjs/toolkit": "^2.11.2",
     "@tanstack/react-form": "^1.28.0",
