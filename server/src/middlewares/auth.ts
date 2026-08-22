@@ -2,8 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../prisma/client.js";
 import crypto from "crypto";
+import { ServerSettingsRepository } from "../repositories/serverSettingsRepository.js";
+import { ServerSettingKey } from "../constants/serverSettings.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret";
+const serverSettingsRepository = new ServerSettingsRepository();
 
 interface JwtPayload {
   userId: string;
@@ -175,6 +178,12 @@ export const optionalAuth = async (
  * APIキーの検証
  */
 const validateApiKey = async (apiKey: string) => {
+  // API Key機能が無効化されている場合は既存のキーも利用不可
+  const setting = await serverSettingsRepository.findByKey(
+    ServerSettingKey.AllowApiKey,
+  );
+  if (setting?.value !== "true") return null;
+
   // 1. 入力されたAPIキーをハッシュ化（Service層での保存時と同じロジック）
   const hash = crypto.createHash("sha256").update(apiKey).digest("hex");
 
