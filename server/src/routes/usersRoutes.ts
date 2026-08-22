@@ -8,13 +8,19 @@ import { UploadImagesService } from "../services/uploadImagesService.js";
 import { TagsRepository } from "../repositories/tagsRepository.js";
 import { TagsService } from "../services/tagsService.js";
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
+import { ServerSettingsRepository } from "../repositories/serverSettingsRepository.js";
 
 const usersRouter = Router();
 
 // インスタンス化
 const usersRepo = new UsersRepository();
 const articlesRepos = new ArticlesRepository();
-const usersService = new UsersService(usersRepo, articlesRepos);
+const serverSettingsRepo = new ServerSettingsRepository();
+const usersService = new UsersService(
+  usersRepo,
+  articlesRepos,
+  serverSettingsRepo,
+);
 
 // UploadImagesServiceが必要なため、こちらもインスタンス化
 const uploadImagesRepo = new UploadImagesRepository();
