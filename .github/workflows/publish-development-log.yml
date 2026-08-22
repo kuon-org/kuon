@@ -50,7 +50,7 @@ jobs:
             '{
               title: $title,
               raw_content: $raw_content,
-              tagIds: [],
+              tagIds: ["01a02824-3777-7a60-acb9-c34654e2d1be"],
               status: "public",
               is_private: false,
               is_published: true
