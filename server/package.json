@@ -13,13 +13,6 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "pnpm": {
-    "allowBuilds": {
-      "@prisma/engines": true,
-      "argon2": true,
-      "@scarf/scarf": false
-    }
-  },
   "dependencies": {
     "@marp-team/marp-core": "^4.3.0",
     "@node-saml/node-saml": "^5.1.0",
