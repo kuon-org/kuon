@@ -11,6 +11,9 @@ const AdminIndex = lazy(() =>
 const Security = lazy(() =>
   import("../pages/Admin/Security").then((mod) => ({ default: mod.Security })),
 );
+const ServerSettings = lazy(() =>
+  import("../pages/Admin/ServerSettings").then((mod) => ({ default: mod.ServerSettings })),
+);
 const UserManagement = lazy(() =>
   import("../pages/Admin/UserManagement").then((mod) => ({
     default: mod.UserManagement,
@@ -50,6 +53,19 @@ export const adminSecurityRoute = createRoute({
   component: () => (
     <Suspense fallback={<LoadingFallback />}>
       <Security />
+    </Suspense>
+  ),
+});
+
+/**
+ * サーバ設定
+ */
+export const adminServerSettingsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "server-settings",
+  component: () => (
+    <Suspense fallback={<LoadingFallback />}>
+      <ServerSettings />
     </Suspense>
   ),
 });
