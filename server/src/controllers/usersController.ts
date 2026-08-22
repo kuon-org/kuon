@@ -17,12 +17,14 @@ import { UsersService } from "../services/usersService.js";
 import { UploadImagesService } from "../services/uploadImagesService.js";
 import { TagsService } from "../services/tagsService.js";
 import { getDeviceNameFromUserAgent } from "../utils/uaParser/index.js";
+import { ServerSettingsService } from "../services/serverSettingsService.js";
 
 export class UsersController {
   constructor(
     private usersService: UsersService,
     private tagsService: TagsService,
     private uploadImagesService: UploadImagesService,
+    private serverSettingsService: ServerSettingsService,
   ) {}
 
   getMe = async (req: AuthRequest, res: Response) => {
@@ -717,7 +719,13 @@ export class UsersController {
         return res.status(401).json({ message: "未ログインです" });
 
       const { name, expiresAt } = req.body; // expiresAt を受け取る
-
+      const setting = await this.serverSettingsService.get("allow_api_key");
+      const enabled = setting?.value === "true";
+      if (!enabled) {
+        return res
+          .status(403)
+          .json({ message: "APIキーの利用は許可されていません" });
+      }
       if (!name) {
         return res
           .status(400)
