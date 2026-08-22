@@ -10,7 +10,7 @@ const migrationDirectories = [
   path.resolve(__dirname, "../../migration"),
 ];
 
-const MIGRATION_TABLE = "kuon_migrations";
+const MIGRATION_TABLE = "knowledge.kuon_migrations";
 
 const findMigrationDirectory = async () => {
   for (const directory of migrationDirectories) {
