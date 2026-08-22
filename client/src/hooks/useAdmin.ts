@@ -19,6 +19,13 @@ interface Users {
     role: Role[]
 }
 
+interface ServerSetting {
+    key: string;
+    value: string;
+    created_at: string;
+    updated_at: string;
+}
+
 
 export const useAdminQuery = (provider_name?: string) => {
     const queryClient = useQueryClient();
@@ -111,4 +118,31 @@ export const useAdminQuery = (provider_name?: string) => {
         deleteIdpConf: idpDeleteMutation.mutateAsync, // mutateAsyncにしてawaitできるようにする
         deleteIdp_isPending: idpDeleteMutation.isPending
     }
+}
+
+export const useServerSettingsQuery = () => {
+    const queryClient = useQueryClient();
+    const query = useQuery<ServerSetting[]>({
+        queryKey: ["serverSettings"],
+        queryFn: async () => {
+            const { data } = await apiClient.get("/admin/settings/server");
+            return data;
+        },
+    });
+    const mutation = useMutation({
+        mutationFn: async (setting: { key: string; value: string }) => {
+            const { data } = await apiClient.put("/admin/settings/server", setting);
+            return data as ServerSetting;
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["serverSettings"] });
+        },
+    });
+
+    return {
+        settings: query.data,
+        settings_isLoading: query.isLoading,
+        updateServerSetting: mutation.mutateAsync,
+        updateServerSetting_isPending: mutation.isPending,
+    };
 }
