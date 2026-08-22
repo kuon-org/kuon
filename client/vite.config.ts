@@ -17,7 +17,9 @@ export default defineConfig({
   esbuild: {
     drop: ["console", "debugger"],
   },
-
+  resolve: {
+    dedupe: ["react", "react-dom", "@emotion/react", "@emotion/styled"],
+  },
   server: {
     host: true,
     port: 5050,
