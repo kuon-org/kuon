@@ -15,7 +15,10 @@ RUN pnpm install --prod --no-frozen-lockfile
 COPY dist ./dist
 COPY public ./public
 COPY prisma ./prisma
-COPY node_modules/.prisma ./node_modules/.prisma
+
+# Generate Prisma Client inside the runtime image.
+# prisma is a development dependency, so use a temporary CLI via pnpm dlx.
+RUN pnpm dlx prisma@7.9.1 generate --schema=./prisma/schema.prisma
 
 EXPOSE 9040
 
