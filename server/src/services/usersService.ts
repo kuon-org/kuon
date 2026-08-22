@@ -13,12 +13,12 @@ import {
 } from "../utils/sessionTokens/index.js";
 import crypto from "crypto";
 
-const serverSettingsRepository = new ServerSettingsRepository();
-
 export class UsersService {
   constructor(
     private usersRepo: UsersRepository,
     private articlesRepo: ArticlesRepository,
+
+    private serverSettingsRepo: ServerSettingsRepository,
   ) {}
 
   async getAllUsers() {
@@ -314,7 +314,7 @@ export class UsersService {
    * APIキーを生成し、ハッシュ化したものをDBへ、生キーを一度だけ返す
    */
   async createApiKey(userId: string, name: string, expiresAt: string | null) {
-    const setting = await serverSettingsRepository.findByKey(
+    const setting = await this.serverSettingsRepo.findByKey(
       ServerSettingKey.AllowApiKey,
     );
     if (setting?.value !== "true") {

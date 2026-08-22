@@ -17,14 +17,12 @@ import { UsersService } from "../services/usersService.js";
 import { UploadImagesService } from "../services/uploadImagesService.js";
 import { TagsService } from "../services/tagsService.js";
 import { getDeviceNameFromUserAgent } from "../utils/uaParser/index.js";
-import { ServerSettingsService } from "../services/serverSettingsService.js";
 
 export class UsersController {
   constructor(
     private usersService: UsersService,
     private tagsService: TagsService,
     private uploadImagesService: UploadImagesService,
-    private serverSettingsService: ServerSettingsService,
   ) {}
 
   getMe = async (req: AuthRequest, res: Response) => {
