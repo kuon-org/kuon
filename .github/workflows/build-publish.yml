@@ -57,6 +57,14 @@ jobs:
       #   run: pnpm typecheck
 
       # ========================================
+      # Generate Prisma Client
+      # ========================================
+      # The server TypeScript build depends on the generated Prisma Client
+      # types, so this must run before the server build.
+      - name: Generate Prisma Client
+        run: pnpm --filter server exec prisma generate
+
+      # ========================================
       # Build client
       # ========================================
       - name: Build client
