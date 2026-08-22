@@ -16,6 +16,7 @@ import {
   adminRoute,
   adminTopRoute,
   adminSecurityRoute,
+  adminServerSettingsRoute,
   adminUserManagementRoute,
 } from "./admin";
 
@@ -74,6 +75,7 @@ export const routeTree = baseRootRoute.addChildren([
     adminRoute.addChildren([
       adminTopRoute,
       adminSecurityRoute,
+      adminServerSettingsRoute,
       adminUserManagementRoute,
     ]),
   ]),
