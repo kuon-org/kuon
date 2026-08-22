@@ -2,6 +2,13 @@
 CREATE SCHEMA IF NOT EXISTS knowledge;
 SET search_path TO knowledge;
 
+create table knowledge.kuon_migrations (
+    name text not null,
+    applied_at timestamp(6) with time zone default CURRENT_TIMESTAMP not null,
+    primary key (name)
+);
+
+
 CREATE TABLE IF NOT EXISTS server_settings (
     key VARCHAR(100) PRIMARY KEY,
     value TEXT NOT NULL,
