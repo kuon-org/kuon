@@ -7,7 +7,16 @@ ENV NODE_ENV=production
 
 RUN corepack enable && corepack prepare pnpm@11.21.0 --activate
 
-# Install only production dependencies from the source package definition.
+# pnpm 11 keeps build-script approvals in workspace/project configuration.
+# This image installs the server as a standalone production project.
+RUN printf '%s\n' \
+    'allowBuilds:' \
+    '  "@prisma/engines": true' \
+    '  "@scarf/scarf": false' \
+    '  argon2: true' \
+    > pnpm-workspace.yaml
+
+# Install only production dependencies from the server package definition.
 COPY package.json ./
 RUN pnpm install --prod --no-frozen-lockfile
 
