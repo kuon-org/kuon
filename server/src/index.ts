@@ -69,7 +69,7 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(distPath));
 
   // SPAのルーティング対応
-  app.get("/{*path}", (_req, res) => {
+  app.get("{/*path}", (_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
