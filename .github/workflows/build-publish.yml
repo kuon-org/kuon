@@ -78,13 +78,8 @@ jobs:
         run: |
           cp -r client/dist/. server/dist/
 
-      # The Dockerfile currently expects the generated Prisma client at
-      # server/node_modules/.prisma. pnpm generates it in the workspace
-      # node_modules, so copy it into the Docker build context explicitly.
-      - name: Prepare Prisma Client for Docker
-        run: |
-          mkdir -p server/node_modules
-          cp -r node_modules/.prisma server/node_modules/.prisma
+      # Prisma Client is generated inside the server workspace by pnpm.
+      # The Docker build context is server/, so no extra copy is required.
 
       # ========================================
       # Login to GitHub Container Registry
