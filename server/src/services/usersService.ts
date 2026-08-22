@@ -4,12 +4,17 @@ import ScureBase32Plugin from "@otplib/plugin-base32-scure";
 import NodeCryptoPlugin from "@otplib/plugin-crypto-node";
 import { TOTP } from "@otplib/totp";
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
+import { ServerSettingsRepository } from "../repositories/serverSettingsRepository.js";
+import { ServerSettingKey } from "../constants/serverSettings.js";
 import {
   createAccessToken,
   createRefreshToken,
   getRefreshTokenExpiryDate,
 } from "../utils/sessionTokens/index.js";
 import crypto from "crypto";
+
+const serverSettingsRepository = new ServerSettingsRepository();
+
 export class UsersService {
   constructor(
     private usersRepo: UsersRepository,
@@ -38,11 +43,9 @@ export class UsersService {
     password: string,
     displayName?: string,
   ) {
-    // バリデーション
     const existing = await this.usersRepo.isUsernameExisting(username);
     if (existing) throw new Error("UsernameAlreadyExists");
 
-    // Repository側のトランザクションメソッドを呼び出し
     return await this.usersRepo.createLocalAccount(
       username,
       email,
@@ -131,7 +134,6 @@ export class UsersService {
       base32: new ScureBase32Plugin(),
     });
 
-    // 🔍 デバッグ（残してもOK）
     console.log("---- 2FA Debug ----");
     console.log("Email:", email);
     console.log("Token (入力):", token);
@@ -141,7 +143,6 @@ export class UsersService {
     console.log("Result (verifyLogin2FA):", result);
     console.log("-------------------");
 
-    // ✅ 修正箇所：result.valid を見る！
     if (!result.valid) {
       throw new Error("認証コードが正しくありません");
     }
@@ -188,14 +189,11 @@ export class UsersService {
 
     const user = await this.getUserById(session.user_id);
 
-    // 期限切れ掃除は残してOK
     await this.usersRepo.deleteExpiredSessionsByUser(user.id);
 
-    // 新しいトークン生成
     const newRefreshToken = createRefreshToken();
     const expiresAt = getRefreshTokenExpiryDate();
 
-    // 🔥 セッション更新 (削除しない)
     await this.usersRepo.updateSessionRefreshToken(
       session.id,
       newRefreshToken,
@@ -203,7 +201,7 @@ export class UsersService {
     );
 
     return {
-      accessToken: createAccessToken(user.id, session.id), // 同じsession id
+      accessToken: createAccessToken(user.id, session.id),
       refreshToken: newRefreshToken,
       refreshExpiresAt: expiresAt,
     };
@@ -269,7 +267,6 @@ export class UsersService {
 
   async getPickupArticles(userId: string) {
     const data = await this.articlesRepo.findPickupArticles(userId);
-    // dataが [{ articles: {...} }, { articles: {...} }] になっているので展開する
     return data.map((item) => item.articles);
   }
 
@@ -298,18 +295,15 @@ export class UsersService {
   async getAllRanking() {
     const users = await this.usersRepo.allRanking();
 
-    return (
-      users
-        .map((user) => {
-          const { _count, ...userData } = user;
-          return {
-            ...userData,
-            contribution: _count.articles + _count.comments,
-          };
-        })
-        // 合計値の降順でソート
-        .sort((a, b) => b.contribution - a.contribution)
-    );
+    return users
+      .map((user) => {
+        const { _count, ...userData } = user;
+        return {
+          ...userData,
+          contribution: _count.articles + _count.comments,
+        };
+      })
+      .sort((a, b) => b.contribution - a.contribution);
   }
 
   async getUserApiKeys(userId: string) {
@@ -319,16 +313,18 @@ export class UsersService {
   /**
    * APIキーを生成し、ハッシュ化したものをDBへ、生キーを一度だけ返す
    */
-  /**
-   * APIキーを生成
-   * @param expiresAt 具体的な日付、または null（無期限）
-   */
   async createApiKey(userId: string, name: string, expiresAt: string | null) {
+    const setting = await serverSettingsRepository.findByKey(
+      ServerSettingKey.AllowApiKey,
+    );
+    if (setting?.value !== "true") {
+      throw new Error("ApiKeyGenerationDisabled");
+    }
+
     const rawKey = `ku_${crypto.randomBytes(32).toString("hex")}`;
     const hash = crypto.createHash("sha256").update(rawKey).digest("hex");
     const prefix = rawKey.substring(0, 7);
 
-    // 有効期限のパース
     const expiryDate = expiresAt ? new Date(expiresAt) : null;
 
     const apiKey = await this.usersRepo.createApiKey({
@@ -340,7 +336,6 @@ export class UsersService {
       created_by: userId,
     });
 
-    // クライアントには一度だけ生のキーを返す
     return { ...apiKey, rawKey };
   }
 
