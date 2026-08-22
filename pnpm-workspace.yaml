@@ -1,3 +1,9 @@
 packages:
   - client
   - server
+allowBuilds:
+  '@scarf/scarf': false
+  argon2: true
+  esbuild: true
+minimumReleaseAgeExclude:
+  - satori@0.33.3

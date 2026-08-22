@@ -2,7 +2,11 @@
   "name": "kuon",
   "private": true,
   "version": "0.0.0",
-  "packageManager": "pnpm@10.15.1",
+  "packageManager": "pnpm@11.21.0",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=11 <12"
+  },
   "scripts": {
     "dev": "pnpm -r --parallel --if-present dev",
     "dev:client": "pnpm --filter client dev",
