@@ -11,6 +11,9 @@ export const rehypeBootstrapPlugin: Plugin<[], Root> = () => {
       // クラス名の配列をスペース区切り文字列に強制結合
       const rawClass = props.className || props.class;
       if (rawClass) {
+        // HAST上では className は string[] だが、
+        // rehypeパイプライン上では文字列として扱うため変換する
+        // @ts-expect-error HASTの型定義と実際の利用方法が異なる
         props.className = Array.isArray(rawClass)
           ? rawClass.join(" ")
           : String(rawClass);
