@@ -5,7 +5,7 @@ WORKDIR /app
 ENV TZ=Asia/Tokyo
 ENV NODE_ENV=production
 
-RUN corepack enable && corepack prepare pnpm@10.15.1 --activate
+RUN corepack enable && corepack prepare pnpm@11.21.0 --activate
 
 # Install only production dependencies from the source package definition.
 COPY package.json ./
