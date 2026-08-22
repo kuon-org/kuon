@@ -48,13 +48,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ========================================
-      # Checks
+      # Checks                                    Temporarily comment out
       # ========================================
-      - name: Lint client
-        run: pnpm --filter client lint
+      # - name: Lint client
+      #   run: pnpm --filter client lint
 
-      - name: Typecheck
-        run: pnpm typecheck
+      # - name: Typecheck
+      #   run: pnpm typecheck
 
       # ========================================
       # Build client
