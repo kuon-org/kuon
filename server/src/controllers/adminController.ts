@@ -1,12 +1,12 @@
 import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
-import { Request, Response } from "express";
+import { Response } from "express";
 import { AdminService } from "../services/adminService.js";
 import { ServerSettingsService } from "../services/serverSettingsService.js";
 
 export class AdminController {
   constructor(
     private adminService: AdminService,
-    private serverSettingsService?: ServerSettingsService,
+    private serverSettingsService: ServerSettingsService,
   ) {}
 
   getUserList = async (req: AuthRequest, res: Response) => {
@@ -54,8 +54,6 @@ export class AdminController {
       const isAdmin = await this.adminService.isAdmin(req.user.userId);
       if (!isAdmin)
         return res.status(403).json({ message: "権限がありません" });
-      if (!this.serverSettingsService)
-        return res.status(500).json({ message: "設定サービスが初期化されていません" });
 
       const settings = await this.serverSettingsService.getAll();
       return res.status(200).json(settings);
@@ -75,8 +73,6 @@ export class AdminController {
       const isAdmin = await this.adminService.isAdmin(req.user.userId);
       if (!isAdmin)
         return res.status(403).json({ message: "権限がありません" });
-      if (!this.serverSettingsService)
-        return res.status(500).json({ message: "設定サービスが初期化されていません" });
 
       const { key, value } = req.body as { key?: unknown; value?: unknown };
       if (typeof key !== "string" || typeof value !== "string") {
