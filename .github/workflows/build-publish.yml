@@ -36,6 +36,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
+          version: 11.21.0
           run_install: false
 
       - name: Setup Node.js
@@ -76,6 +77,14 @@ jobs:
       - name: Copy client build into server runtime
         run: |
           cp -r client/dist/. server/dist/
+
+      # The Dockerfile currently expects the generated Prisma client at
+      # server/node_modules/.prisma. pnpm generates it in the workspace
+      # node_modules, so copy it into the Docker build context explicitly.
+      - name: Prepare Prisma Client for Docker
+        run: |
+          mkdir -p server/node_modules
+          cp -r node_modules/.prisma server/node_modules/.prisma
 
       # ========================================
       # Login to GitHub Container Registry
