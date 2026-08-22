@@ -719,13 +719,6 @@ export class UsersController {
         return res.status(401).json({ message: "未ログインです" });
 
       const { name, expiresAt } = req.body; // expiresAt を受け取る
-      const setting = await this.serverSettingsService.get("allow_api_key");
-      const enabled = setting?.value === "true";
-      if (!enabled) {
-        return res
-          .status(403)
-          .json({ message: "APIキーの利用は許可されていません" });
-      }
       if (!name) {
         return res
           .status(400)
@@ -747,6 +740,8 @@ export class UsersController {
 
       res.status(201).json(result);
     } catch (error: any) {
+      if (error.message === "ApiKeyGenerationDisabled")
+        res.status(403).json({ message: "APIキーの利用は許可されていません" });
       res.status(500).json({ message: error.message });
     }
   };
