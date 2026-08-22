@@ -16,6 +16,7 @@ import {
 import {
   adminRoute,
   adminSecurityRoute,
+  adminServerSettingsRoute,
   adminTopRoute,
   adminUserManagementRoute,
 } from "../../routes";
@@ -31,6 +32,7 @@ export const AdminIndex = () => {
     { path: adminRoute.to, label: "管理TOP" },
     { path: adminTopRoute.to, label: "アプリ設定" },
     { path: adminSecurityRoute.to, label: "セキュリティ設定" },
+    { path: adminServerSettingsRoute.to, label: "サーバ設定" },
     { path: adminUserManagementRoute.to, label: "ユーザ管理" },
     // ここにどんどん追加可能
   ];
