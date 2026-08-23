@@ -30,22 +30,13 @@ export class AuthService {
 
     // pkceStore に userId も保存
     pkceStore.set(state, { verifier: code_verifier, userId: currentUserId });
-    console.log("Timing generateAuthUrl currentUserId:", currentUserId);
     if (record.provider_type === "SAML") {
       const saml = await this.getSamlInstance(providerName);
       // 第1引数の state は RelayState として IdP に送られ、戻ってくる
       const authUrl = await saml.getAuthorizeUrlAsync(state, undefined, {});
 
-      // --- デバッグ開始 ---
-      console.log("---------- SAML DEBUG START ----------");
-      console.log("Target URL (Keycloak SSO):", config.entry_point);
-      console.log("Generated Auth URL:", authUrl);
-
       // URLからSAMLRequestパラメータを抽出してデコードするためのヒント
       const urlParams = new URL(authUrl).searchParams;
-      console.log("SAMLRequest (Raw):", urlParams.get("SAMLRequest"));
-      console.log("---------- SAML DEBUG END ----------");
-      // --- デバッグ終了 ---
       return { url: authUrl };
     }
 
@@ -266,7 +257,6 @@ export class AuthService {
       return this.repo.findUserById(identity.user_id).then((u) => u!);
 
     if (currentUserId) {
-      console.log("既存ユーザあり、紐づけ:", currentUserId);
       await this.repo.linkIdentity(
         currentUserId,
         providerId,
@@ -368,7 +358,6 @@ export class AuthService {
     if (!stored) throw new Error("Invalid SAML state (RelayState)");
 
     const currentUserId = stored.userId || fallbackUserId;
-    console.log("Timing handleSamlCallback", currentUserId);
     const saml = await this.getSamlInstance(providerName);
     const { profile } = await saml.validatePostResponseAsync(body);
     if (!profile) throw new Error("SAML verification failed");

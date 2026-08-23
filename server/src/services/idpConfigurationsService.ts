@@ -17,7 +17,6 @@ export class IdpConfigurationsService {
       button_color: p.idp_configurations!.button_color,
       text_color: p.idp_configurations!.text_color,
     }));
-    console.log(activeProviders);
     return activeProviders;
   }
 
@@ -34,8 +33,6 @@ export class IdpConfigurationsService {
   }
   async getProviderConfiguration(userId: string, provider_name: string) {
     const isAdmin = await this.urepo.isAdmin(userId);
-    console.log(isAdmin);
-    console.log(userId);
     if (!isAdmin) throw new Error("権限がありません");
     return await this.repo.getConfiguration(provider_name);
   }

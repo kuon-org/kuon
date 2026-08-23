@@ -4,7 +4,6 @@ import ScureBase32Plugin from "@otplib/plugin-base32-scure";
 import NodeCryptoPlugin from "@otplib/plugin-crypto-node";
 import { TOTP } from "@otplib/totp";
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
-import { ServerSettingsRepository } from "../repositories/serverSettingsRepository.js";
 import { ServerSettingKey } from "../constants/serverSettings.js";
 import {
   createAccessToken,
@@ -12,13 +11,13 @@ import {
   getRefreshTokenExpiryDate,
 } from "../utils/sessionTokens/index.js";
 import crypto from "crypto";
+import { ServerSettingsService } from "./serverSettingsService.js";
 
 export class UsersService {
   constructor(
     private usersRepo: UsersRepository,
     private articlesRepo: ArticlesRepository,
-
-    private serverSettingsRepo: ServerSettingsRepository,
+    private serverSettingsService: ServerSettingsService,
   ) {}
 
   async getAllUsers() {
@@ -133,16 +132,7 @@ export class UsersService {
       crypto: new NodeCryptoPlugin(),
       base32: new ScureBase32Plugin(),
     });
-
-    console.log("---- 2FA Debug ----");
-    console.log("Email:", email);
-    console.log("Token (入力):", token);
-    console.log("Secret (DB):", security.totp_secret);
-
     const result = await totp.verify(token, { secret: security.totp_secret });
-    console.log("Result (verifyLogin2FA):", result);
-    console.log("-------------------");
-
     if (!result.valid) {
       throw new Error("認証コードが正しくありません");
     }
@@ -314,12 +304,8 @@ export class UsersService {
    * APIキーを生成し、ハッシュ化したものをDBへ、生キーを一度だけ返す
    */
   async createApiKey(userId: string, name: string, expiresAt: string | null) {
-    const setting = await this.serverSettingsRepo.findByKey(
-      ServerSettingKey.AllowApiKey,
-    );
-    if (setting?.value !== "true") {
+    if (!this.serverSettingsService.isEnabled(ServerSettingKey.AllowApiKey))
       throw new Error("ApiKeyGenerationDisabled");
-    }
 
     const rawKey = `ku_${crypto.randomBytes(32).toString("hex")}`;
     const hash = crypto.createHash("sha256").update(rawKey).digest("hex");
