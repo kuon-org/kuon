@@ -24,7 +24,6 @@ export class UsersController {
     private usersService: UsersService,
     private tagsService: TagsService,
     private uploadImagesService: UploadImagesService,
-    private serverSettingsService: ServerSettingsService,
   ) {}
 
   getMe = async (req: AuthRequest, res: Response) => {
@@ -189,7 +188,6 @@ export class UsersController {
     const metadata = this.getSessionMetadata(req);
     try {
       const user = await this.usersService.verifyLogin2FA(email, token);
-      console.log(user);
       await this.usersService.updateLastLogin(user.id);
       const session = await this.usersService.createSessionForUser(
         user.id,
@@ -613,7 +611,6 @@ export class UsersController {
         page,
         limit,
       );
-      console.log("フォロー中のタグ", result);
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -625,7 +622,6 @@ export class UsersController {
       if (!isAuthenticated(req))
         return res.status(401).json({ message: "未ログインです" });
       const result = await this.usersService.getFollowingTags(req.user.userId);
-      console.log(result);
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

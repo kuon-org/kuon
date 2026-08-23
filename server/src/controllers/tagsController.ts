@@ -55,7 +55,6 @@ export class TagsController {
 
   uploadTagAvatar = async (req: AuthRequest, res: Response) => {
     if (!isAuthenticated(req)) {
-      console.log("401");
       return res.status(401).json({ message: "未ログインです" });
     }
     const slug = String(req.params.slug);
