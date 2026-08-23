@@ -8,7 +8,7 @@
 
 実際に動作しているKuonのデモサイトを公開しています。
 
-**[🌐 Demo Site](https://demo.kuon.fi.si/)**
+**[🌐 Demo Site](https://demo.kuon.f5.si/)**
 
 ---
 
