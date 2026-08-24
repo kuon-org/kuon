@@ -12,6 +12,7 @@ const apiClient = new FetchHttpClient({
   credentials: "include",
   authFailureHandler: authFailureHandler,
   authRefreshStrategy: authRefreshStrategy,
+  shouldRefreshAuth: () => authSessionManager.shouldRefreshAccessToken(),
   responseObserver: (response) => authSessionManager.syncFromResponse(response),
 });
 
