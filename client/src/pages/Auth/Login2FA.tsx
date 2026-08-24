@@ -1,9 +1,12 @@
 import { Box, Button, Paper, Typography } from "@mui/material";
 import { keyframes } from "@mui/system";
 import { useRef, useState } from "react";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useNotify } from "../../hooks/useNotify";
+import apiClient from "../../api/client";
+import type { HttpError } from "../../api/FetchHttpClient";
+
 const shakeAnimation = keyframes`
   0%, 100% { transform: translateX(0); }
   20% { transform: translateX(-8px); }
@@ -15,40 +18,41 @@ const shakeAnimation = keyframes`
 const blinkAnimation = keyframes`
   50% { opacity: 0; }
 `;
+
 export const Login2FA = () => {
-  const { loginVerify2FA, loginVerify2FA_isPending } = useAuthQuery();
   const [token, setToken] = useState("");
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const [shake, setShake] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { error } = useNotify();
-  const email = sessionStorage.getItem("pendingEmail");
+  const { error, success } = useNotify();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const handleVerify = (token: string) => {
-    if (!email) {
-      error("メール情報が見つかりません。ログインをやり直してください。");
-      return;
-    }
+  const verifyMutation = useMutation({
+    mutationFn: async (totpToken: string) => {
+      const { data } = await apiClient.post("/login/verify-2fa", {
+        token: totpToken,
+      });
+      return data;
+    },
+    onSuccess: async () => {
+      success("二段階認証が完了しました！");
+      await queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      sessionStorage.removeItem("pendingEmail");
+      navigate({ to: "/" });
+    },
+    onError: (err: HttpError) => {
+      error(err.response?.data?.message || "認証コードが正しくありません");
+      setShake(true);
+      setToken("");
+      inputRef.current?.focus();
+      setTimeout(() => setShake(false), 400);
+    },
+  });
 
-    loginVerify2FA(
-      { email, token },
-      {
-        onSuccess: async () => {
-          navigate({ to: "/" });
-        },
-        onError: () => {
-          setShake(true);
-          setToken("");
-
-          inputRef.current?.focus();
-
-          setTimeout(() => {
-            setShake(false);
-          }, 400);
-        },
-      },
-    );
+  const handleVerify = (value: string) => {
+    if (value.length !== 6 || verifyMutation.isPending) return;
+    verifyMutation.mutate(value);
   };
 
   const handleChange = (value: string) => {
@@ -77,7 +81,6 @@ export const Login2FA = () => {
         Google Authenticator に表示された6桁のコードを入力してください。
       </Typography>
 
-      {/* 実際の入力欄 */}
       <input
         ref={inputRef}
         value={token}
@@ -96,7 +99,6 @@ export const Login2FA = () => {
         }}
       />
 
-      {/* 6桁表示 */}
       <Box
         onClick={() => inputRef.current?.focus()}
         sx={{
@@ -148,7 +150,7 @@ export const Login2FA = () => {
         variant="contained"
         fullWidth
         onClick={() => handleVerify(token)}
-        disabled={loginVerify2FA_isPending || token.length < 6}
+        disabled={verifyMutation.isPending || token.length < 6}
       >
         認証する
       </Button>

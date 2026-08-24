@@ -12,19 +12,26 @@ import {
 import { useServerSettingsQuery } from "../../hooks/useAdmin";
 
 export const ServerSettings = () => {
-  const { settings, settings_isLoading, updateServerSetting, updateServerSetting_isPending } =
-    useServerSettingsQuery();
+  const {
+    settings,
+    settings_isLoading,
+    updateServerSetting,
+    updateServerSetting_isPending,
+  } = useServerSettingsQuery();
   const [error, setError] = useState<string | null>(null);
 
-  const allowApiKey = settings?.find((setting) => setting.key === "allow_api_key")?.value === "true";
+  const allowApiKey =
+    settings?.find((setting) => setting.key === "allow_api_key")?.value ===
+    "true";
+  const requireTotpForExternalIdp =
+    settings?.find(
+      (setting) => setting.key === "require_totp_for_external_idp",
+    )?.value === "true";
 
-  const handleApiKeyChange = async (enabled: boolean) => {
+  const updateBooleanSetting = async (key: string, enabled: boolean) => {
     setError(null);
     try {
-      await updateServerSetting({
-        key: "allow_api_key",
-        value: String(enabled),
-      });
+      await updateServerSetting({ key, value: String(enabled) });
     } catch (e) {
       setError(e instanceof Error ? e.message : "設定の更新に失敗しました");
     }
@@ -47,13 +54,6 @@ export const ServerSettings = () => {
       </Typography>
       <Divider sx={{ mb: 3 }} />
 
-      <Typography variant="h5" sx={{ mb: 1 }}>
-        API Key
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        API Keyの発行と、発行済みAPI Keyによる認証を許可します。
-      </Typography>
-
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -65,16 +65,50 @@ export const ServerSettings = () => {
           <CircularProgress size={24} />
         </Box>
       ) : (
-        <FormControlLabel
-          control={
-            <Switch
-              checked={allowApiKey}
-              onChange={(event) => handleApiKeyChange(event.target.checked)}
-              disabled={updateServerSetting_isPending}
-            />
-          }
-          label={allowApiKey ? "許可する" : "許可しない"}
-        />
+        <>
+          <Typography variant="h5" sx={{ mb: 1 }}>
+            API Key
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            API Keyの発行と、発行済みAPI Keyによる認証を許可します。
+          </Typography>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={allowApiKey}
+                onChange={(event) =>
+                  updateBooleanSetting("allow_api_key", event.target.checked)
+                }
+                disabled={updateServerSetting_isPending}
+              />
+            }
+            label={allowApiKey ? "許可する" : "許可しない"}
+          />
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="h5" sx={{ mb: 1 }}>
+            外部IdPログイン時の二段階認証
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            OIDC / OAuth2 / SAMLで認証した場合でも、Kuon側でTOTPを有効にしているユーザーには追加の二段階認証を要求します。TOTP未設定ユーザーへの設定強制は行いません。
+          </Typography>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={requireTotpForExternalIdp}
+                onChange={(event) =>
+                  updateBooleanSetting(
+                    "require_totp_for_external_idp",
+                    event.target.checked,
+                  )
+                }
+                disabled={updateServerSetting_isPending}
+              />
+            }
+            label={requireTotpForExternalIdp ? "要求する" : "要求しない"}
+          />
+        </>
       )}
     </Paper>
   );
