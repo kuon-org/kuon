@@ -1,9 +1,8 @@
 import { Router } from "express";
 import { UsersRepository } from "../repositories/usersRepository.js";
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
-import { ServerSettingsRepository } from "../repositories/serverSettingsRepository.js";
 import { UsersService } from "../services/usersService.js";
-import { ServerSettingsService } from "../services/serverSettingsService.js";
+import { serverSettingsService } from "../services/serverSettingsService.js";
 import { LocalAuthController } from "../controllers/localAuthController.js";
 
 const localAuthRouter = Router();
@@ -11,7 +10,7 @@ const localAuthRouter = Router();
 const usersService = new UsersService(
   new UsersRepository(),
   new ArticlesRepository(),
-  new ServerSettingsService(new ServerSettingsRepository()),
+  serverSettingsService,
 );
 const controller = new LocalAuthController(usersService);
 
