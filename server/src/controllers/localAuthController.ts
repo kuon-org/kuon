@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { UsersService } from "../services/usersService.js";
+import { TotpService } from "../services/totpService.js";
 import {
   ACCESS_TOKEN_MAX_AGE_MS,
   REFRESH_TOKEN_MAX_AGE_MS,
@@ -10,11 +11,13 @@ import {
   PENDING_2FA_MAX_AGE_MS,
   verifyPending2FAToken,
 } from "../utils/pending2faToken/index.js";
-import { verifyTotpForUser } from "../utils/totp/index.js";
 import { getDeviceNameFromUserAgent } from "../utils/uaParser/index.js";
 
 export class LocalAuthController {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private totpService: TotpService,
+  ) {}
 
   private getSessionMetadata(req: Request) {
     const userAgent = req.get("User-Agent") ?? undefined;
@@ -49,7 +52,7 @@ export class LocalAuthController {
 
     try {
       const user = await this.usersService.loginUser(identifier, password);
-      const requires2FA = await this.usersService.getIs2FAEnabled(user.id);
+      const requires2FA = await this.totpService.isEnabled(user.id);
 
       if (requires2FA) {
         const pendingToken = createPending2FAToken(user.id);
@@ -105,7 +108,7 @@ export class LocalAuthController {
 
     try {
       const { userId } = verifyPending2FAToken(pendingToken);
-      await verifyTotpForUser(userId, token);
+      await this.totpService.verify(userId, token);
       const user = await this.usersService.getUserById(userId);
 
       await this.usersService.updateLastLogin(user.id);
