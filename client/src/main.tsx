@@ -13,10 +13,6 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "material-symbols";
 import "./styles/admonitions.css";
 import store from "./store";
-import apiClient from "./api/client";
-import { startAuthSessionLifecycle } from "./api/AuthSessionLifecycle";
-
-startAuthSessionLifecycle(() => apiClient.refreshAuth());
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
