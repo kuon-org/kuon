@@ -1,7 +1,13 @@
-const JWT_SECRET = process.env.JWT_SECRET;
+const getJwtSecret = (): string => {
+  const secret = process.env.JWT_SECRET;
 
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is required");
-}
+  if (!secret) {
+    throw new Error("JWT_SECRET is required");
+  }
+
+  return secret;
+};
+
+const JWT_SECRET = getJwtSecret();
 
 export default JWT_SECRET;
