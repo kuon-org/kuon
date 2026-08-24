@@ -12,7 +12,6 @@ import {
   getRefreshTokenExpiryDate,
 } from "../utils/sessionTokens/index.js";
 
-// userId と OIDC nonce を保持できるように拡張
 const pkceStore = new Map<
   string,
   { verifier: string; userId?: string; nonce?: string }
@@ -35,7 +34,6 @@ export class AuthService {
         ? crypto.randomUUID()
         : undefined;
 
-    // pkceStore に userId と OIDC nonce を保存
     pkceStore.set(state, {
       verifier: code_verifier,
       userId: currentUserId,
@@ -44,7 +42,6 @@ export class AuthService {
     if (record.provider_type === "SAML") {
       const saml = await this.getSamlInstance(providerName);
       const authUrl = await saml.getAuthorizeUrlAsync(state, undefined, {});
-      const urlParams = new URL(authUrl).searchParams;
       return { url: authUrl };
     }
 
@@ -162,6 +159,7 @@ export class AuthService {
   ) {
     const issuer = String(config.issuer_host || "").replace(/\/$/, "");
     if (!issuer) throw new Error("OIDC issuer is not configured");
+    if (!config.client_id) throw new Error("OIDC client_id is not configured");
     if (!nonce) throw new Error("OIDC nonce is missing");
 
     const discoveryUrl = `${issuer}/.well-known/openid-configuration`;
@@ -189,8 +187,12 @@ export class AuthService {
     const { payload } = await jwtVerify(idToken, remoteJwks, {
       issuer: metadata.issuer,
       audience: config.client_id,
-      nonce,
+      requiredClaims: ["iss", "sub", "aud", "exp", "iat", "nonce"],
     });
+
+    if (payload.nonce !== nonce) {
+      throw new Error("OIDC nonce mismatch");
+    }
 
     return payload;
   }
