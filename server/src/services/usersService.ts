@@ -1,8 +1,5 @@
 import argon2 from "argon2";
 import { UsersRepository } from "../repositories/usersRepository.js";
-import ScureBase32Plugin from "@otplib/plugin-base32-scure";
-import NodeCryptoPlugin from "@otplib/plugin-crypto-node";
-import { TOTP } from "@otplib/totp";
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
 import { ServerSettingKey } from "../constants/serverSettings.js";
 import {
@@ -106,41 +103,6 @@ export class UsersService {
     return records.map((r) => r.users_user_follows_followee_idTousers);
   }
 
-  async get2FASettingValue(userId: string) {
-    const user = await this.usersRepo.findUserById(userId);
-    const security = await this.usersRepo.findUserSecurity(userId);
-    return { email: user?.email, totp_secret: security?.totp_secret };
-  }
-
-  async getIs2FAEnabled(userId: string) {
-    const security = await this.usersRepo.findUserSecurity(userId);
-    return security?.is_2fa_enabled;
-  }
-
-  async saveTemp2FASecret(userId: string, secret: string) {
-    return await this.usersRepo.update2FASetting(userId, secret);
-  }
-  async verifyLogin2FA(email: string, token: string) {
-    const account = await this.usersRepo.findLocalAccountByEmail(email);
-    if (!account || !account.user_id) throw new Error("UserNotFound");
-
-    const security = await this.usersRepo.findUserSecurity(account.user_id);
-    if (!security || !security.totp_secret)
-      throw new Error("2FA設定が見つかりません");
-
-    const totp = new TOTP({
-      crypto: new NodeCryptoPlugin(),
-      base32: new ScureBase32Plugin(),
-    });
-    const result = await totp.verify(token, { secret: security.totp_secret });
-    if (!result.valid) {
-      throw new Error("認証コードが正しくありません");
-    }
-    const user = await this.usersRepo.findUserById(account.user_id);
-    if (!user) throw new Error("UserNotFound");
-    return user;
-  }
-
   async updateLastLogin(userId: string) {
     return await this.usersRepo.updateLastLogin(userId);
   }
@@ -211,14 +173,6 @@ export class UsersService {
 
   async deleteAllSessionsByUser(userId: string) {
     return await this.usersRepo.deleteAllSessionsByUser(userId);
-  }
-
-  async save2FASecret(userId: string, secret: string) {
-    return await this.usersRepo.update2FASetting(userId, secret, true);
-  }
-
-  async delete2FASettings(userId: string) {
-    return await this.usersRepo.delete2FASetting(userId);
   }
 
   async getUserRole(userId: string) {
@@ -300,9 +254,6 @@ export class UsersService {
     return await this.usersRepo.findApiKeysByUserId(userId);
   }
 
-  /**
-   * APIキーを生成し、ハッシュ化したものをDBへ、生キーを一度だけ返す
-   */
   async createApiKey(userId: string, name: string, expiresAt: string | null) {
     if (!this.serverSettingsService.isEnabled(ServerSettingKey.AllowApiKey))
       throw new Error("ApiKeyGenerationDisabled");
