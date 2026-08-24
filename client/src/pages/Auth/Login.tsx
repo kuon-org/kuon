@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "@tanstack/react-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   TextField,
   Button,
@@ -14,36 +15,50 @@ import { NavButton } from "../../components/common/NavButton";
 import { useAuthQuery } from "../../hooks/useAuth";
 import Loading from "../../components/common/Loading/Loading";
 import { useNavigate } from "@tanstack/react-router";
+import apiClient from "../../api/client";
+import type { HttpError } from "../../api/FetchHttpClient";
+import { useNotify } from "../../hooks/useNotify";
 
 const Login: React.FC = () => {
-  const {
-    login,
-    login_isPending,
-    serverError,
-    activeIdp,
-    activeIdp_isLoading,
-  } = useAuthQuery();
+  const { activeIdp, activeIdp_isLoading } = useAuthQuery();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { notify } = useNotify();
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const loginMutation = useMutation({
+    mutationFn: async (value: { identifier: string; password: string }) => {
+      const { data } = await apiClient.post("/login", value);
+      return data;
+    },
+    onSuccess: async (data) => {
+      setServerError(null);
+      if (data.requires2FA) {
+        navigate({ to: "/login/2fa" });
+        return;
+      }
+
+      notify("ログインしました！");
+      await queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      navigate({ to: "/" });
+    },
+    onError: (error: HttpError) => {
+      setServerError(error.response?.data?.message || "認証に失敗しました");
+    },
+  });
+
   const form = useForm({
     defaultValues: {
       identifier: "",
       password: "",
     },
     onSubmit: async ({ value }) => {
-      login(value, {
-        onSuccess: async (data) => {
-          if (data.requires2FA) {
-            // pending状態はHttpOnly Cookieで管理するため、emailは保持しない
-            sessionStorage.removeItem("pendingEmail");
-            navigate({ to: "/login/2fa" });
-          } else {
-            navigate({ to: "/" });
-          }
-        },
-      });
+      loginMutation.mutate(value);
     },
   });
+
   if (activeIdp_isLoading) return <Loading />;
+
   return (
     <Container maxWidth="md">
       <Typography variant="h4" sx={{ mt: 4 }}>
@@ -144,9 +159,9 @@ const Login: React.FC = () => {
                   fullWidth
                   variant="contained"
                   sx={{ mt: 3, mb: 2 }}
-                  disabled={!canSubmit || login_isPending}
+                  disabled={!canSubmit || loginMutation.isPending}
                 >
-                  {login_isPending || isSubmitting ? (
+                  {loginMutation.isPending || isSubmitting ? (
                     <CircularProgress size={24} />
                   ) : (
                     "ログイン"
