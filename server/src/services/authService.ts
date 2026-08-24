@@ -1,5 +1,6 @@
 import * as pkce from "pkce-challenge";
 import jwt from "jsonwebtoken";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { get } from "lodash-es";
@@ -12,8 +13,11 @@ import {
   getRefreshTokenExpiryDate,
 } from "../utils/sessionTokens/index.js";
 
-// userId を保持できるように拡張
-const pkceStore = new Map<string, { verifier: string; userId?: string }>();
+// userId と OIDC nonce を保持できるように拡張
+const pkceStore = new Map<
+  string,
+  { verifier: string; userId?: string; nonce?: string }
+>();
 
 export class AuthService {
   constructor(private repo: AuthRepository) {}
@@ -27,9 +31,17 @@ export class AuthService {
 
     const { code_verifier, code_challenge } = await pkce.default();
     const state = crypto.randomUUID();
+    const nonce =
+      record.provider_type?.toUpperCase() === "OIDC"
+        ? crypto.randomUUID()
+        : undefined;
 
-    // pkceStore に userId も保存
-    pkceStore.set(state, { verifier: code_verifier, userId: currentUserId });
+    // pkceStore に userId と OIDC nonce を保存
+    pkceStore.set(state, {
+      verifier: code_verifier,
+      userId: currentUserId,
+      nonce,
+    });
     if (record.provider_type === "SAML") {
       const saml = await this.getSamlInstance(providerName);
       // 第1引数の state は RelayState として IdP に送られ、戻ってくる
@@ -48,6 +60,7 @@ export class AuthService {
     url.searchParams.set("state", state);
     url.searchParams.set("code_challenge", code_challenge);
     url.searchParams.set("code_challenge_method", "S256");
+    if (nonce) url.searchParams.set("nonce", nonce);
 
     return { url: url.toString() };
   }
@@ -80,7 +93,11 @@ export class AuthService {
     if (record.provider_type?.toUpperCase() === "OIDC") {
       if (!tokenData.id_token)
         throw new Error("id_token not found in OIDC response");
-      rawUserInfo = jwt.decode(tokenData.id_token);
+      rawUserInfo = await this.verifyOidcIdToken(
+        tokenData.id_token,
+        config,
+        stored.nonce,
+      );
     } else {
       const res = await fetch(config.user_info_url, {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
@@ -141,6 +158,45 @@ export class AuthService {
     await this.repo.updateLastLogin(user.id);
     pkceStore.delete(state);
     return await this.createUserSession(user.id, metadata);
+  }
+
+  private async verifyOidcIdToken(
+    idToken: string,
+    config: any,
+    nonce?: string,
+  ) {
+    const issuer = String(config.issuer_host || "").replace(/\/$/, "");
+    if (!issuer) throw new Error("OIDC issuer is not configured");
+
+    const discoveryUrl = `${issuer}/.well-known/openid-configuration`;
+    const response = await fetch(discoveryUrl);
+    if (!response.ok) {
+      throw new Error(`OIDC discovery request failed: ${response.status}`);
+    }
+
+    const metadata = (await response.json()) as {
+      issuer?: string;
+      jwks_uri?: string;
+    };
+    if (!metadata.issuer || !metadata.jwks_uri) {
+      throw new Error("OIDC discovery metadata is incomplete");
+    }
+
+    const discoveredIssuer = metadata.issuer.replace(/\/$/, "");
+    if (discoveredIssuer !== issuer) {
+      throw new Error("OIDC issuer mismatch");
+    }
+
+    const jwksUri = new URL(metadata.jwks_uri);
+    const remoteJwks = createRemoteJWKSet(jwksUri);
+
+    const { payload } = await jwtVerify(idToken, remoteJwks, {
+      issuer: metadata.issuer,
+      audience: config.client_id,
+      nonce,
+    });
+
+    return payload;
   }
 
   private async fetchToken(config: any, code: string, verifier: string) {
@@ -392,7 +448,7 @@ export class AuthService {
       .replace(/-----END CERTIFICATE-----/g, "")
       .replace(/\s+/g, ""); // 空白、改行、タブをすべて削除
 
-    // 2. 改めて PEM 形式に包み直す (64文字ごとの改行はライブラリがやってくれるので不要な場合が多いですが、念のため)
+    // 2. 改めて PEM 形式に包み直す (64文字ごとの改行はライブラリがやってくれるので不要な場合も多いですが、念のため)
     return `-----BEGIN CERTIFICATE-----\n${cleanCert}\n-----END CERTIFICATE-----`;
   }
 }
