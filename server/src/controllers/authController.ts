@@ -1,21 +1,28 @@
 // src/controllers/authController.ts
 import { Request, Response } from "express";
-import { AuthService } from "../services/authService.js";
+import { AuthService, type ExternalAuthResult } from "../services/authService.js";
 import { AuthRequest } from "../middlewares/auth.js";
 import {
   ACCESS_TOKEN_MAX_AGE_MS,
   REFRESH_TOKEN_MAX_AGE_MS,
   getCookieOptions,
 } from "../utils/sessionTokens/index.js";
+import {
+  createPending2FAToken,
+  PENDING_2FA_MAX_AGE_MS,
+} from "../utils/pending2faToken/index.js";
 import { getDeviceNameFromUserAgent } from "../utils/uaParser/index.js";
 
 const BASE_URL = process.env.APP_SITE_URL ?? process.env.FRONTEND_URL;
+const frontendUrl = (path = "/") =>
+  new URL(path, `${(BASE_URL || "http://localhost:5050").replace(/\/$/, "")}/`)
+    .toString();
+
 export class AuthController {
   constructor(private service: AuthService) {}
 
   login = async (req: AuthRequest, res: Response) => {
     try {
-      // ログイン中であれば userId を渡す（共通エンドポイント対応）
       const { url } = await this.service.generateAuthUrl(
         String(req.params.provider),
         req.user?.userId,
@@ -36,20 +43,18 @@ export class AuthController {
         userAgent,
         deviceName: getDeviceNameFromUserAgent(userAgent),
       };
-      let token: { accessToken: string; refreshToken: string };
+      let result: ExternalAuthResult;
 
       if (req.method === "POST") {
-        // SAMLコールバック (POST)
-        token = await this.service.handleSamlCallback(
+        result = await this.service.handleSamlCallback(
           providerName,
           req.body,
           req.user?.userId,
           metadata,
         );
       } else {
-        // 既存の OAuth2/OIDC コールバック (GET)
         const { code, state } = req.query;
-        token = await this.service.handleCallback(
+        result = await this.service.handleCallback(
           providerName,
           code as string,
           state as string,
@@ -57,20 +62,30 @@ export class AuthController {
           metadata,
         );
       }
+
+      if (result.requires2FA) {
+        res.cookie(
+          "pending_2fa_token",
+          createPending2FAToken(result.userId),
+          getCookieOptions(PENDING_2FA_MAX_AGE_MS),
+        );
+        return res.redirect(frontendUrl("/login/2fa"));
+      }
+
       res.cookie(
         "access_token",
-        token.accessToken,
+        result.accessToken,
         getCookieOptions(ACCESS_TOKEN_MAX_AGE_MS),
       );
       res.cookie(
         "refresh_token",
-        token.refreshToken,
+        result.refreshToken,
         getCookieOptions(REFRESH_TOKEN_MAX_AGE_MS),
       );
-      res.redirect(BASE_URL || "http://localhost:5050");
+      return res.redirect(frontendUrl());
     } catch (err: any) {
       console.error("Auth Callback Error:", err.message);
-      res
+      return res
         .status(500)
         .json({ error: "Authentication failed", details: err.message });
     }
