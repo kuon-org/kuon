@@ -82,6 +82,7 @@ export class AuthController {
         result.refreshToken,
         getCookieOptions(REFRESH_TOKEN_MAX_AGE_MS),
       );
+      res.clearCookie("pending_2fa_token", getCookieOptions(0));
       return res.redirect(frontendUrl());
     } catch (err: any) {
       console.error("Auth Callback Error:", err.message);
