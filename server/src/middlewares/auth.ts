@@ -4,8 +4,7 @@ import prisma from "../prisma/client.js";
 import crypto from "crypto";
 import { serverSettingsService } from "../services/serverSettingsService.js";
 import { ServerSettingKey } from "../constants/serverSettings.js";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret";
+import JWT_SECRET from "../utils/sessionTokens/jwtSecret.js";
 
 interface JwtPayload {
   userId: string;
@@ -24,6 +23,24 @@ const clearAuthCookies = (res: Response) => {
   const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/" };
   res.clearCookie("access_token", cookieOptions);
   res.clearCookie("refresh_token", cookieOptions);
+};
+
+const isJwtPayload = (value: jwt.JwtPayload | string): value is jwt.JwtPayload & JwtPayload => {
+  return (
+    typeof value !== "string" &&
+    typeof value.userId === "string" &&
+    value.userId.length > 0 &&
+    typeof value.sid === "string" &&
+    value.sid.length > 0
+  );
+};
+
+const verifyAccessToken = (accessToken: string): JwtPayload => {
+  const decoded = jwt.verify(accessToken, JWT_SECRET, {
+    algorithms: ["HS256"],
+  });
+  if (!isJwtPayload(decoded)) throw new Error("Invalid access token payload");
+  return decoded;
 };
 
 const validateRefreshSession = async (refreshToken: string) => {
@@ -50,9 +67,9 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
   if (!accessToken) return res.status(401).json({ message: "認証が必要です" });
 
   try {
-    const decoded = jwt.verify(accessToken, JWT_SECRET) as JwtPayload;
+    const decoded = verifyAccessToken(accessToken);
     const session = await prisma.user_sessions.findUnique({ where: { id: decoded.sid } });
-    if (!session || session.expires_at < new Date()) {
+    if (!session || session.expires_at < new Date() || session.user_id !== decoded.userId) {
       clearAuthCookies(res);
       return res.status(401).json({ message: "セッションが無効です" });
     }
@@ -74,9 +91,9 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
   const refreshToken = req.cookies.refresh_token;
   if (accessToken) {
     try {
-      const decoded = jwt.verify(accessToken, JWT_SECRET) as JwtPayload;
+      const decoded = verifyAccessToken(accessToken);
       const session = await prisma.user_sessions.findUnique({ where: { id: decoded.sid } });
-      if (session && session.expires_at >= new Date()) {
+      if (session && session.expires_at >= new Date() && session.user_id === decoded.userId) {
         req.user = { userId: decoded.userId, sessionId: decoded.sid };
         return next();
       }
