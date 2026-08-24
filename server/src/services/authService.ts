@@ -1,5 +1,5 @@
 import * as pkce from "pkce-challenge";
-import jwt from "jsonwebtoken";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { get } from "lodash-es";
@@ -12,8 +12,10 @@ import {
   getRefreshTokenExpiryDate,
 } from "../utils/sessionTokens/index.js";
 
-// userId を保持できるように拡張
-const pkceStore = new Map<string, { verifier: string; userId?: string }>();
+const pkceStore = new Map<
+  string,
+  { verifier: string; userId?: string; nonce?: string }
+>();
 
 export class AuthService {
   constructor(private repo: AuthRepository) {}
@@ -27,16 +29,19 @@ export class AuthService {
 
     const { code_verifier, code_challenge } = await pkce.default();
     const state = crypto.randomUUID();
+    const nonce =
+      record.provider_type?.toUpperCase() === "OIDC"
+        ? crypto.randomUUID()
+        : undefined;
 
-    // pkceStore に userId も保存
-    pkceStore.set(state, { verifier: code_verifier, userId: currentUserId });
+    pkceStore.set(state, {
+      verifier: code_verifier,
+      userId: currentUserId,
+      nonce,
+    });
     if (record.provider_type === "SAML") {
       const saml = await this.getSamlInstance(providerName);
-      // 第1引数の state は RelayState として IdP に送られ、戻ってくる
       const authUrl = await saml.getAuthorizeUrlAsync(state, undefined, {});
-
-      // URLからSAMLRequestパラメータを抽出してデコードするためのヒント
-      const urlParams = new URL(authUrl).searchParams;
       return { url: authUrl };
     }
 
@@ -48,6 +53,7 @@ export class AuthService {
     url.searchParams.set("state", state);
     url.searchParams.set("code_challenge", code_challenge);
     url.searchParams.set("code_challenge_method", "S256");
+    if (nonce) url.searchParams.set("nonce", nonce);
 
     return { url: url.toString() };
   }
@@ -66,7 +72,6 @@ export class AuthService {
     const stored = pkceStore.get(state);
     if (!stored) throw new Error("Invalid state");
 
-    // pkceStore に保存されていた userId を優先的に使用
     const currentUserId = stored.userId || fallbackUserId;
 
     const record = await this.repo.findProviderByName(providerName);
@@ -80,7 +85,11 @@ export class AuthService {
     if (record.provider_type?.toUpperCase() === "OIDC") {
       if (!tokenData.id_token)
         throw new Error("id_token not found in OIDC response");
-      rawUserInfo = jwt.decode(tokenData.id_token);
+      rawUserInfo = await this.verifyOidcIdToken(
+        tokenData.id_token,
+        config,
+        stored.nonce,
+      );
     } else {
       const res = await fetch(config.user_info_url, {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
@@ -143,6 +152,51 @@ export class AuthService {
     return await this.createUserSession(user.id, metadata);
   }
 
+  private async verifyOidcIdToken(
+    idToken: string,
+    config: any,
+    nonce?: string,
+  ) {
+    const issuer = String(config.issuer_host || "").replace(/\/$/, "");
+    if (!issuer) throw new Error("OIDC issuer is not configured");
+    if (!config.client_id) throw new Error("OIDC client_id is not configured");
+    if (!nonce) throw new Error("OIDC nonce is missing");
+
+    const discoveryUrl = `${issuer}/.well-known/openid-configuration`;
+    const response = await fetch(discoveryUrl);
+    if (!response.ok) {
+      throw new Error(`OIDC discovery request failed: ${response.status}`);
+    }
+
+    const metadata = (await response.json()) as {
+      issuer?: string;
+      jwks_uri?: string;
+    };
+    if (!metadata.issuer || !metadata.jwks_uri) {
+      throw new Error("OIDC discovery metadata is incomplete");
+    }
+
+    const discoveredIssuer = metadata.issuer.replace(/\/$/, "");
+    if (discoveredIssuer !== issuer) {
+      throw new Error("OIDC issuer mismatch");
+    }
+
+    const jwksUri = new URL(metadata.jwks_uri);
+    const remoteJwks = createRemoteJWKSet(jwksUri);
+
+    const { payload } = await jwtVerify(idToken, remoteJwks, {
+      issuer: metadata.issuer,
+      audience: config.client_id,
+      requiredClaims: ["iss", "sub", "aud", "exp", "iat", "nonce"],
+    });
+
+    if (payload.nonce !== nonce) {
+      throw new Error("OIDC nonce mismatch");
+    }
+
+    return payload;
+  }
+
   private async fetchToken(config: any, code: string, verifier: string) {
     const params = new URLSearchParams();
     params.set("grant_type", "authorization_code");
@@ -157,16 +211,12 @@ export class AuthService {
     };
 
     if (config.auth_method === "header") {
-      // Twitterなどの Basic 認証パターン
       const basicAuth = Buffer.from(
         `${config.client_id}:${config.client_secret}`,
       ).toString("base64");
       headers["Authorization"] = `Basic ${basicAuth}`;
-      // Header認証の場合、Bodyに client_id を含めても良いですが、
-      // Twitterは厳格なので Secret は Body に含めないのが安全です
       params.set("client_id", config.client_id);
     } else {
-      // GitHubなどの Body 認証パターン
       params.set("client_id", config.client_id);
       params.set("client_secret", config.client_secret);
     }
@@ -310,32 +360,18 @@ export class AuthService {
       throw new Error("Invalid SAML provider");
     const config = record.idp_configurations.config as any;
     return new SAML({
-      // --- 必須・基本設定 ---
       issuer: config.issuer,
       callbackUrl: config.redirect_uri,
       entryPoint: config.entry_point,
       idpCert: this.formatCert(config.cert),
-
-      // --- 詳細設定 (フロントから送信された値を使用) ---
-      // 許容する時刻のズレ (秒 -> ミリ秒に変換)
       acceptedClockSkewMs: (config.clockSkewSeconds || 0) * 1000,
-
-      // Requestの有効期限 (ミリ秒)
       requestIdExpirationPeriodMs: config.requestIdExpirationMs || 28800000,
-
-      // 署名の検証設定
       wantAssertionsSigned: config.wantAssertionsSigned ?? true,
       wantAuthnResponseSigned: config.wantAuthnResponseSigned ?? false,
-
-      // AuthnContextの無効化 (Azure AD等で RequestedAuthnContext が原因でエラーになる場合に使用)
       disableRequestedAuthnContext:
         config.disableRequestedAuthnContext ?? false,
-
-      // アルゴリズム系 (デフォルト sha256)
       signatureAlgorithm: config.signature_algorithm || "sha256",
       digestAlgorithm: config.signature_algorithm || "sha256",
-
-      // Identifier Format
       identifierFormat:
         config.identifier_format ||
         "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
@@ -352,7 +388,6 @@ export class AuthService {
       deviceName?: string;
     },
   ) {
-    // RelayState から state を取得し、保存されていた userId を復元
     const state = body.RelayState;
     const stored = pkceStore.get(state);
     if (!stored) throw new Error("Invalid SAML state (RelayState)");
@@ -386,13 +421,11 @@ export class AuthService {
   private formatCert(cert: string): string {
     if (!cert) return "";
 
-    // 1. 全ての改行とスペースを削除して、純粋な Base64 文字列のみを取り出す
     const cleanCert = cert
       .replace(/-----BEGIN CERTIFICATE-----/g, "")
       .replace(/-----END CERTIFICATE-----/g, "")
-      .replace(/\s+/g, ""); // 空白、改行、タブをすべて削除
+      .replace(/\s+/g, "");
 
-    // 2. 改めて PEM 形式に包み直す (64文字ごとの改行はライブラリがやってくれるので不要な場合が多いですが、念のため)
     return `-----BEGIN CERTIFICATE-----\n${cleanCert}\n-----END CERTIFICATE-----`;
   }
 }

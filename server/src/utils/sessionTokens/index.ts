@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
+import JWT_SECRET from "./jwtSecret.js";
 
-export const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 export const ACCESS_TOKEN_EXPIRES_IN = "15m";
 export const ACCESS_TOKEN_MAX_AGE_MS = 15 * 60 * 1000;
 export const REFRESH_TOKEN_EXPIRES_DAYS = 7;
@@ -20,6 +20,7 @@ export const createAccessToken = (userId: string, sessionId: string) => {
     } satisfies AccessTokenPayload,
     JWT_SECRET,
     {
+      algorithm: "HS256",
       expiresIn: ACCESS_TOKEN_EXPIRES_IN,
     },
   );
