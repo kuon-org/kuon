@@ -70,6 +70,7 @@ export class LocalAuthController {
         this.getSessionMetadata(req),
       );
       this.setSessionCookies(res, session);
+      res.clearCookie("pending_2fa_token", getCookieOptions(0));
 
       return res.json({
         message: "ログインに成功しました",
