@@ -24,22 +24,23 @@ const Login: React.FC = () => {
     activeIdp_isLoading,
   } = useAuthQuery();
   const navigate = useNavigate();
-  // フォームのセットアップ
   const form = useForm({
     defaultValues: {
-      identifier: "", // ← emailから変更
+      identifier: "",
       password: "",
     },
     onSubmit: async ({ value }) => {
       login(value, {
         onSuccess: async (data) => {
           if (data.requires2FA) {
+            // pending状態はHttpOnly Cookieで管理するため、emailは保持しない
+            sessionStorage.removeItem("pendingEmail");
             navigate({ to: "/login/2fa" });
           } else {
             navigate({ to: "/" });
           }
         },
-      }); // identifierとpasswordをそのまま渡す
+      });
     },
   });
   if (activeIdp_isLoading) return <Loading />;
@@ -56,12 +57,11 @@ const Login: React.FC = () => {
           justifyContent: "center",
           gap: 4,
           flexDirection: {
-            xs: "column", // スマホ〜小さい画面
-            sm: "row", // sm以上の画面で横並び
+            xs: "column",
+            sm: "row",
           },
         }}
       >
-        {/* 左側：外部サービス */}
         {activeIdp && activeIdp.length > 0 && (
           <Box sx={{ mt: 4, flex: 1 }}>
             {activeIdp.map((idp) => (
@@ -78,7 +78,7 @@ const Login: React.FC = () => {
                     />
                   ) : null
                 }
-                href={`/auth/${idp.provider_name}/login`} // 既存のOAuthルートに誘導
+                href={`/auth/${idp.provider_name}/login`}
                 sx={{ mb: 1 }}
               >
                 {idp.display_name} でログイン
@@ -88,7 +88,6 @@ const Login: React.FC = () => {
         )}
         <Divider orientation={activeIdp ? "vertical" : "horizontal"} flexItem />
         <Divider orientation={activeIdp ? "horizontal" : "vertical"} flexItem />
-        {/* 右側：ローカルアカウント */}
         <Box sx={{ flex: 1 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             ローカルアカウントでログイン
@@ -101,21 +100,13 @@ const Login: React.FC = () => {
               form.handleSubmit();
             }}
           >
-            {/* identifier / password フィールドはそのまま */}
             {serverError && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {serverError}
               </Alert>
             )}
 
-            <form.Field
-              name="identifier"
-              validators={
-                {
-                  /* ... */
-                }
-              }
-            >
+            <form.Field name="identifier">
               {(field) => (
                 <TextField
                   fullWidth
@@ -129,14 +120,7 @@ const Login: React.FC = () => {
               )}
             </form.Field>
 
-            <form.Field
-              name="password"
-              validators={
-                {
-                  /* ... */
-                }
-              }
-            >
+            <form.Field name="password">
               {(field) => (
                 <TextField
                   fullWidth
