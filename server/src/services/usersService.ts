@@ -231,7 +231,7 @@ export class UsersService {
   }
 
   async getUserArticleCount(userId: string) {
-    const result = await this.articlesRepo.articleCount(userId);
+    const result = await this.usersRepo.articleCount(userId);
     if (!result) return 0;
     return result._count.articles;
   }
