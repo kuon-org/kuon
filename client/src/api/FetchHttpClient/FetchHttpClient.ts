@@ -14,6 +14,7 @@ type CreateHttpClientConfig = {
   credentials?: RequestCredentials;
   authFailureHandler?: AuthFailureHandler;
   authRefreshStrategy?: AuthRefreshStrategy;
+  responseObserver?: (response: Response) => void;
 };
 
 export class FetchHttpClient implements HttpClient {
@@ -22,6 +23,7 @@ export class FetchHttpClient implements HttpClient {
   private credentials?: RequestCredentials;
   private authFailureHandler?: AuthFailureHandler;
   private authRefreshStrategy?: AuthRefreshStrategy;
+  private responseObserver?: (response: Response) => void;
 
   private refreshPromise: Promise<void> | null = null;
 
@@ -31,6 +33,7 @@ export class FetchHttpClient implements HttpClient {
     this.credentials = config.credentials;
     this.authFailureHandler = config.authFailureHandler;
     this.authRefreshStrategy = config.authRefreshStrategy;
+    this.responseObserver = config.responseObserver;
   }
 
   // ===== public API =====
@@ -57,7 +60,7 @@ export class FetchHttpClient implements HttpClient {
 
   // ===== refresh control =====
 
-  private async refreshToken(): Promise<void> {
+  async refreshAuth(): Promise<void> {
     if (!this.authRefreshStrategy) return;
 
     // 既に refresh 中なら待つ
@@ -109,6 +112,8 @@ export class FetchHttpClient implements HttpClient {
       body: serializedBody,
     });
 
+    this.responseObserver?.(res);
+
     // ===== 401 handling =====
     if (!res.ok) {
       const isRefreshCall = url.includes("/refresh");
@@ -120,7 +125,7 @@ export class FetchHttpClient implements HttpClient {
         window.location.pathname !== "/login"
       ) {
         try {
-          await this.refreshToken();
+          await this.refreshAuth();
 
           // refresh 成功 → retry
           return this.request<T>(method, url, body, requestConfig, true);
