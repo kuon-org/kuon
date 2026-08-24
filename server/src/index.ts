@@ -1,6 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import usersRoutes from "./routes/usersRoutes.js";
+import localAuthRoutes from "./routes/localAuthRoutes.js";
+import totpRoutes from "./routes/totpRoutes.js";
 import articlesRouter from "./routes/articlesRoutes.js";
 import tagsRouter from "./routes/tagsRoutes.js";
 import cors from "cors";
@@ -34,6 +36,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({ origin: "http://localhost:5050", credentials: true }));
 app.use("/api-docs", ...swaggerUiMiddleware());
+app.use("/api", localAuthRoutes);
+app.use("/api", totpRoutes);
 app.use("/api", usersRoutes);
 app.use("/api", articlesRouter);
 app.use("/api", tagsRouter);

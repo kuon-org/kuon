@@ -11,11 +11,29 @@ import {
   createRefreshToken,
   getRefreshTokenExpiryDate,
 } from "../utils/sessionTokens/index.js";
+import { serverSettingsService } from "./serverSettingsService.js";
+import { ServerSettingKey } from "../constants/serverSettings.js";
+import { isTotpEnabledForUser } from "../utils/totp/index.js";
 
 const pkceStore = new Map<
   string,
   { verifier: string; userId?: string; nonce?: string }
 >();
+
+type SessionMetadata = {
+  ipAddress?: string;
+  userAgent?: string;
+  deviceName?: string;
+};
+
+export type ExternalAuthResult =
+  | { requires2FA: true; userId: string }
+  | {
+      requires2FA: false;
+      accessToken: string;
+      refreshToken: string;
+      refreshExpiresAt: Date;
+    };
 
 export class AuthService {
   constructor(private repo: AuthRepository) {}
@@ -63,12 +81,8 @@ export class AuthService {
     code: string,
     state: string,
     fallbackUserId?: string,
-    metadata?: {
-      ipAddress?: string;
-      userAgent?: string;
-      deviceName?: string;
-    },
-  ) {
+    metadata?: SessionMetadata,
+  ): Promise<ExternalAuthResult> {
     const stored = pkceStore.get(state);
     if (!stored) throw new Error("Invalid state");
 
@@ -97,8 +111,7 @@ export class AuthService {
       if (!res.ok) {
         throw new Error(`Failed to fetch user info: ${res.status}`);
       }
-      const data = await res.json();
-      rawUserInfo = data;
+      rawUserInfo = await res.json();
     }
 
     const idpUser = {
@@ -147,9 +160,30 @@ export class AuthService {
       });
     }
 
-    await this.repo.updateLastLogin(user.id);
     pkceStore.delete(state);
-    return await this.createUserSession(user.id, metadata);
+    return this.completeExternalAuthentication(
+      user.id,
+      metadata,
+      Boolean(currentUserId),
+    );
+  }
+
+  private async completeExternalAuthentication(
+    userId: string,
+    metadata?: SessionMetadata,
+    isLinking = false,
+  ): Promise<ExternalAuthResult> {
+    const requireTotp = serverSettingsService.isEnabled(
+      ServerSettingKey.RequireTotpForExternalIdp,
+    );
+
+    if (!isLinking && requireTotp && (await isTotpEnabledForUser(userId))) {
+      return { requires2FA: true, userId };
+    }
+
+    await this.repo.updateLastLogin(userId);
+    const session = await this.createUserSession(userId, metadata);
+    return { requires2FA: false, ...session };
   }
 
   private async verifyOidcIdToken(
@@ -234,11 +268,7 @@ export class AuthService {
 
   private async createUserSession(
     userId: string,
-    metadata?: {
-      ipAddress?: string;
-      userAgent?: string;
-      deviceName?: string;
-    },
+    metadata?: SessionMetadata,
   ) {
     await prisma.user_sessions.deleteMany({
       where: {
@@ -382,12 +412,8 @@ export class AuthService {
     providerName: string,
     body: any,
     fallbackUserId?: string,
-    metadata?: {
-      ipAddress?: string;
-      userAgent?: string;
-      deviceName?: string;
-    },
-  ) {
+    metadata?: SessionMetadata,
+  ): Promise<ExternalAuthResult> {
     const state = body.RelayState;
     const stored = pkceStore.get(state);
     if (!stored) throw new Error("Invalid SAML state (RelayState)");
@@ -414,8 +440,18 @@ export class AuthService {
       tokenDataForDb,
       currentUserId,
     );
+
+    if (user.is_active === false) {
+      pkceStore.delete(state);
+      throw new Error("このアカウントは無効化されています。");
+    }
+
     pkceStore.delete(state);
-    return await this.createUserSession(user.id, metadata);
+    return this.completeExternalAuthentication(
+      user.id,
+      metadata,
+      Boolean(currentUserId),
+    );
   }
 
   private formatCert(cert: string): string {
