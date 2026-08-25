@@ -48,6 +48,7 @@ export class WebhookEventContextService {
         article: {
           id: comment.articles.id,
           title: comment.articles.title ?? "",
+          summary: comment.articles.summary ?? null,
           url: articleUrl(comment.articles.id),
         },
         comment: {
@@ -72,6 +73,7 @@ export class WebhookEventContextService {
         article: {
           id: article.id,
           title: article.title ?? "",
+          summary: article.summary ?? null,
           url: articleUrl(article.id),
         },
         actor: actor(liker),
