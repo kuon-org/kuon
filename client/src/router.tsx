@@ -1,4 +1,5 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useAuthQuery } from "./hooks/useAuth";
 import { usePublicServerSettings } from "./hooks/usePublicServerSettings";
 import { routeTree } from "./routes";
@@ -29,6 +30,13 @@ declare module "@tanstack/react-router" {
 export const AppRouter = () => {
   const { user, user_isLoading } = useAuthQuery();
   const publicSettings = usePublicServerSettings();
+  const requireAuthentication =
+    publicSettings.data?.requireAuthentication ?? false;
+
+  useEffect(() => {
+    if (user_isLoading || publicSettings.isLoading) return;
+    void router.invalidate();
+  }, [user?.id, requireAuthentication, user_isLoading, publicSettings.isLoading]);
 
   if (user_isLoading || publicSettings.isLoading) return null;
 
@@ -37,8 +45,7 @@ export const AppRouter = () => {
       router={router}
       context={{
         user,
-        requireAuthentication:
-          publicSettings.data?.requireAuthentication ?? false,
+        requireAuthentication,
       }}
     />
   );
