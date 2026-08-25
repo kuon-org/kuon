@@ -8,7 +8,6 @@ import type {
   WebhookHeaderInput,
   WebhookRecord,
 } from "../webhooks/types.js";
-import type { WebhookEventType } from "../webhooks/events.js";
 
 const toRecord = (row: webhooks): WebhookRecord => ({
   id: row.id,
@@ -19,6 +18,7 @@ const toRecord = (row: webhooks): WebhookRecord => ({
   url: row.url,
   httpMethod: row.http_method,
   payloadTemplate: row.payload_template,
+  event: row.event_type as WebhookRecord["event"],
   isActive: row.is_active,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -55,7 +55,6 @@ export class WebhookRepository {
     const row = await prisma.webhooks.findFirst({
       where,
       include: {
-        webhook_events: { orderBy: { event_type: "asc" } },
         webhook_headers: { orderBy: { name: "asc" } },
       },
     });
@@ -63,7 +62,6 @@ export class WebhookRepository {
 
     return {
       ...toRecord(row),
-      events: row.webhook_events.map((event) => event.event_type as WebhookEventType),
       headers: row.webhook_headers.map((header): WebhookHeaderInput => ({
         name: header.name,
         value: header.value,
@@ -83,10 +81,11 @@ export class WebhookRepository {
           url: input.url,
           http_method: input.httpMethod ?? "POST",
           payload_template: (input.payloadTemplate ?? {}) as Prisma.InputJsonValue,
+          event_type: input.event,
         },
       });
-      await this.replaceChildren(tx, row.id, input.events, input.headers ?? []);
-      return { ...toRecord(row), events: input.events, headers: input.headers ?? [] };
+      await this.replaceHeaders(tx, row.id, input.headers ?? []);
+      return { ...toRecord(row), headers: input.headers ?? [] };
     });
   }
 
@@ -115,12 +114,13 @@ export class WebhookRepository {
           url: input.url,
           http_method: input.httpMethod ?? "POST",
           payload_template: (input.payloadTemplate ?? {}) as Prisma.InputJsonValue,
+          event_type: input.event,
           is_active: input.isActive,
           updated_at: new Date(),
         },
       });
-      await this.replaceChildren(tx, id, input.events, input.headers ?? []);
-      return { ...toRecord(row), events: input.events, headers: input.headers ?? [] };
+      await this.replaceHeaders(tx, id, input.headers ?? []);
+      return { ...toRecord(row), headers: input.headers ?? [] };
     });
   }
 
@@ -176,12 +176,12 @@ export class WebhookRepository {
     return result.count > 0;
   }
 
-  private async replaceChildren(tx: Prisma.TransactionClient, webhookId: string, events: WebhookEventType[], headers: WebhookHeaderInput[]) {
-    await tx.webhook_events.deleteMany({ where: { webhook_id: webhookId } });
+  private async replaceHeaders(
+    tx: Prisma.TransactionClient,
+    webhookId: string,
+    headers: WebhookHeaderInput[],
+  ) {
     await tx.webhook_headers.deleteMany({ where: { webhook_id: webhookId } });
-    if (events.length > 0) {
-      await tx.webhook_events.createMany({ data: events.map((eventType) => ({ webhook_id: webhookId, event_type: eventType })) });
-    }
     if (headers.length > 0) {
       await tx.webhook_headers.createMany({
         data: headers.map((header) => ({
