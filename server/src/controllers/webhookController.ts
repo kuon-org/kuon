@@ -5,6 +5,7 @@ import { WebhookService } from "../services/webhookService.js";
 import { WebhookPreviewService } from "../services/webhookPreviewService.js";
 import { webhookEventDefinitions } from "../webhooks/events.js";
 import { webhookVariablesByEvent } from "../webhooks/variables.js";
+import { webhookPresets } from "../webhooks/presets.js";
 import type {
   CreateWebhookInput,
   UpdateWebhookInput,
@@ -41,6 +42,7 @@ export class WebhookController {
           ...event,
           variables: webhookVariablesByEvent[event.type] ?? [],
         })),
+        presets: webhookPresets,
       });
     } catch (error) {
       return res.status(500).json({
