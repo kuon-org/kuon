@@ -18,12 +18,14 @@ export type PayloadNode =
   | { type: "variable"; variable: string }
   | { type: "text"; value: string }
   | { type: "number"; value: number }
-  | { type: "boolean"; value: boolean };
+  | { type: "boolean"; value: boolean }
+  | { type: "null" };
 export type PayloadProperty = { key: string; value: PayloadNode };
 
 export const templateToNode = (value: unknown): PayloadNode => {
+  if (value === null) return { type: "null" };
   if (Array.isArray(value)) return { type: "array", items: value.map(templateToNode) };
-  if (value !== null && typeof value === "object") {
+  if (typeof value === "object") {
     return {
       type: "object",
       properties: Object.entries(value).map(([key, child]) => ({ key, value: templateToNode(child) })),
@@ -47,6 +49,7 @@ export const nodeToTemplate = (node: PayloadNode): unknown => {
     case "text": return node.value;
     case "number": return node.value;
     case "boolean": return node.value;
+    case "null": return null;
   }
 };
 
@@ -56,6 +59,7 @@ const newNode = (type: PayloadNode["type"]): PayloadNode => {
   if (type === "variable") return { type, variable: "article.title" };
   if (type === "number") return { type, value: 0 };
   if (type === "boolean") return { type, value: true };
+  if (type === "null") return { type };
   return { type: "text", value: "" };
 };
 
@@ -73,7 +77,7 @@ const NodeEditor = ({ node, variables, onChange, onDelete, label }: {
         {label && <Typography sx={{ minWidth: 54 }} color="text.secondary">{label}</Typography>}
         <Select size="small" value={node.type} onChange={(e) => setType(e.target.value as PayloadNode["type"])} sx={{ minWidth: 130 }}>
           <MenuItem value="variable">Kuon value</MenuItem><MenuItem value="text">Text</MenuItem>
-          <MenuItem value="number">Number</MenuItem><MenuItem value="boolean">Boolean</MenuItem>
+          <MenuItem value="number">Number</MenuItem><MenuItem value="boolean">Boolean</MenuItem><MenuItem value="null">Null</MenuItem>
           <MenuItem value="object">Object {'{}'}</MenuItem><MenuItem value="array">Array []</MenuItem>
         </Select>
         {node.type === "variable" && (
@@ -84,6 +88,7 @@ const NodeEditor = ({ node, variables, onChange, onDelete, label }: {
         {node.type === "text" && <TextField size="small" value={node.value} onChange={(e) => onChange({ ...node, value: e.target.value })} sx={{ flex: 1 }} />}
         {node.type === "number" && <TextField size="small" type="number" value={node.value} onChange={(e) => onChange({ ...node, value: Number(e.target.value) })} sx={{ flex: 1 }} />}
         {node.type === "boolean" && <Select size="small" value={String(node.value)} onChange={(e) => onChange({ ...node, value: e.target.value === "true" })}><MenuItem value="true">true</MenuItem><MenuItem value="false">false</MenuItem></Select>}
+        {node.type === "null" && <Typography color="text.secondary">null</Typography>}
         {onDelete && <IconButton size="small" onClick={onDelete}><Delete fontSize="small" /></IconButton>}
       </Stack>
       {node.type === "object" && (
