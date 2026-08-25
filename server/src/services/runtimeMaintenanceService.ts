@@ -30,7 +30,7 @@ export const runtimeMaintenanceService = new RuntimeMaintenanceService();
 
 /**
  * Restore中のDB非依存アクセスゲート。
- * public-settingsのみ許可し、開始済みのRestoreリクエスト以外の新規APIを停止する。
+ * SPA本体は配信し続け、DBや永続データへ触れる経路のみ停止する。
  */
 export const runtimeMaintenanceGate = (
   req: Request,
@@ -40,6 +40,14 @@ export const runtimeMaintenanceGate = (
   if (!runtimeMaintenanceService.isLocked()) return next();
 
   if (req.path === "/api/server/public-settings") return next();
+
+  const guardedPath =
+    req.path.startsWith("/api") ||
+    req.path.startsWith("/uploads") ||
+    req.path.startsWith("/share") ||
+    req.path.startsWith("/auth");
+
+  if (!guardedPath) return next();
 
   return res.status(503).json({
     code: RUNTIME_MAINTENANCE_CODE,
