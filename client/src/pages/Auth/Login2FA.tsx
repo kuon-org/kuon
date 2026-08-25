@@ -2,7 +2,6 @@ import { Box, Button, Paper, Typography } from "@mui/material";
 import { keyframes } from "@mui/system";
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import { useNotify } from "../../hooks/useNotify";
 import apiClient from "../../api/client";
 import type { HttpError } from "../../api/FetchHttpClient";
@@ -26,7 +25,6 @@ export const Login2FA = () => {
   const [shake, setShake] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { error, success } = useNotify();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const verifyMutation = useMutation({
@@ -41,7 +39,9 @@ export const Login2FA = () => {
       queryClient.setQueryData(["authUser"], user);
       sessionStorage.removeItem("pendingEmail");
       success("二段階認証が完了しました！");
-      await navigate({ to: "/", replace: true });
+      // authUser の更新を受けた AppRouter が router.invalidate() を行い、
+      // 認証済みユーザーを /login/2fa から / へリダイレクトする。
+      // ここで先に navigate すると古い Router context で判定され、ちらつく。
     },
     onError: (err: HttpError) => {
       error(err.response?.data?.message || "認証コードが正しくありません");
