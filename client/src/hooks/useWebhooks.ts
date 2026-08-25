@@ -124,9 +124,17 @@ const useWebhookApi = ({ basePath, queryKey, userScoped = false }: WebhookApiOpt
   const getDeliveries = async (id: string) =>
     (await apiClient.get(`${basePath}/${id}/deliveries`)).data as WebhookDelivery[];
 
+  const scope = userScoped ? "user" : "system";
+  const scopedMetadata = metadata.data
+    ? {
+        ...metadata.data,
+        events: metadata.data.events.filter((event) => event.scopes.includes(scope)),
+      }
+    : undefined;
+
   return {
     userScoped,
-    metadata: metadata.data,
+    metadata: scopedMetadata,
     metadataLoading: metadata.isLoading,
     metadataError: metadata.error,
     webhooks: webhooks.data ?? [],
