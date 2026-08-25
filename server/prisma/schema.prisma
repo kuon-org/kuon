@@ -129,9 +129,9 @@ model idp_configurations {
   button_color       String?            @db.VarChar(20)
   text_color         String?            @db.VarChar(20)
   is_active          Boolean?           @default(false)
-  created_at         DateTime?          @default(now()) @db.Timestamp(6)
-  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
-  last_tested_at     DateTime?          @db.Timestamp(6)
+  created_at         DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?           @default(now()) @db.Timestamp(6)
+  last_tested_at     DateTime?           @db.Timestamp(6)
   created_by         String?            @db.Uuid
   identity_providers identity_providers @relation(fields: [provider_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -383,28 +383,18 @@ model webhooks {
   url                String
   http_method        String               @default("POST") @db.VarChar(10)
   payload_template   Json                 @default("{}")
+  event_type         String               @db.VarChar(100)
   is_active          Boolean              @default(true)
   created_at         DateTime             @default(now()) @db.Timestamptz(6)
   updated_at         DateTime             @default(now()) @db.Timestamptz(6)
   webhook_deliveries webhook_deliveries[]
-  webhook_events     webhook_events[]
   webhook_headers    webhook_headers[]
   users              users?               @relation(fields: [owner_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([scope], map: "idx_webhooks_scope")
   @@index([owner_user_id], map: "idx_webhooks_owner_user_id")
   @@index([is_active], map: "idx_webhooks_is_active")
-  @@schema("knowledge")
-}
-
-model webhook_events {
-  webhook_id String   @db.Uuid
-  event_type String   @db.VarChar(100)
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  webhooks   webhooks @relation(fields: [webhook_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@id([webhook_id, event_type])
-  @@index([event_type], map: "idx_webhook_events_event_type")
+  @@index([event_type], map: "idx_webhooks_event_type")
   @@schema("knowledge")
 }
 
@@ -517,7 +507,6 @@ model user_api_keys {
 model kuon_migrations {
   name       String   @id
   applied_at DateTime @default(now()) @db.Timestamptz(6)
-
   @@schema("knowledge")
 }
 
