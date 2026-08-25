@@ -1,11 +1,13 @@
 import { evaluateWebhookTemplate } from "../webhooks/templateEvaluator.js";
-import { articlePublishedSampleContext } from "../webhooks/samples.js";
+import { WebhookEventType, findWebhookEventDefinition } from "../webhooks/events.js";
+import { getWebhookSampleContext } from "../webhooks/samples.js";
 
 const TEST_TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BODY_LENGTH = 2_000;
 
 export type WebhookPreviewInput = {
   payloadTemplate: unknown;
+  eventType?: string;
 };
 
 export type WebhookTestSendInput = WebhookPreviewInput & {
@@ -18,9 +20,15 @@ export type WebhookTestSendInput = WebhookPreviewInput & {
 
 export class WebhookPreviewService {
   preview(input: WebhookPreviewInput) {
+    const eventType = input.eventType ?? WebhookEventType.ArticlePublished;
+    const definition = findWebhookEventDefinition(eventType);
+    if (!definition) {
+      throw new Error(`未対応のWebhookイベントです: ${eventType}`);
+    }
+
     return evaluateWebhookTemplate(
       input.payloadTemplate,
-      articlePublishedSampleContext,
+      getWebhookSampleContext(definition.type),
     );
   }
 
