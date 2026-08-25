@@ -92,6 +92,10 @@ export const Webhooks = () => {
     () => metadata?.events.find((item) => item.type === event)?.variables ?? [],
     [metadata, event],
   );
+  const presets = useMemo(
+    () => metadata?.presets.filter((preset) => preset.event === event) ?? [],
+    [metadata, event],
+  );
 
   const syncPayload = (value: unknown) => {
     setPayload(value);
@@ -129,7 +133,7 @@ export const Webhooks = () => {
     setName(detail.name);
     setProvider(detail.provider);
     setUrl(detail.url);
-    setEvent(detail.events[0] ?? metadata?.events[0]?.type ?? "article.published");
+    setEvent(detail.event);
     setHeaders(detail.headers ?? []);
     syncPayload(detail.payloadTemplate);
     setPreview(undefined);
@@ -138,7 +142,7 @@ export const Webhooks = () => {
   };
 
   const applyPreset = (id: string) => {
-    const preset = metadata?.presets.find((item) => item.id === id);
+    const preset = presets.find((item) => item.id === id);
     if (!preset) return;
     setProvider(preset.provider);
     syncPayload(preset.payloadTemplate);
@@ -151,7 +155,7 @@ export const Webhooks = () => {
     url,
     httpMethod: "POST",
     payloadTemplate: payload,
-    events: [event],
+    event,
     headers,
     isActive: true,
   });
@@ -204,6 +208,7 @@ export const Webhooks = () => {
                       <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                         <Typography fontWeight={600}>{webhook.name}</Typography>
                         <Chip size="small" label={providerLabel[webhook.provider]} />
+                        <Chip size="small" variant="outlined" label={webhook.event} />
                         <Chip size="small" variant="outlined" label={webhook.isActive ? "Active" : "Disabled"} />
                       </Stack>
                       <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-all", mt: 0.5 }}>{webhook.url}</Typography>
@@ -230,20 +235,6 @@ export const Webhooks = () => {
         <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} />
         <TextField label="Webhook URL" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." />
 
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-          <Select value={provider} onChange={(e) => setProvider(e.target.value as WebhookInput["provider"])} sx={{ minWidth: 180 }}>
-            {Object.entries(providerLabel).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}
-          </Select>
-          <Select displayEmpty value="" onChange={(e) => applyPreset(e.target.value)} sx={{ minWidth: 300 }}>
-            <MenuItem value="" disabled>Apply template...</MenuItem>
-            {metadata?.presets.map((preset) => (
-              <MenuItem key={preset.id} value={preset.id}>
-                <Box><Typography variant="body2">{preset.name}</Typography><Typography variant="caption" color="text.secondary">{preset.description}</Typography></Box>
-              </MenuItem>
-            ))}
-          </Select>
-        </Stack>
-
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Typography variant="subtitle2" mb={1}>Event</Typography>
           <Select fullWidth value={event} onChange={(e) => setEvent(e.target.value)}>
@@ -252,6 +243,20 @@ export const Webhooks = () => {
             ))}
           </Select>
         </Paper>
+
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Select value={provider} onChange={(e) => setProvider(e.target.value as WebhookInput["provider"])} sx={{ minWidth: 180 }}>
+            {Object.entries(providerLabel).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}
+          </Select>
+          <Select displayEmpty value="" onChange={(e) => applyPreset(e.target.value)} sx={{ minWidth: 300 }}>
+            <MenuItem value="" disabled>Apply template...</MenuItem>
+            {presets.map((preset) => (
+              <MenuItem key={preset.id} value={preset.id}>
+                <Box><Typography variant="body2">{preset.name}</Typography><Typography variant="caption" color="text.secondary">{preset.description}</Typography></Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </Stack>
 
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -314,7 +319,7 @@ export const Webhooks = () => {
           <Stack spacing={2} pt={1}>
             <Box><Typography fontWeight={600}>1. 送信先URL</Typography><Typography color="text.secondary">Discord Incoming Webhook、Slack Incoming Webhook、Teams Workflow/Webhook、または任意のHTTP endpoint URLを指定します。</Typography></Box>
             <Box><Typography fontWeight={600}>2. Event</Typography><Typography color="text.secondary">Webhookごとにイベントを1つ選択します。同じURLへ別イベントを送る場合はWebhook設定を分けてください。</Typography></Box>
-            <Box><Typography fontWeight={600}>3. Template</Typography><Typography color="text.secondary">Discord / Slack / Teamsはテンプレートを適用すると推奨JSON構造がVisual Builderへ展開されます。適用後も自由に編集できます。</Typography></Box>
+            <Box><Typography fontWeight={600}>3. Template</Typography><Typography color="text.secondary">選択中のイベントに対応するDiscord / Slack / Teamsテンプレートを適用できます。適用後も自由に編集できます。</Typography></Box>
             <Box><Typography fontWeight={600}>4. Kuon values</Typography><Typography color="text.secondary">利用可能な変数は選択中のイベントに応じて変わります。JSONモードでは変数一覧からコピーできます。</Typography></Box>
             <Box><Typography fontWeight={600}>5. Preview / Test Send</Typography><Typography color="text.secondary">Previewでサンプルデータを展開したJSONを確認し、Test Sendで実際の送信先へ試験通知できます。</Typography></Box>
           </Stack>
