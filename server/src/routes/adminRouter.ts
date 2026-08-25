@@ -7,6 +7,7 @@ import { AdminController } from "../controllers/adminController.js";
 import { BackupController } from "../controllers/backupController.js";
 import { RestoreController } from "../controllers/restoreController.js";
 import { WebhookController } from "../controllers/webhookController.js";
+import { webhookSelectionController } from "../controllers/webhookSelectionController.js";
 import { authenticateToken } from "../middlewares/auth.js";
 import { AdminRepository } from "../repositories/adminRepository.js";
 import { serverSettingsService } from "../services/serverSettingsService.js";
@@ -37,6 +38,13 @@ adminRouter.get("/admin/settings/users", authenticateToken, adminController.getU
 adminRouter.post("/admin/settings/users/toggle_active/:userId", authenticateToken, adminController.toggleUserActive);
 adminRouter.get("/admin/settings/server", authenticateToken, adminController.getServerSettings);
 adminRouter.put("/admin/settings/server", authenticateToken, adminController.updateServerSetting);
+
+// 投稿画面向け。URLやHeaderは返さず、選択に必要な情報だけ公開する。
+adminRouter.get(
+  "/webhooks/available/article-published",
+  authenticateToken,
+  webhookSelectionController.getArticlePublishedTargets,
+);
 
 adminRouter.get("/admin/webhooks/metadata", authenticateToken, webhookController.getMetadata);
 adminRouter.post("/admin/webhooks/preview", authenticateToken, webhookController.preview);
