@@ -1,3 +1,4 @@
+import { WebhookRepository } from "../repositories/webhookRepository.js";
 import { findWebhookEventDefinition, WebhookScope } from "../webhooks/events.js";
 import type { CreateWebhookInput } from "../webhooks/types.js";
 
@@ -15,6 +16,8 @@ const validateUrl = (value: string) => {
 };
 
 export class WebhookService {
+  constructor(private repo: WebhookRepository) {}
+
   validateCreateInput(input: CreateWebhookInput): void {
     if (!input.name.trim()) {
       throw new Error("Webhook名を指定してください");
@@ -59,6 +62,23 @@ export class WebhookService {
       headerNames.add(normalizedName);
     }
   }
+
+  async getAll() {
+    return this.repo.findAll();
+  }
+
+  async getById(id: string) {
+    return this.repo.findById(id);
+  }
+
+  async create(input: CreateWebhookInput) {
+    this.validateCreateInput(input);
+    return this.repo.create(input);
+  }
+
+  async delete(id: string) {
+    return this.repo.delete(id);
+  }
 }
 
-export const webhookService = new WebhookService();
+export const webhookService = new WebhookService(new WebhookRepository());
