@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
 import { authenticateToken } from "../middlewares/auth.js";
 import { UsersRepository } from "../repositories/usersRepository.js";
 import { UsersService } from "../services/usersService.js";
@@ -9,6 +9,10 @@ import { TagsRepository } from "../repositories/tagsRepository.js";
 import { TagsService } from "../services/tagsService.js";
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
 import { serverSettingsService } from "../services/serverSettingsService.js";
+import {
+  ACCESS_TOKEN_MAX_AGE_MS,
+  REFRESH_TOKEN_MAX_AGE_MS,
+} from "../utils/sessionTokens/index.js";
 
 const usersRouter = Router();
 
@@ -27,13 +31,30 @@ const usersCtrl = new UsersController(
   uploadImagesService,
 );
 
+const attachRefreshExpiryHeaders = (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const now = Date.now();
+  res.setHeader(
+    "X-Access-Token-Expires-At",
+    new Date(now + ACCESS_TOKEN_MAX_AGE_MS).toISOString(),
+  );
+  res.setHeader(
+    "X-Refresh-Token-Expires-At",
+    new Date(now + REFRESH_TOKEN_MAX_AGE_MS).toISOString(),
+  );
+  next();
+};
+
 usersRouter.get("/users", usersCtrl.getUsers);
 usersRouter.get("/users/id/:userId", usersCtrl.getUserById);
 usersRouter.get("/users/:username", usersCtrl.getUserByUsername);
 usersRouter.get("/me", authenticateToken, usersCtrl.getMe);
 usersRouter.post("/register", usersCtrl.registerUser);
 
-usersRouter.post("/refresh", usersCtrl.refreshToken);
+usersRouter.post("/refresh", attachRefreshExpiryHeaders, usersCtrl.refreshToken);
 usersRouter.post("/logout", usersCtrl.logoutUser);
 usersRouter.get("/devices", authenticateToken, usersCtrl.getDevices);
 usersRouter.post("/logout/all", authenticateToken, usersCtrl.logoutAllDevices);

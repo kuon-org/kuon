@@ -14,6 +14,8 @@ type CreateHttpClientConfig = {
   credentials?: RequestCredentials;
   authFailureHandler?: AuthFailureHandler;
   authRefreshStrategy?: AuthRefreshStrategy;
+  shouldRefreshAuth?: () => boolean;
+  responseObserver?: (response: Response) => void;
 };
 
 export class FetchHttpClient implements HttpClient {
@@ -22,6 +24,8 @@ export class FetchHttpClient implements HttpClient {
   private credentials?: RequestCredentials;
   private authFailureHandler?: AuthFailureHandler;
   private authRefreshStrategy?: AuthRefreshStrategy;
+  private shouldRefreshAuth?: () => boolean;
+  private responseObserver?: (response: Response) => void;
 
   private refreshPromise: Promise<void> | null = null;
 
@@ -31,9 +35,9 @@ export class FetchHttpClient implements HttpClient {
     this.credentials = config.credentials;
     this.authFailureHandler = config.authFailureHandler;
     this.authRefreshStrategy = config.authRefreshStrategy;
+    this.shouldRefreshAuth = config.shouldRefreshAuth;
+    this.responseObserver = config.responseObserver;
   }
-
-  // ===== public API =====
 
   get<T = any>(url: string, config?: RequestConfig) {
     return this.request<T>("GET", url, undefined, config);
@@ -55,17 +59,13 @@ export class FetchHttpClient implements HttpClient {
     return this.request<T>("DELETE", url, undefined, config);
   }
 
-  // ===== refresh control =====
-
-  private async refreshToken(): Promise<void> {
+  async refreshAuth(): Promise<void> {
     if (!this.authRefreshStrategy) return;
 
-    // 既に refresh 中なら待つ
     if (this.refreshPromise) {
       return this.refreshPromise;
     }
 
-    // 新規 refresh
     this.refreshPromise = (async () => {
       const success = await this.authRefreshStrategy!.refresh();
 
@@ -80,8 +80,6 @@ export class FetchHttpClient implements HttpClient {
     return this.refreshPromise;
   }
 
-  // ===== request =====
-
   private async request<T = any>(
     method: string,
     url: string,
@@ -89,6 +87,17 @@ export class FetchHttpClient implements HttpClient {
     requestConfig?: RequestConfig,
     isRetry = false,
   ): Promise<HttpResponse<T>> {
+    const isRefreshCall = url.includes("/refresh");
+    const shouldAttemptPreRequestRefresh =
+      !isRetry &&
+      !isRefreshCall &&
+      window.location.pathname !== "/login" &&
+      this.shouldRefreshAuth?.();
+
+    if (shouldAttemptPreRequestRefresh) {
+      await this.refreshAuth();
+    }
+
     const fullUrl = new URL(this.baseURL + url, window.location.origin);
 
     if (requestConfig?.params) {
@@ -109,10 +118,9 @@ export class FetchHttpClient implements HttpClient {
       body: serializedBody,
     });
 
-    // ===== 401 handling =====
-    if (!res.ok) {
-      const isRefreshCall = url.includes("/refresh");
+    this.responseObserver?.(res);
 
+    if (!res.ok) {
       if (
         res.status === 401 &&
         !isRetry &&
@@ -120,12 +128,9 @@ export class FetchHttpClient implements HttpClient {
         window.location.pathname !== "/login"
       ) {
         try {
-          await this.refreshToken();
-
-          // refresh 成功 → retry
+          await this.refreshAuth();
           return this.request<T>(method, url, body, requestConfig, true);
         } catch {
-          // refresh 失敗
           this.authFailureHandler?.handleAuthFailure();
         }
       }
@@ -165,8 +170,6 @@ export class FetchHttpClient implements HttpClient {
     return headers;
   }
 }
-
-// ===== helpers =====
 
 async function parseResponse<T = any>(
   res: Response,
