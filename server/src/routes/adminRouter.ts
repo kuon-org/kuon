@@ -37,13 +37,18 @@ adminRouter.get("/admin/settings/users", authenticateToken, adminController.getU
 adminRouter.post("/admin/settings/users/toggle_active/:userId", authenticateToken, adminController.toggleUserActive);
 adminRouter.get("/admin/settings/server", authenticateToken, adminController.getServerSettings);
 adminRouter.put("/admin/settings/server", authenticateToken, adminController.updateServerSetting);
+
 adminRouter.get("/admin/webhooks/metadata", authenticateToken, webhookController.getMetadata);
 adminRouter.post("/admin/webhooks/preview", authenticateToken, webhookController.preview);
 adminRouter.post("/admin/webhooks/test", authenticateToken, webhookController.testSend);
 adminRouter.get("/admin/webhooks", authenticateToken, webhookController.getAll);
-adminRouter.get("/admin/webhooks/:id", authenticateToken, webhookController.getById);
 adminRouter.post("/admin/webhooks", authenticateToken, webhookController.create);
+adminRouter.get("/admin/webhooks/:id/deliveries", authenticateToken, webhookController.getDeliveries);
+adminRouter.patch("/admin/webhooks/:id/active", authenticateToken, webhookController.setActive);
+adminRouter.get("/admin/webhooks/:id", authenticateToken, webhookController.getById);
+adminRouter.put("/admin/webhooks/:id", authenticateToken, webhookController.update);
 adminRouter.delete("/admin/webhooks/:id", authenticateToken, webhookController.delete);
+
 adminRouter.post("/admin/backup/export", authenticateToken, backupController.exportBackup);
 adminRouter.post(
   "/admin/backup/restore",
