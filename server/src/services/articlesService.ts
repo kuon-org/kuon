@@ -2,15 +2,16 @@ import { ArticlesRepository } from "../repositories/articlesRepository.js";
 import generateSummary from "../utils/generateSummary/index.js";
 import { asUUID } from "../utils/uuid/index.js";
 import { Marp } from "@marp-team/marp-core";
+import { webhookDispatcherService } from "./webhookDispatcherService.js";
+import { WebhookEventType } from "../webhooks/events.js";
+
 export class ArticlesService {
   constructor(private articlesRepo: ArticlesRepository) {}
 
   async getPublishedArticleList(page: number, limit: number, q?: string) {
     return await this.articlesRepo.findAllPublishedArticles(page, limit, q);
   }
-  // articlesService.ts 内に追加
   async getTrendingArticleList(page: number, limit: number, weights?: any) {
-    // デフォルトの重み付け設定
     const safeWeights = {
       like: Number(weights?.like ?? 10),
       view: Number(weights?.view ?? 1),
@@ -37,23 +38,17 @@ export class ArticlesService {
     const article = await this.articlesRepo.findArticleById(articleId);
     if (!article || article.is_deleted) throw new Error("ArticleNotFound");
 
-    // 1. 本人チェック（所有者なら問答無用で全データを返す）
     if (currentUserId && article.user_id === currentUserId) {
       return article;
     }
 
-    // 2. 本人以外（ゲスト含む）への制限
-    // 非公開設定(is_private)なら拒否
     if (article.is_private) {
       throw new Error("Forbidden");
     }
 
-    // 限定公開(is_published: false)であっても、ここ（URL直接叩き）に来ているなら
-    // is_privateさえfalseなら閲覧を許可する
     return article;
   }
 
-  // /articles/meで利用中
   async getAllArticlesByUserId(userId: string) {
     return await this.articlesRepo.findAllArticlesByUserId(userId);
   }
@@ -99,27 +94,63 @@ export class ArticlesService {
   async createArticle(userId: string, payload: any) {
     const { tagIds, raw_content, status, is_published, is_private, summary } =
       payload;
-
-    // 🚀 新規作成時は、status: 'public' なら「即時公開」、'draft' なら「下書き」として扱う
     const isPublicMode = status === "public";
 
-    return this.articlesRepo.createArticles(
+    const article = await this.articlesRepo.createArticles(
       {
         user_id: userId,
         title: payload.title,
-        raw_content: raw_content,
-        // 公開モードなら現在の内容を反映、下書きなら空文字 or 初期値
+        raw_content,
         render_content: isPublicMode ? raw_content : "",
         last_published_raw_content: isPublicMode ? raw_content : undefined,
         summary: summary || generateSummary(raw_content),
-        // 🚀 ルール通り：status は下書きがあるかどうか
         status: isPublicMode ? "public" : "draft",
-        // 🚀 公開設定フラグをそのまま保存
         is_published: is_published ?? false,
         is_private: is_private ?? false,
       },
       tagIds,
     );
+
+    if (isPublicMode && is_published === true && is_private !== true) {
+      void this.dispatchArticlePublished(article.id, userId);
+    }
+
+    return article;
+  }
+
+  private async dispatchArticlePublished(articleId: string, userId: string) {
+    try {
+      const detail = await this.getArticle(articleId, userId);
+      const baseUrl = (process.env.APP_SITE_URL ?? process.env.BACKEND_URL ?? "")
+        .replace(/\/$/, "");
+      const articleUrl = baseUrl
+        ? `${baseUrl}/share/${articleId}`
+        : `/share/${articleId}`;
+
+      await webhookDispatcherService.dispatchArticlePublished(
+        {
+          event: {
+            type: WebhookEventType.ArticlePublished,
+            createdAt: new Date().toISOString(),
+          },
+          article: {
+            id: detail.id,
+            title: detail.title ?? "",
+            summary: detail.summary ?? null,
+            url: articleUrl,
+          },
+          author: {
+            username: detail.users?.username ?? null,
+            displayName: detail.users?.display_name ?? null,
+            avatarUrl: detail.users?.avatar_url ?? null,
+          },
+        },
+        userId,
+      );
+    } catch (error) {
+      // Webhook送信失敗で記事投稿自体を失敗させない。
+      console.error("Failed to dispatch article.published webhook", error);
+    }
   }
 
   async updateArticle(articleId: string, userId: string, payload: any) {
@@ -138,24 +169,18 @@ export class ArticlesService {
 
     const updateData: any = { ...otherData, updated_at: new Date() };
 
-    // 🚀 「保存して公開（更新）」ボタンが押された場合
     if (status === "public") {
       updateData.raw_content = raw_content;
-      updateData.render_content = raw_content; // 公開内容を同期
-      updateData.last_published_raw_content = raw_content; // 差分比較用のバックアップを更新
-      updateData.status = "public"; // 下書きなし状態へ
-      updateData.is_published = is_published; // 最新の公開設定を反映
-      updateData.is_private = is_private; // 最新の非公開設定を反映
-    }
-    // 🚀 「下書き保存」ボタンが押された場合
-    else if (status === "draft") {
+      updateData.render_content = raw_content;
+      updateData.last_published_raw_content = raw_content;
+      updateData.status = "public";
+      updateData.is_published = is_published;
+      updateData.is_private = is_private;
+    } else if (status === "draft") {
       updateData.raw_content = raw_content;
-      updateData.status = "draft"; // 下書きあり状態へ
-
-      // 💡 重要：下書き保存時は、現在の「公開されている状態」を変えない
+      updateData.status = "draft";
       updateData.is_published = existing.is_published;
       updateData.is_private = existing.is_private;
-      // render_content と last_published_raw_content は既存を維持（差分を作るため）
     }
 
     return this.articlesRepo.updateArticles(articleId, updateData, tagIds);
@@ -169,9 +194,8 @@ export class ArticlesService {
       throw new Error("No published version to rollback to");
 
     const rollbackData = {
-      raw_content: existing.last_published_raw_content, // 公開時の内容で上書き
-      status: "public", // ステータスを公開に戻す
-      // render_content は既に last_published_raw_content と一致しているはず
+      raw_content: existing.last_published_raw_content,
+      status: "public",
     };
 
     return this.articlesRepo.updateArticles(articleId, rollbackData);
@@ -188,7 +212,6 @@ export class ArticlesService {
     return await this.articlesRepo.findDeletedArticlesByUserId(userId);
   }
 
-  // 復元
   async restoreArticle(articleId: string, userId: string) {
     const existing = await this.articlesRepo.findArticleById(articleId);
     if (!existing || existing.user_id !== userId)
@@ -196,7 +219,6 @@ export class ArticlesService {
     return await this.articlesRepo.restoreArticle(articleId);
   }
 
-  // 物理削除
   async hardDeleteArticle(articleId: string, userId: string) {
     const existing = await this.articlesRepo.findArticleById(articleId);
     if (!existing || existing.user_id !== userId)
@@ -205,15 +227,12 @@ export class ArticlesService {
   }
 
   async getArticleMarp(articleId: string, currentUserId?: string) {
-    // 既存の getArticle メソッドを利用して記事を取得（権限チェックも含まれる）
     const article = await this.getArticle(articleId, currentUserId);
-    // Marpのインスタンス化（HTML出力を許可する設定）
     const marp = new Marp({
       html: true,
       container: { tag: "div", id: "marp-container" },
     });
     if (!article || !article.render_content) throw new Error("ArticleNotFound");
-    // Markdownをレンダリング
     const { html, css } = marp.render(article.render_content);
 
     return { html, css, title: article.title };
