@@ -71,10 +71,19 @@ export const useWebhookAdmin = () => {
     queryFn: async () => (await apiClient.get("/admin/webhooks")).data,
   });
   const save = useMutation({
-    mutationFn: async ({ id, input }: { id?: string; input: WebhookInput }) =>
-      id
-        ? (await apiClient.put(`/admin/webhooks/${id}`, input)).data
-        : (await apiClient.post("/admin/webhooks", input)).data,
+    mutationFn: async ({ id, input }: { id?: string; input: WebhookInput }) => {
+      if (!id) {
+        return (await apiClient.post("/admin/webhooks", input)).data;
+      }
+
+      const current = (await apiClient.get(`/admin/webhooks/${id}`)).data as WebhookDetail;
+      return (
+        await apiClient.put(`/admin/webhooks/${id}`, {
+          ...input,
+          isActive: current.isActive,
+        })
+      ).data;
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["adminWebhooks"] });
     },
