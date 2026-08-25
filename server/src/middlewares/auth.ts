@@ -9,6 +9,7 @@ import JWT_SECRET from "../utils/sessionTokens/jwtSecret.js";
 interface JwtPayload {
   userId: string;
   sid: string;
+  exp: number;
 }
 
 export interface AuthRequest extends Request {
@@ -31,7 +32,8 @@ const isJwtPayload = (value: jwt.JwtPayload | string): value is jwt.JwtPayload &
     typeof value.userId === "string" &&
     value.userId.length > 0 &&
     typeof value.sid === "string" &&
-    value.sid.length > 0
+    value.sid.length > 0 &&
+    typeof value.exp === "number"
   );
 };
 
@@ -41,6 +43,15 @@ const verifyAccessToken = (accessToken: string): JwtPayload => {
   });
   if (!isJwtPayload(decoded)) throw new Error("Invalid access token payload");
   return decoded;
+};
+
+const setSessionExpiryHeaders = (
+  res: Response,
+  accessTokenExpiresAt: Date,
+  refreshTokenExpiresAt: Date,
+) => {
+  res.setHeader("X-Access-Token-Expires-At", accessTokenExpiresAt.toISOString());
+  res.setHeader("X-Refresh-Token-Expires-At", refreshTokenExpiresAt.toISOString());
 };
 
 const validateRefreshSession = async (refreshToken: string) => {
@@ -74,6 +85,11 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
       return res.status(401).json({ message: "セッションが無効です" });
     }
     req.user = { userId: decoded.userId, sessionId: decoded.sid };
+    setSessionExpiryHeaders(
+      res,
+      new Date(decoded.exp * 1000),
+      session.expires_at,
+    );
     return next();
   } catch (err: any) {
     if (err.name === "TokenExpiredError") return res.status(401).json({ message: "アクセストークン期限切れ" });
@@ -95,6 +111,11 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
       const session = await prisma.user_sessions.findUnique({ where: { id: decoded.sid } });
       if (session && session.expires_at >= new Date() && session.user_id === decoded.userId) {
         req.user = { userId: decoded.userId, sessionId: decoded.sid };
+        setSessionExpiryHeaders(
+          res,
+          new Date(decoded.exp * 1000),
+          session.expires_at,
+        );
         return next();
       }
       clearAuthCookies(res);

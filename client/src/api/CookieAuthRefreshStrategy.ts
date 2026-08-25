@@ -1,4 +1,5 @@
 import type { AuthRefreshStrategy } from "./FetchHttpClient/AuthRefreshStrategy";
+import authSessionManager from "./AuthSessionManager";
 
 class CookieAuthRefreshStrategy implements AuthRefreshStrategy {
   private baseURL: string;
@@ -16,13 +17,15 @@ class CookieAuthRefreshStrategy implements AuthRefreshStrategy {
         credentials: this.credentials,
       });
 
-      // 200 / 204 のみ成功扱い
       if (res.status === 200 || res.status === 204) {
+        authSessionManager.syncFromResponse(res);
         return true;
       }
 
+      authSessionManager.clear();
       return false;
     } catch {
+      authSessionManager.clear();
       return false;
     }
   }
