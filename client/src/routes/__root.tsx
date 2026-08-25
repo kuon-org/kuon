@@ -17,17 +17,40 @@ import { TagLists } from "../components/Tag/TagLists";
 import { Ranking } from "../components/Ranking";
 
 export interface MyRouterContext {
-  user: { id: string; username: string } | null;
+  user: { id: string; username: string; role: string } | null;
   requireAuthentication: boolean;
+  maintenanceMode: boolean;
 }
 
 const anonymousRoutes = new Set(["/login", "/login/2fa", "/register"]);
+const maintenancePublicRoutes = new Set([
+  "/maintenance",
+  "/login",
+  "/login/2fa",
+]);
 
 /**
  * 完全に素のルート（最上位）
  */
 export const baseRootRoute = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: ({ context, location }) => {
+    const isAdmin = context.user?.role === "admin";
+
+    if (
+      context.maintenanceMode &&
+      !isAdmin &&
+      !maintenancePublicRoutes.has(location.pathname)
+    ) {
+      throw redirect({ to: "/maintenance" });
+    }
+
+    if (
+      !context.maintenanceMode &&
+      location.pathname === "/maintenance"
+    ) {
+      throw redirect({ to: "/" });
+    }
+
     const isAnonymousRoute = anonymousRoutes.has(location.pathname);
 
     if (context.user && isAnonymousRoute) {
@@ -37,7 +60,8 @@ export const baseRootRoute = createRootRouteWithContext<MyRouterContext>()({
     if (
       context.requireAuthentication &&
       !context.user &&
-      !isAnonymousRoute
+      !isAnonymousRoute &&
+      location.pathname !== "/maintenance"
     ) {
       throw redirect({ to: "/login" });
     }

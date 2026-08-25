@@ -11,12 +11,14 @@ export type ServerSettings = {
   allowApiKey: boolean;
   requireTotpForExternalIdp: boolean;
   requireAuthentication: boolean;
+  maintenanceMode: boolean;
 };
 
 const defaultSettings: ServerSettings = {
   allowApiKey: false,
   requireTotpForExternalIdp: false,
   requireAuthentication: false,
+  maintenanceMode: false,
 };
 
 export class ServerSettingsService {
@@ -38,6 +40,9 @@ export class ServerSettingsService {
       if (setting.key === ServerSettingKey.RequireAuthentication) {
         this.settings.requireAuthentication = setting.value === "true";
       }
+      if (setting.key === ServerSettingKey.MaintenanceMode) {
+        this.settings.maintenanceMode = setting.value === "true";
+      }
     }
   }
 
@@ -53,6 +58,8 @@ export class ServerSettingsService {
         return this.settings.requireTotpForExternalIdp;
       case ServerSettingKey.RequireAuthentication:
         return this.settings.requireAuthentication;
+      case ServerSettingKey.MaintenanceMode:
+        return this.settings.maintenanceMode;
     }
   }
 
@@ -91,6 +98,9 @@ export class ServerSettingsService {
     if (normalizedKey === ServerSettingKey.RequireAuthentication) {
       this.settings.requireAuthentication = value === "true";
     }
+    if (normalizedKey === ServerSettingKey.MaintenanceMode) {
+      this.settings.maintenanceMode = value === "true";
+    }
 
     return {
       key: setting.key,
@@ -111,6 +121,9 @@ export class ServerSettingsService {
     }
     if (key === ServerSettingKey.RequireAuthentication) {
       this.settings.requireAuthentication = defaultSettings.requireAuthentication;
+    }
+    if (key === ServerSettingKey.MaintenanceMode) {
+      this.settings.maintenanceMode = defaultSettings.maintenanceMode;
     }
   }
 }
