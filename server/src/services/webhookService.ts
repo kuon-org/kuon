@@ -1,6 +1,9 @@
 import { WebhookRepository } from "../repositories/webhookRepository.js";
 import { findWebhookEventDefinition, WebhookScope } from "../webhooks/events.js";
-import type { CreateWebhookInput } from "../webhooks/types.js";
+import type {
+  CreateWebhookInput,
+  UpdateWebhookInput,
+} from "../webhooks/types.js";
 
 const validateUrl = (value: string) => {
   let url: URL;
@@ -68,12 +71,25 @@ export class WebhookService {
   }
 
   async getById(id: string) {
-    return this.repo.findById(id);
+    return this.repo.findDetailById(id);
   }
 
   async create(input: CreateWebhookInput) {
     this.validateCreateInput(input);
     return this.repo.create(input);
+  }
+
+  async update(id: string, input: UpdateWebhookInput) {
+    this.validateCreateInput(input);
+    return this.repo.update(id, input);
+  }
+
+  async setActive(id: string, isActive: boolean) {
+    return this.repo.setActive(id, isActive);
+  }
+
+  async getDeliveries(id: string, limit?: number) {
+    return this.repo.findDeliveries(id, limit);
   }
 
   async delete(id: string) {
