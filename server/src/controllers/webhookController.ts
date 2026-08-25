@@ -37,12 +37,17 @@ export class WebhookController {
     try {
       if (!(await this.ensureAdmin(req, res))) return;
 
-      return res.status(200).json({
-        events: webhookEventDefinitions.map((event) => ({
+      const events = webhookEventDefinitions
+        .filter((event) => event.scopes.includes("system"))
+        .map((event) => ({
           ...event,
           variables: webhookVariablesByEvent[event.type] ?? [],
-        })),
-        presets: webhookPresets,
+        }));
+      const allowedEvents = new Set(events.map((event) => event.type));
+
+      return res.status(200).json({
+        events,
+        presets: webhookPresets.filter((preset) => allowedEvents.has(preset.event)),
       });
     } catch (error) {
       return res.status(500).json({
@@ -58,6 +63,7 @@ export class WebhookController {
 
       const payload = this.previewService.preview({
         payloadTemplate: req.body?.payloadTemplate,
+        eventType: req.body?.eventType,
       });
       return res.status(200).json({ payload });
     } catch (error) {
@@ -76,6 +82,7 @@ export class WebhookController {
         url: req.body?.url,
         headers: req.body?.headers,
         payloadTemplate: req.body?.payloadTemplate,
+        eventType: req.body?.eventType,
       });
       return res.status(200).json(result);
     } catch (error) {

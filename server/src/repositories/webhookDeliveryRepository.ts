@@ -22,7 +22,7 @@ export class WebhookDeliveryRepository {
     const rows = await prisma.webhooks.findMany({
       where: {
         is_active: true,
-        webhook_events: { some: { event_type: eventType } },
+        event_type: eventType,
         OR: [
           { scope: "system" },
           ...(ownerUserId

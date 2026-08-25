@@ -23,9 +23,7 @@ export class WebhookSelectionService {
     const rows = await prisma.webhooks.findMany({
       where: {
         is_active: true,
-        webhook_events: {
-          some: { event_type: WebhookEventType.ArticlePublished },
-        },
+        event_type: WebhookEventType.ArticlePublished,
         OR: [
           { scope: "system" },
           ...(allowUserWebhooks

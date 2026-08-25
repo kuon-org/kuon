@@ -3,7 +3,9 @@ import generateSummary from "../utils/generateSummary/index.js";
 import { asUUID } from "../utils/uuid/index.js";
 import { Marp } from "@marp-team/marp-core";
 import { webhookDispatcherService } from "./webhookDispatcherService.js";
+import { webhookEventContextService } from "./webhookEventContextService.js";
 import { WebhookEventType } from "../webhooks/events.js";
+import { buildWebhookArticleUrl, toWebhookExternalUrl } from "../webhooks/url.js";
 
 export class ArticlesService {
   constructor(private articlesRepo: ArticlesRepository) {}
@@ -85,10 +87,11 @@ export class ArticlesService {
     if (existing) {
       await this.articlesRepo.removeLike(articleId, userId);
       return { isLike: false, message: "いいねを解除しました" };
-    } else {
-      await this.articlesRepo.addLike(articleId, userId);
-      return { isLike: true, message: "いいねしました" };
     }
+
+    await this.articlesRepo.addLike(articleId, userId);
+    void this.dispatchArticleLiked(articleId, userId);
+    return { isLike: true, message: "いいねしました" };
   }
 
   async createArticle(userId: string, payload: any) {
@@ -143,11 +146,6 @@ export class ArticlesService {
   ) {
     try {
       const detail = await this.getArticle(articleId, userId);
-      const baseUrl = (process.env.APP_SITE_URL ?? process.env.BACKEND_URL ?? "")
-        .replace(/\/$/, "");
-      const articleUrl = baseUrl
-        ? `${baseUrl}/share/${articleId}`
-        : `/share/${articleId}`;
 
       await webhookDispatcherService.dispatchArticlePublished(
         {
@@ -159,19 +157,18 @@ export class ArticlesService {
             id: detail.id,
             title: detail.title ?? "",
             summary: detail.summary ?? null,
-            url: articleUrl,
+            url: buildWebhookArticleUrl(articleId),
           },
           author: {
             username: detail.users?.username ?? null,
             displayName: detail.users?.display_name ?? null,
-            avatarUrl: detail.users?.avatar_url ?? null,
+            avatarUrl: toWebhookExternalUrl(detail.users?.avatar_url),
           },
         },
         userId,
         selectedWebhookIds,
       );
     } catch (error) {
-      // Webhook送信失敗で記事投稿自体を失敗させない。
       console.error("Failed to dispatch article.published webhook", error);
     }
   }
@@ -208,7 +205,42 @@ export class ArticlesService {
       updateData.is_private = existing.is_private;
     }
 
-    return this.articlesRepo.updateArticles(articleId, updateData, tagIds);
+    const updated = await this.articlesRepo.updateArticles(articleId, updateData, tagIds);
+
+    if (
+      status === "public" &&
+      is_published === true &&
+      is_private !== true
+    ) {
+      void this.dispatchArticleUpdated(articleId);
+    }
+
+    return updated;
+  }
+
+  private async dispatchArticleUpdated(articleId: string) {
+    try {
+      const { context, recipientUserId } =
+        await webhookEventContextService.articleUpdated(articleId);
+      await webhookDispatcherService.dispatch(WebhookEventType.ArticleUpdated, context, {
+        recipientUserId,
+      });
+    } catch (error) {
+      console.error("Failed to dispatch article.updated webhook", error);
+    }
+  }
+
+  private async dispatchArticleLiked(articleId: string, userId: string) {
+    try {
+      const { context, recipientUserId } =
+        await webhookEventContextService.articleLiked(articleId, userId);
+      if (!recipientUserId || recipientUserId === userId) return;
+      await webhookDispatcherService.dispatch(WebhookEventType.ArticleLiked, context, {
+        recipientUserId,
+      });
+    } catch (error) {
+      console.error("Failed to dispatch article.liked webhook", error);
+    }
   }
 
   async rollbackDraft(articleId: string, userId: string) {

@@ -14,6 +14,7 @@ import {
   securityRoute,
   uploadedImagesRoute,
   user2faSettingRoute,
+  userWebhooksRoute,
 } from "../../routes";
 export const UserSettings = () => {
   const navigate = useNavigate();
@@ -45,40 +46,25 @@ export const UserSettings = () => {
           設定
         </Typography>
         <List>
-          <ListItemButton
-            onClick={() => navigate({ to: accountSettingRoute.to })}
-            selected={isSelected(accountSettingRoute.to)}
-          >
+          <ListItemButton onClick={() => navigate({ to: accountSettingRoute.to })} selected={isSelected(accountSettingRoute.to)}>
             <ListItemText>アカウント</ListItemText>
           </ListItemButton>
-          <ListItemButton
-            onClick={() => navigate({ to: publicProfileRoute.to })}
-            selected={isSelected(publicProfileRoute.to)}
-          >
+          <ListItemButton onClick={() => navigate({ to: publicProfileRoute.to })} selected={isSelected(publicProfileRoute.to)}>
             <ListItemText>公開用プロフィール</ListItemText>
           </ListItemButton>
-          <ListItemButton
-            onClick={() => navigate({ to: securityRoute.to })}
-            selected={isSelected(securityRoute.to)}
-          >
+          <ListItemButton onClick={() => navigate({ to: securityRoute.to })} selected={isSelected(securityRoute.to)}>
             <ListItemText>セキュリティ</ListItemText>
           </ListItemButton>
-          <ListItemButton
-            onClick={() => navigate({ to: user2faSettingRoute.to })}
-            selected={isSelected(user2faSettingRoute.to)}
-          >
+          <ListItemButton onClick={() => navigate({ to: user2faSettingRoute.to })} selected={isSelected(user2faSettingRoute.to)}>
             <ListItemText>二段階認証</ListItemText>
           </ListItemButton>
-          <ListItemButton
-            onClick={() => navigate({ to: apiKeySettingsRoute.to })}
-            selected={isSelected(apiKeySettingsRoute.to)}
-          >
+          <ListItemButton onClick={() => navigate({ to: apiKeySettingsRoute.to })} selected={isSelected(apiKeySettingsRoute.to)}>
             <ListItemText>APIキー設定</ListItemText>
           </ListItemButton>
-          <ListItemButton
-            onClick={() => navigate({ to: uploadedImagesRoute.to })}
-            selected={isSelected(uploadedImagesRoute.to)}
-          >
+          <ListItemButton onClick={() => navigate({ to: userWebhooksRoute.to })} selected={isSelected(userWebhooksRoute.to)}>
+            <ListItemText>Webhooks</ListItemText>
+          </ListItemButton>
+          <ListItemButton onClick={() => navigate({ to: uploadedImagesRoute.to })} selected={isSelected(uploadedImagesRoute.to)}>
             <ListItemText>アップロードしたファイル</ListItemText>
           </ListItemButton>
         </List>
