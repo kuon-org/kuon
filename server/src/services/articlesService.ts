@@ -92,8 +92,16 @@ export class ArticlesService {
   }
 
   async createArticle(userId: string, payload: any) {
-    const { tagIds, raw_content, status, is_published, is_private, summary } =
-      payload;
+    const {
+      tagIds,
+      raw_content,
+      status,
+      is_published,
+      is_private,
+      summary,
+      notify_webhooks = false,
+      webhook_ids = [],
+    } = payload;
     const isPublicMode = status === "public";
 
     const article = await this.articlesRepo.createArticles(
@@ -111,14 +119,28 @@ export class ArticlesService {
       tagIds,
     );
 
-    if (isPublicMode && is_published === true && is_private !== true) {
-      void this.dispatchArticlePublished(article.id, userId);
+    const selectedWebhookIds = Array.isArray(webhook_ids)
+      ? webhook_ids.filter((id): id is string => typeof id === "string")
+      : [];
+
+    if (
+      notify_webhooks === true &&
+      selectedWebhookIds.length > 0 &&
+      isPublicMode &&
+      is_published === true &&
+      is_private !== true
+    ) {
+      void this.dispatchArticlePublished(article.id, userId, selectedWebhookIds);
     }
 
     return article;
   }
 
-  private async dispatchArticlePublished(articleId: string, userId: string) {
+  private async dispatchArticlePublished(
+    articleId: string,
+    userId: string,
+    selectedWebhookIds: string[],
+  ) {
     try {
       const detail = await this.getArticle(articleId, userId);
       const baseUrl = (process.env.APP_SITE_URL ?? process.env.BACKEND_URL ?? "")
@@ -146,6 +168,7 @@ export class ArticlesService {
           },
         },
         userId,
+        selectedWebhookIds,
       );
     } catch (error) {
       // Webhook送信失敗で記事投稿自体を失敗させない。
@@ -164,6 +187,8 @@ export class ArticlesService {
       status,
       is_published,
       is_private,
+      notify_webhooks: _notifyWebhooks,
+      webhook_ids: _webhookIds,
       ...otherData
     } = payload;
 
