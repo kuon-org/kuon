@@ -18,6 +18,8 @@ type CreateHttpClientConfig = {
   responseObserver?: (response: Response) => void;
 };
 
+export const MAINTENANCE_MODE_EVENT = "kuon:maintenance-mode-detected";
+
 export class FetchHttpClient implements HttpClient {
   private baseURL: string;
   private baseHeaders?: Record<string, string>;
@@ -135,10 +137,20 @@ export class FetchHttpClient implements HttpClient {
         }
       }
 
+      const errorData = await parseResponse<any>(res, requestConfig?.responseType);
+
+      if (
+        res.status === 503 &&
+        errorData?.code === "MAINTENANCE_MODE" &&
+        typeof window !== "undefined"
+      ) {
+        window.dispatchEvent(new Event(MAINTENANCE_MODE_EVENT));
+      }
+
       const error: HttpError = {
         response: {
           status: res.status,
-          data: await parseResponse<any>(res, requestConfig?.responseType),
+          data: errorData,
         },
       };
 
