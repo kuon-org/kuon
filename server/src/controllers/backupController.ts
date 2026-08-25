@@ -15,6 +15,11 @@ export class BackupController {
       return res.status(401).json({ message: "未ログインです" });
     }
 
+    // Backups contain sensitive instance data and must never be exportable via API keys.
+    if (req.user.sessionId === "apikey") {
+      return res.status(403).json({ message: "APIキーではバックアップを作成できません" });
+    }
+
     const isAdmin = await this.adminService.isAdmin(req.user.userId);
     if (!isAdmin) {
       return res.status(403).json({ message: "権限がありません" });
