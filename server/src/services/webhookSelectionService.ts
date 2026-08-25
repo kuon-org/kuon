@@ -20,24 +20,34 @@ export class WebhookSelectionService {
       ServerSettingKey.AllowUserWebhooks,
     );
 
-    return prisma.$queryRawUnsafe<SelectableWebhook[]>(
-      `
-        SELECT DISTINCT w.id, w.name, w.provider, w.scope
-        FROM knowledge.webhooks w
-        INNER JOIN knowledge.webhook_events e
-          ON e.webhook_id = w.id
-        WHERE w.is_active = TRUE
-          AND e.event_type = $1
-          AND (
-            w.scope = 'system'
-            OR ($3 = TRUE AND w.scope = 'user' AND w.owner_user_id = $2::uuid)
-          )
-        ORDER BY w.name ASC
-      `,
-      WebhookEventType.ArticlePublished,
-      userId,
-      allowUserWebhooks,
-    );
+    const rows = await prisma.webhooks.findMany({
+      where: {
+        is_active: true,
+        webhook_events: {
+          some: { event_type: WebhookEventType.ArticlePublished },
+        },
+        OR: [
+          { scope: "system" },
+          ...(allowUserWebhooks
+            ? [{ scope: "user", owner_user_id: userId }]
+            : []),
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        provider: true,
+        scope: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      provider: row.provider as SelectableWebhook["provider"],
+      scope: row.scope as SelectableWebhook["scope"],
+    }));
   }
 }
 
