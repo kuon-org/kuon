@@ -5,7 +5,9 @@ export type WebhookVariable = { key: string; label: string; group: string };
 export type WebhookEventMetadata = {
   type: string;
   displayName: string;
+  category?: "global" | "owner" | "recipient";
   scopes: ("system" | "user")[];
+  userTarget?: string;
   variables: WebhookVariable[];
 };
 export type WebhookPreset = {
@@ -32,6 +34,7 @@ export type WebhookInput = {
   headers?: WebhookHeader[];
   isActive?: boolean;
 };
+export type UserWebhookInput = Omit<WebhookInput, "scope" | "ownerUserId">;
 export type WebhookSummary = {
   id: string;
   name: string;
@@ -60,66 +63,61 @@ export type WebhookDelivery = {
   createdAt: string;
 };
 
-export const useWebhookAdmin = () => {
+type WebhookApiOptions = {
+  basePath: string;
+  queryKey: string;
+  userScoped?: boolean;
+};
+
+const useWebhookApi = ({ basePath, queryKey, userScoped = false }: WebhookApiOptions) => {
   const queryClient = useQueryClient();
   const metadata = useQuery<WebhookMetadata>({
-    queryKey: ["webhookMetadata"],
-    queryFn: async () => (await apiClient.get("/admin/webhooks/metadata")).data,
+    queryKey: [queryKey, "metadata"],
+    queryFn: async () => (await apiClient.get(`${basePath}/metadata`)).data,
   });
   const webhooks = useQuery<WebhookSummary[]>({
-    queryKey: ["adminWebhooks"],
-    queryFn: async () => (await apiClient.get("/admin/webhooks")).data,
+    queryKey: [queryKey],
+    queryFn: async () => (await apiClient.get(basePath)).data,
   });
   const save = useMutation({
-    mutationFn: async ({ id, input }: { id?: string; input: WebhookInput }) => {
-      if (!id) {
-        return (await apiClient.post("/admin/webhooks", input)).data;
-      }
-
-      const current = (await apiClient.get(`/admin/webhooks/${id}`)).data as WebhookDetail;
-      return (
-        await apiClient.put(`/admin/webhooks/${id}`, {
-          ...input,
-          isActive: current.isActive,
-        })
-      ).data;
+    mutationFn: async ({ id, input }: { id?: string; input: WebhookInput | UserWebhookInput }) => {
+      if (!id) return (await apiClient.post(basePath, input)).data;
+      const current = (await apiClient.get(`${basePath}/${id}`)).data as WebhookDetail;
+      return (await apiClient.put(`${basePath}/${id}`, { ...input, isActive: current.isActive })).data;
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["adminWebhooks"] });
-    },
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: [queryKey] }),
   });
   const remove = useMutation({
-    mutationFn: async (id: string) => apiClient.delete(`/admin/webhooks/${id}`),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["adminWebhooks"] });
-    },
+    mutationFn: async (id: string) => apiClient.delete(`${basePath}/${id}`),
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: [queryKey] }),
   });
   const toggleActive = useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) =>
-      (await apiClient.patch(`/admin/webhooks/${id}/active`, { isActive })).data,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["adminWebhooks"] });
-    },
+      (await apiClient.patch(`${basePath}/${id}/active`, { isActive })).data,
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: [queryKey] }),
   });
   const preview = useMutation({
-    mutationFn: async (payloadTemplate: unknown) =>
-      (await apiClient.post("/admin/webhooks/preview", { payloadTemplate })).data,
+    mutationFn: async ({ payloadTemplate, eventType }: { payloadTemplate: unknown; eventType?: string }) =>
+      (await apiClient.post(`${basePath}/preview`, { payloadTemplate, eventType })).data,
   });
   const testSend = useMutation({
-    mutationFn: async (input: Pick<WebhookInput, "url" | "headers" | "payloadTemplate">) =>
-      (await apiClient.post("/admin/webhooks/test", input)).data,
+    mutationFn: async (input: Pick<WebhookInput, "url" | "headers" | "payloadTemplate"> & { eventType?: string }) =>
+      (await apiClient.post(`${basePath}/test`, input)).data,
   });
 
   const getWebhook = async (id: string) =>
-    (await apiClient.get(`/admin/webhooks/${id}`)).data as WebhookDetail;
+    (await apiClient.get(`${basePath}/${id}`)).data as WebhookDetail;
   const getDeliveries = async (id: string) =>
-    (await apiClient.get(`/admin/webhooks/${id}/deliveries`)).data as WebhookDelivery[];
+    (await apiClient.get(`${basePath}/${id}/deliveries`)).data as WebhookDelivery[];
 
   return {
+    userScoped,
     metadata: metadata.data,
     metadataLoading: metadata.isLoading,
+    metadataError: metadata.error,
     webhooks: webhooks.data ?? [],
     webhooksLoading: webhooks.isLoading,
+    webhooksError: webhooks.error,
     getWebhook,
     getDeliveries,
     saveWebhook: save.mutateAsync,
@@ -134,3 +132,13 @@ export const useWebhookAdmin = () => {
     testPending: testSend.isPending,
   };
 };
+
+export const useWebhookAdmin = () =>
+  useWebhookApi({ basePath: "/admin/webhooks", queryKey: "adminWebhooks" });
+
+export const useWebhookUser = () =>
+  useWebhookApi({
+    basePath: "/users/settings/webhooks",
+    queryKey: "userWebhooks",
+    userScoped: true,
+  });
