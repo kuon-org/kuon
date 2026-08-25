@@ -141,7 +141,7 @@ export class FetchHttpClient implements HttpClient {
 
       if (
         res.status === 503 &&
-        errorData?.code === "MAINTENANCE_MODE" &&
+        ["MAINTENANCE_MODE", "RUNTIME_MAINTENANCE"].includes(errorData?.code) &&
         typeof window !== "undefined"
       ) {
         window.dispatchEvent(new Event(MAINTENANCE_MODE_EVENT));
