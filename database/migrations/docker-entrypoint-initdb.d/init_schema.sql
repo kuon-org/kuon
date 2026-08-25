@@ -309,7 +309,7 @@ CREATE TABLE IF NOT EXISTS stock_list_tags (
 COMMENT ON TABLE stock_list_tags IS 'ストックリストとタグの紐づけ';
 COMMENT ON COLUMN stock_list_tags.stock_list_id IS 'ストックリストID';
 COMMENT ON COLUMN stock_list_tags.tag_id IS 'タグID';
-COMMENT ON COLUMN stock_list_tags.attached_at IS '紐づけ日時';
+COMMENT ON COLUMN stock_list_tags.attached_at IS '紐付け日時';
 
 -- stock_list_likes
 CREATE TABLE IF NOT EXISTS stock_list_likes (
@@ -559,32 +559,6 @@ COMMENT ON COLUMN knowledge.user_avatars.service_name IS '取得元サービス�
 COMMENT ON COLUMN knowledge.user_avatars.avatar_url IS 'サーバー内のローカル保存パス';
 COMMENT ON COLUMN knowledge.user_avatars.source_url IS '外部サービスのオリジナルURL';
 COMMENT ON COLUMN knowledge.user_avatars.is_selected IS '現在選択中フラグ';
-
--- webhook_settings
-CREATE TABLE IF NOT EXISTS knowledge.webhook_settings (
-    id uuid NOT NULL DEFAULT uuidv7(),
-    name VARCHAR(50) NOT NULL,                         -- 管理名（例: Discord通知）
-    provider VARCHAR(30) NOT NULL,                     -- Webhook種別 (discord, slack, teams, custom)
-    url TEXT NOT NULL,                                 -- Webhook URL
-    headers JSONB DEFAULT '{}'::jsonb,                 -- 任意の追加HTTPヘッダー
-    payload_template JSONB DEFAULT '{}'::jsonb,        -- カスタムWebhook用テンプレート
-    is_active BOOLEAN DEFAULT false,                   -- 有効フラグ
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    CONSTRAINT webhook_settings_pkey PRIMARY KEY (id),
-    CONSTRAINT webhook_settings_name_unique UNIQUE (name)
-);
-
-COMMENT ON TABLE knowledge.webhook_settings IS 'Webhook通知設定';
-COMMENT ON COLUMN knowledge.webhook_settings.id IS 'Webhook設定ID';
-COMMENT ON COLUMN knowledge.webhook_settings.name IS '管理名';
-COMMENT ON COLUMN knowledge.webhook_settings.provider IS 'Webhook種別 (discord, slack, teams, custom)';
-COMMENT ON COLUMN knowledge.webhook_settings.url IS 'Webhook送信先URL';
-COMMENT ON COLUMN knowledge.webhook_settings.headers IS '追加HTTPヘッダー（カスタムWebhook用）';
-COMMENT ON COLUMN knowledge.webhook_settings.payload_template IS '送信ペイロードテンプレート';
-COMMENT ON COLUMN knowledge.webhook_settings.is_active IS '有効化フラグ';
-COMMENT ON COLUMN knowledge.webhook_settings.created_at IS '作成日時';
-COMMENT ON COLUMN knowledge.webhook_settings.updated_at IS '更新日時';
 
 -- tag_follows
 CREATE TABLE IF NOT EXISTS knowledge.tag_follows (
