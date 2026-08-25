@@ -12,6 +12,7 @@ export type WebhookEventMetadata = {
 };
 export type WebhookPreset = {
   id: string;
+  event: string;
   provider: "generic" | "discord" | "slack" | "teams";
   name: string;
   description: string;
@@ -30,7 +31,7 @@ export type WebhookInput = {
   url: string;
   httpMethod?: "POST";
   payloadTemplate: unknown;
-  events: string[];
+  event: string;
   headers?: WebhookHeader[];
   isActive?: boolean;
 };
@@ -44,12 +45,12 @@ export type WebhookSummary = {
   url: string;
   httpMethod: string;
   payloadTemplate: unknown;
+  event: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 };
 export type WebhookDetail = WebhookSummary & {
-  events: string[];
   headers: WebhookHeader[];
 };
 export type WebhookDelivery = {
