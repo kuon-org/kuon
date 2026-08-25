@@ -20,6 +20,10 @@ export type CreateWebhookInput = {
   headers?: WebhookHeaderInput[];
 };
 
+export type UpdateWebhookInput = CreateWebhookInput & {
+  isActive: boolean;
+};
+
 export type WebhookRecord = {
   id: string;
   name: string;
@@ -32,4 +36,20 @@ export type WebhookRecord = {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type WebhookDetail = WebhookRecord & {
+  events: WebhookEventType[];
+  headers: WebhookHeaderInput[];
+};
+
+export type WebhookDeliveryRecord = {
+  id: string;
+  webhookId: string;
+  eventType: string;
+  success: boolean;
+  statusCode: number | null;
+  durationMs: number | null;
+  errorMessage: string | null;
+  createdAt: Date;
 };
