@@ -7,6 +7,20 @@ ENV NODE_ENV=production
 
 RUN corepack enable && corepack prepare pnpm@11.21.0 --activate
 
+# Backup export uses pg_dump against PostgreSQL 18.
+# Install the matching client from the official PostgreSQL apt repository.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+      | gpg --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg \
+    && . /etc/os-release \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+      > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-18 \
+    && rm -rf /var/lib/apt/lists/*
+
 # pnpm 11 keeps build-script approvals in workspace/project configuration.
 # This image installs the server as a standalone production project.
 RUN printf '%s\n' \
