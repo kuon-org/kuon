@@ -19,6 +19,11 @@ const UserManagement = lazy(() =>
     default: mod.UserManagement,
   })),
 );
+const BackupRestore = lazy(() =>
+  import("../pages/Admin/BackupRestore").then((mod) => ({
+    default: mod.BackupRestore,
+  })),
+);
 
 const LoadingFallback = () => <Loading />;
 
@@ -66,6 +71,19 @@ export const adminServerSettingsRoute = createRoute({
   component: () => (
     <Suspense fallback={<LoadingFallback />}>
       <ServerSettings />
+    </Suspense>
+  ),
+});
+
+/**
+ * Backup & Restore
+ */
+export const adminBackupRestoreRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "backup-restore",
+  component: () => (
+    <Suspense fallback={<LoadingFallback />}>
+      <BackupRestore />
     </Suspense>
   ),
 });
