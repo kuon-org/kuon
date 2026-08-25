@@ -3,7 +3,7 @@ import { WebhookEventType } from "./events.js";
 export type WebhookVariableDefinition = {
   key: string;
   label: string;
-  group: "Event" | "Article" | "Author" | "Actor" | "Comment" | "Mention";
+  group: "Event" | "Article" | "Author" | "Actor" | "Comment";
 };
 
 const eventVariables = [
@@ -56,22 +56,9 @@ export const articleLikedVariables: readonly WebhookVariableDefinition[] = [
   ...actorVariables,
 ];
 
-export const mentionCreatedVariables: readonly WebhookVariableDefinition[] = [
-  ...eventVariables,
-  ...articleVariables,
-  ...actorVariables,
-  { key: "mentioned.username", label: "Mentioned username", group: "Mention" },
-  {
-    key: "mentioned.displayName",
-    label: "Mentioned display name",
-    group: "Mention",
-  },
-];
-
 export const webhookVariablesByEvent = {
   [WebhookEventType.ArticlePublished]: articlePublishedVariables,
   [WebhookEventType.ArticleUpdated]: articleUpdatedVariables,
   [WebhookEventType.CommentCreated]: commentCreatedVariables,
   [WebhookEventType.ArticleLiked]: articleLikedVariables,
-  [WebhookEventType.MentionCreated]: mentionCreatedVariables,
 } as const;
