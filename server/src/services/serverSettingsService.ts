@@ -12,6 +12,8 @@ export type ServerSettings = {
   requireTotpForExternalIdp: boolean;
   requireAuthentication: boolean;
   maintenanceMode: boolean;
+  webhooksEnabled: boolean;
+  allowUserWebhooks: boolean;
 };
 
 const defaultSettings: ServerSettings = {
@@ -19,6 +21,8 @@ const defaultSettings: ServerSettings = {
   requireTotpForExternalIdp: false,
   requireAuthentication: false,
   maintenanceMode: false,
+  webhooksEnabled: false,
+  allowUserWebhooks: false,
 };
 
 export class ServerSettingsService {
@@ -31,18 +35,7 @@ export class ServerSettingsService {
     this.settings = { ...defaultSettings };
 
     for (const setting of settings) {
-      if (setting.key === ServerSettingKey.AllowApiKey) {
-        this.settings.allowApiKey = setting.value === "true";
-      }
-      if (setting.key === ServerSettingKey.RequireTotpForExternalIdp) {
-        this.settings.requireTotpForExternalIdp = setting.value === "true";
-      }
-      if (setting.key === ServerSettingKey.RequireAuthentication) {
-        this.settings.requireAuthentication = setting.value === "true";
-      }
-      if (setting.key === ServerSettingKey.MaintenanceMode) {
-        this.settings.maintenanceMode = setting.value === "true";
-      }
+      this.applySetting(setting.key, setting.value);
     }
   }
 
@@ -60,6 +53,10 @@ export class ServerSettingsService {
         return this.settings.requireAuthentication;
       case ServerSettingKey.MaintenanceMode:
         return this.settings.maintenanceMode;
+      case ServerSettingKey.WebhooksEnabled:
+        return this.settings.webhooksEnabled;
+      case ServerSettingKey.AllowUserWebhooks:
+        return this.settings.allowUserWebhooks;
     }
   }
 
@@ -88,19 +85,7 @@ export class ServerSettingsService {
 
     const normalizedKey = key.trim();
     const setting = await this.repo.upsert(normalizedKey, value);
-
-    if (normalizedKey === ServerSettingKey.AllowApiKey) {
-      this.settings.allowApiKey = value === "true";
-    }
-    if (normalizedKey === ServerSettingKey.RequireTotpForExternalIdp) {
-      this.settings.requireTotpForExternalIdp = value === "true";
-    }
-    if (normalizedKey === ServerSettingKey.RequireAuthentication) {
-      this.settings.requireAuthentication = value === "true";
-    }
-    if (normalizedKey === ServerSettingKey.MaintenanceMode) {
-      this.settings.maintenanceMode = value === "true";
-    }
+    this.applySetting(normalizedKey, value);
 
     return {
       key: setting.key,
@@ -111,19 +96,55 @@ export class ServerSettingsService {
 
   async delete(key: string): Promise<void> {
     await this.repo.delete(key);
+    this.resetSetting(key);
+  }
 
-    if (key === ServerSettingKey.AllowApiKey) {
-      this.settings.allowApiKey = defaultSettings.allowApiKey;
+  private applySetting(key: string, value: string): void {
+    const enabled = value === "true";
+
+    switch (key) {
+      case ServerSettingKey.AllowApiKey:
+        this.settings.allowApiKey = enabled;
+        break;
+      case ServerSettingKey.RequireTotpForExternalIdp:
+        this.settings.requireTotpForExternalIdp = enabled;
+        break;
+      case ServerSettingKey.RequireAuthentication:
+        this.settings.requireAuthentication = enabled;
+        break;
+      case ServerSettingKey.MaintenanceMode:
+        this.settings.maintenanceMode = enabled;
+        break;
+      case ServerSettingKey.WebhooksEnabled:
+        this.settings.webhooksEnabled = enabled;
+        break;
+      case ServerSettingKey.AllowUserWebhooks:
+        this.settings.allowUserWebhooks = enabled;
+        break;
     }
-    if (key === ServerSettingKey.RequireTotpForExternalIdp) {
-      this.settings.requireTotpForExternalIdp =
-        defaultSettings.requireTotpForExternalIdp;
-    }
-    if (key === ServerSettingKey.RequireAuthentication) {
-      this.settings.requireAuthentication = defaultSettings.requireAuthentication;
-    }
-    if (key === ServerSettingKey.MaintenanceMode) {
-      this.settings.maintenanceMode = defaultSettings.maintenanceMode;
+  }
+
+  private resetSetting(key: string): void {
+    switch (key) {
+      case ServerSettingKey.AllowApiKey:
+        this.settings.allowApiKey = defaultSettings.allowApiKey;
+        break;
+      case ServerSettingKey.RequireTotpForExternalIdp:
+        this.settings.requireTotpForExternalIdp =
+          defaultSettings.requireTotpForExternalIdp;
+        break;
+      case ServerSettingKey.RequireAuthentication:
+        this.settings.requireAuthentication = defaultSettings.requireAuthentication;
+        break;
+      case ServerSettingKey.MaintenanceMode:
+        this.settings.maintenanceMode = defaultSettings.maintenanceMode;
+        break;
+      case ServerSettingKey.WebhooksEnabled:
+        this.settings.webhooksEnabled = defaultSettings.webhooksEnabled;
+        break;
+      case ServerSettingKey.AllowUserWebhooks:
+        this.settings.allowUserWebhooks = defaultSettings.allowUserWebhooks;
+        break;
     }
   }
 }
