@@ -62,7 +62,7 @@ export const webhookEventDefinitions: readonly WebhookEventDefinition[] = [
     type: WebhookEventType.CommentCreated,
     displayName: "Comment created",
     category: WebhookEventCategory.Owner,
-    scopes: [WebhookScope.System, WebhookScope.User],
+    scopes: [WebhookScope.User],
     userTarget: WebhookUserTarget.ArticleOwner,
   },
   {
