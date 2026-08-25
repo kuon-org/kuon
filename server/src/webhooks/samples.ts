@@ -55,18 +55,6 @@ export const webhookSampleContexts: WebhookEventContextMap = {
     article: sampleArticle,
     actor: sampleActor,
   },
-  [WebhookEventType.MentionCreated]: {
-    event: {
-      type: WebhookEventType.MentionCreated,
-      createdAt: "2026-08-25T00:00:00.000Z",
-    },
-    article: sampleArticle,
-    actor: sampleActor,
-    mentioned: {
-      username: "mentioned-user",
-      displayName: "Mentioned User",
-    },
-  },
 };
 
 export const getWebhookSampleContext = <T extends WebhookEventTypeValue>(
