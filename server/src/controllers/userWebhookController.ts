@@ -34,7 +34,11 @@ export class UserWebhookController {
           ...event,
           variables: webhookVariablesByEvent[event.type] ?? [],
         }));
-      return res.status(200).json({ events, presets: webhookPresets });
+      const allowedEvents = new Set(events.map((event) => event.type));
+      return res.status(200).json({
+        events,
+        presets: webhookPresets.filter((preset) => allowedEvents.has(preset.event)),
+      });
     } catch (error) {
       return res.status(403).json({ message: error instanceof Error ? error.message : "利用できません" });
     }
