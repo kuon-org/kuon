@@ -64,6 +64,18 @@ const getPgRestoreCommand = () => process.env.PG_RESTORE_PATH?.trim() || "pg_res
 
 const parseMajor = (value: string) => value.match(/\b(\d+)(?:\.\d+)?/)?.[1] ?? null;
 
+const isBackupManifest = (value: unknown): value is BackupManifest => {
+  if (!value || typeof value !== "object") return false;
+  const manifest = value as Record<string, unknown>;
+  return (
+    typeof manifest.formatVersion === "number" &&
+    typeof manifest.createdAt === "string" &&
+    typeof manifest.kuonVersion === "string" &&
+    typeof manifest.postgresVersion === "string" &&
+    typeof manifest.pgDumpVersion === "string"
+  );
+};
+
 const validateEntryName = (entry: string) => {
   const normalized = entry.replace(/\\/g, "/");
   if (!normalized || normalized.startsWith("/") || /^[A-Za-z]:\//.test(normalized)) {
@@ -102,6 +114,7 @@ export class RestoreService {
     const token = crypto.randomUUID();
     const stagedUploads = path.join(uploadsParent, `.uploads-restore-${token}`);
     const previousUploads = path.join(uploadsParent, `.uploads-previous-${token}`);
+    let originalUploadsMoved = false;
     let uploadsSwapped = false;
     let databaseRestoreStarted = false;
 
@@ -130,7 +143,11 @@ export class RestoreService {
         access(restoredUploadsPath),
       ]);
 
-      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as BackupManifest;
+      const rawManifest: unknown = JSON.parse(await readFile(manifestPath, "utf8"));
+      if (!isBackupManifest(rawManifest)) {
+        throw new Error("Invalid backup manifest structure");
+      }
+      const manifest = rawManifest;
       if (manifest.formatVersion !== SUPPORTED_FORMAT_VERSION) {
         throw new Error(`Unsupported backup formatVersion: ${manifest.formatVersion}`);
       }
@@ -138,12 +155,17 @@ export class RestoreService {
         throw new Error("Invalid backup manifest: createdAt");
       }
 
+      // Ensure the custom-format dump is readable before changing the current instance.
+      await runCommand(getPgRestoreCommand(), ["--list", databaseDumpPath]);
+
       const [serverVersion] = await prisma.$queryRaw<Array<{ version: string }>>`
         SELECT current_setting('server_version') AS version
       `;
       const backupPgMajor = parseMajor(manifest.postgresVersion);
       const currentPgMajor = parseMajor(serverVersion?.version ?? "");
-      if (backupPgMajor && currentPgMajor && backupPgMajor !== currentPgMajor) {
+      if (!backupPgMajor) throw new Error("Invalid backup PostgreSQL version");
+      if (!currentPgMajor) throw new Error("Unable to determine current PostgreSQL version");
+      if (backupPgMajor !== currentPgMajor) {
         throw new Error(
           `PostgreSQL major version mismatch: backup=${backupPgMajor}, current=${currentPgMajor}`,
         );
@@ -183,6 +205,7 @@ export class RestoreService {
       await rm(previousUploads, { recursive: true, force: true });
       try {
         await rename(this.uploadsPath, previousUploads);
+        originalUploadsMoved = true;
       } catch (error: any) {
         if (error?.code !== "ENOENT") throw error;
       }
@@ -195,6 +218,7 @@ export class RestoreService {
       await serverSettingsService.set(ServerSettingKey.MaintenanceMode, "true");
 
       await rm(previousUploads, { recursive: true, force: true });
+      originalUploadsMoved = false;
 
       return {
         success: true,
@@ -202,10 +226,25 @@ export class RestoreService {
         message: "Restore completed. All sessions were invalidated and maintenance mode remains enabled.",
       };
     } catch (error) {
-      // Restore uploads first if they were already switched.
       if (uploadsSwapped) {
         await rm(this.uploadsPath, { recursive: true, force: true }).catch(() => {});
-        await rename(previousUploads, this.uploadsPath).catch(() => {});
+        if (originalUploadsMoved) {
+          await rename(previousUploads, this.uploadsPath)
+            .then(() => {
+              originalUploadsMoved = false;
+            })
+            .catch((rollbackError) => {
+              console.error("❌ Uploads rollback failed; previous uploads preserved at:", previousUploads, rollbackError);
+            });
+        }
+      } else if (originalUploadsMoved) {
+        await rename(previousUploads, this.uploadsPath)
+          .then(() => {
+            originalUploadsMoved = false;
+          })
+          .catch((rollbackError) => {
+            console.error("❌ Uploads rollback failed; previous uploads preserved at:", previousUploads, rollbackError);
+          });
       }
 
       // Best-effort DB rollback using the snapshot made immediately before restore.
@@ -230,7 +269,10 @@ export class RestoreService {
     } finally {
       runtimeMaintenanceService.unlock();
       await rm(stagedUploads, { recursive: true, force: true }).catch(() => {});
-      await rm(previousUploads, { recursive: true, force: true }).catch(() => {});
+      // Do not delete previousUploads here: if rollback rename failed it is the recovery copy.
+      if (!originalUploadsMoved) {
+        await rm(previousUploads, { recursive: true, force: true }).catch(() => {});
+      }
       await rm(workDir, { recursive: true, force: true }).catch(() => {});
     }
   }
