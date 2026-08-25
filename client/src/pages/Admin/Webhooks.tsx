@@ -1,11 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Add,
-  Delete,
-  Edit,
-  HelpOutline,
-  Refresh,
-} from "@mui/icons-material";
+import { Add, Delete, Edit, HelpOutline, Refresh } from "@mui/icons-material";
 import {
   Alert,
   Box,
@@ -81,7 +75,7 @@ export const Webhooks = () => {
   const [name, setName] = useState("Article published");
   const [provider, setProvider] = useState<WebhookInput["provider"]>("generic");
   const [url, setUrl] = useState("");
-  const [events, setEvents] = useState<string[]>(["article.published"]);
+  const [event, setEvent] = useState("article.published");
   const [headers, setHeaders] = useState<WebhookHeader[]>([]);
   const [payload, setPayload] = useState<unknown>(defaultPayload);
   const [jsonText, setJsonText] = useState(JSON.stringify(defaultPayload, null, 2));
@@ -93,11 +87,10 @@ export const Webhooks = () => {
 
   const webhooksEnabled = settings?.find((s) => s.key === "webhooks_enabled")?.value === "true";
   const allowUserWebhooks = settings?.find((s) => s.key === "allow_user_webhooks")?.value === "true";
-  const selectedEvent = events[0];
 
   const variables = useMemo(
-    () => metadata?.events.find((event) => event.type === selectedEvent)?.variables ?? [],
-    [metadata, selectedEvent],
+    () => metadata?.events.find((item) => item.type === event)?.variables ?? [],
+    [metadata, event],
   );
 
   const syncPayload = (value: unknown) => {
@@ -109,8 +102,7 @@ export const Webhooks = () => {
   const applyJson = (text: string) => {
     setJsonText(text);
     try {
-      const parsed = JSON.parse(text);
-      setPayload(parsed);
+      setPayload(JSON.parse(text));
       setJsonError(undefined);
     } catch (error) {
       setJsonError(error instanceof Error ? error.message : "Invalid JSON");
@@ -122,7 +114,7 @@ export const Webhooks = () => {
     setName("Article published");
     setProvider("generic");
     setUrl("");
-    setEvents(["article.published"]);
+    setEvent(metadata?.events[0]?.type ?? "article.published");
     setHeaders([]);
     syncPayload(defaultPayload);
     setPreview(undefined);
@@ -137,7 +129,7 @@ export const Webhooks = () => {
     setName(detail.name);
     setProvider(detail.provider);
     setUrl(detail.url);
-    setEvents(detail.events);
+    setEvent(detail.events[0] ?? metadata?.events[0]?.type ?? "article.published");
     setHeaders(detail.headers ?? []);
     syncPayload(detail.payloadTemplate);
     setPreview(undefined);
@@ -159,7 +151,7 @@ export const Webhooks = () => {
     url,
     httpMethod: "POST",
     payloadTemplate: payload,
-    events,
+    events: [event],
     headers,
     isActive: true,
   });
@@ -214,7 +206,7 @@ export const Webhooks = () => {
                         <Chip size="small" label={providerLabel[webhook.provider]} />
                         <Chip size="small" variant="outlined" label={webhook.isActive ? "Active" : "Disabled"} />
                       </Stack>
-                      <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-all", mt: .5 }}>{webhook.url}</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-all", mt: 0.5 }}>{webhook.url}</Typography>
                     </Box>
                     <Stack direction="row" alignItems="center">
                       <Switch checked={webhook.isActive} onChange={(_, checked) => setWebhookActive({ id: webhook.id, isActive: checked })} />
@@ -253,14 +245,12 @@ export const Webhooks = () => {
         </Stack>
 
         <Paper variant="outlined" sx={{ p: 2 }}>
-          <Typography variant="subtitle2" mb={1}>Events</Typography>
-          {metadata?.events.map((event) => (
-            <FormControlLabel
-              key={event.type}
-              control={<Checkbox checked={events.includes(event.type)} onChange={(e) => setEvents(e.target.checked ? [...events, event.type] : events.filter((value) => value !== event.type))} />}
-              label={event.displayName}
-            />
-          ))}
+          <Typography variant="subtitle2" mb={1}>Event</Typography>
+          <Select fullWidth value={event} onChange={(e) => setEvent(e.target.value)}>
+            {metadata?.events.map((item) => (
+              <MenuItem key={item.type} value={item.type}>{item.displayName}</MenuItem>
+            ))}
+          </Select>
         </Paper>
 
         <Paper variant="outlined" sx={{ p: 2 }}>
@@ -289,18 +279,16 @@ export const Webhooks = () => {
             <PayloadBuilder value={payload} variables={variables} onChange={syncPayload} />
           ) : (
             <Stack spacing={1.5}>
-              <Box display="flex" justifyContent="flex-end">
-                <AvailableVariables variables={variables} />
-              </Box>
-              <TextField multiline minRows={16} fullWidth value={jsonText} onChange={(e) => applyJson(e.target.value)} error={!!jsonError} helperText={jsonError ?? "{{article.title}} などのKuon variableを利用できます"} inputProps={{ style: { fontFamily: "monospace" } }} />
+              <Box display="flex" justifyContent="flex-end"><AvailableVariables variables={variables} /></Box>
+              <TextField multiline minRows={16} fullWidth value={jsonText} onChange={(e) => applyJson(e.target.value)} error={!!jsonError} helperText={jsonError ?? "選択したイベントで利用可能なKuon variableを使用できます"} inputProps={{ style: { fontFamily: "monospace" } }} />
             </Stack>
           )}
         </Paper>
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-          <Button variant="outlined" disabled={!!jsonError || previewPending} onClick={async () => setPreview((await previewPayload({ payloadTemplate: payload, eventType: selectedEvent })).payload)}>Preview</Button>
-          <Button variant="outlined" disabled={!url || !!jsonError || testPending} onClick={async () => setTestResult(await testSend({ url, headers, payloadTemplate: payload, eventType: selectedEvent }))}>Test Send</Button>
-          <Button variant="contained" disabled={!url || !name || events.length === 0 || !!jsonError || savePending} onClick={async () => { await saveWebhook({ id: editingId, input: input() }); resetEditor(); }}>{editingId ? "Update" : "Save"}</Button>
+          <Button variant="outlined" disabled={!!jsonError || previewPending} onClick={async () => setPreview((await previewPayload({ payloadTemplate: payload, eventType: event })).payload)}>Preview</Button>
+          <Button variant="outlined" disabled={!url || !!jsonError || testPending} onClick={async () => setTestResult(await testSend({ url, headers, payloadTemplate: payload, eventType: event }))}>Test Send</Button>
+          <Button variant="contained" disabled={!url || !name || !event || !!jsonError || savePending} onClick={async () => { await saveWebhook({ id: editingId, input: input() }); resetEditor(); }}>{editingId ? "Update" : "Save"}</Button>
         </Stack>
 
         {preview !== undefined && <Paper variant="outlined" sx={{ p: 2 }}><Typography variant="subtitle2" mb={1}>Preview</Typography><Box component="pre" sx={{ m: 0, overflow: "auto", whiteSpace: "pre-wrap" }}>{JSON.stringify(preview, null, 2)}</Box></Paper>}
@@ -310,7 +298,7 @@ export const Webhooks = () => {
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="subtitle2" mb={1}>Recent deliveries</Typography>
             {deliveries.length === 0 ? <Typography color="text.secondary">Delivery履歴はありません。</Typography> : deliveries.slice(0, 10).map((delivery) => (
-              <Stack key={delivery.id} direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between" py={.75} borderBottom={1} borderColor="divider">
+              <Stack key={delivery.id} direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between" py={0.75} borderBottom={1} borderColor="divider">
                 <Typography variant="body2">{new Date(delivery.createdAt).toLocaleString()}</Typography>
                 <Typography variant="body2">{delivery.eventType}</Typography>
                 <Typography variant="body2" color={delivery.success ? "success.main" : "error.main"}>{delivery.success ? `${delivery.statusCode ?? "OK"}` : delivery.errorMessage ?? "Failed"} / {delivery.durationMs ?? "-"}ms</Typography>
@@ -325,10 +313,10 @@ export const Webhooks = () => {
         <DialogContent>
           <Stack spacing={2} pt={1}>
             <Box><Typography fontWeight={600}>1. 送信先URL</Typography><Typography color="text.secondary">Discord Incoming Webhook、Slack Incoming Webhook、Teams Workflow/Webhook、または任意のHTTP endpoint URLを指定します。</Typography></Box>
-            <Box><Typography fontWeight={600}>2. Template</Typography><Typography color="text.secondary">Discord / Slack / Teamsはテンプレートを適用すると推奨JSON構造がVisual Builderへ展開されます。適用後も自由に編集できます。</Typography></Box>
-            <Box><Typography fontWeight={600}>3. Kuon values</Typography><Typography color="text.secondary">Visual BuilderではArticle title / Summary / URL / Authorなどを選択できます。JSONモードでは {'{{article.title}}'} のように記述します。</Typography></Box>
-            <Box><Typography fontWeight={600}>4. Preview / Test Send</Typography><Typography color="text.secondary">Previewでサンプルデータを展開したJSONを確認し、Test Sendで実際の送信先へ試験通知できます。</Typography></Box>
-            <Box><Typography fontWeight={600}>5. Webhook policy</Typography><Typography color="text.secondary">保存したWebhookを実イベントから送信するには「Webhooksを有効にする」をONにしてください。ユーザーWebhookは別途明示的に許可できます。</Typography></Box>
+            <Box><Typography fontWeight={600}>2. Event</Typography><Typography color="text.secondary">Webhookごとにイベントを1つ選択します。同じURLへ別イベントを送る場合はWebhook設定を分けてください。</Typography></Box>
+            <Box><Typography fontWeight={600}>3. Template</Typography><Typography color="text.secondary">Discord / Slack / Teamsはテンプレートを適用すると推奨JSON構造がVisual Builderへ展開されます。適用後も自由に編集できます。</Typography></Box>
+            <Box><Typography fontWeight={600}>4. Kuon values</Typography><Typography color="text.secondary">利用可能な変数は選択中のイベントに応じて変わります。JSONモードでは変数一覧からコピーできます。</Typography></Box>
+            <Box><Typography fontWeight={600}>5. Preview / Test Send</Typography><Typography color="text.secondary">Previewでサンプルデータを展開したJSONを確認し、Test Sendで実際の送信先へ試験通知できます。</Typography></Box>
           </Stack>
         </DialogContent>
       </Dialog>
