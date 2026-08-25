@@ -23,6 +23,15 @@ export const webhookPresets: readonly WebhookPreset[] = [
     },
   },
   {
+    id: "discord-plain",
+    provider: "discord",
+    name: "Discord Plain Message",
+    description: "Discord Webhookへシンプルなテキスト通知を送信します",
+    payloadTemplate: {
+      content: "**{{article.title}}**\n{{article.summary}}\n{{article.url}}",
+    },
+  },
+  {
     id: "discord-embed",
     provider: "discord",
     name: "Discord Embed",
@@ -39,6 +48,15 @@ export const webhookPresets: readonly WebhookPreset[] = [
           },
         },
       ],
+    },
+  },
+  {
+    id: "slack-plain",
+    provider: "slack",
+    name: "Slack Plain Text",
+    description: "Slack Incoming Webhookへシンプルなテキスト通知を送信します",
+    payloadTemplate: {
+      text: "*{{article.title}}*\n{{article.summary}}\n<{{article.url}}|Kuonで記事を開く>",
     },
   },
   {
@@ -76,7 +94,7 @@ export const webhookPresets: readonly WebhookPreset[] = [
     id: "teams-adaptive-card",
     provider: "teams",
     name: "Microsoft Teams Adaptive Card",
-    description: "Teams Incoming Webhook向けのAdaptive Cardです",
+    description: "Teams Workflow / Incoming Webhook向けのAdaptive Cardです",
     payloadTemplate: {
       type: "message",
       attachments: [
@@ -96,6 +114,12 @@ export const webhookPresets: readonly WebhookPreset[] = [
               {
                 type: "TextBlock",
                 text: "{{article.summary}}",
+                wrap: true,
+              },
+              {
+                type: "TextBlock",
+                text: "投稿者: {{author.displayName}}",
+                isSubtle: true,
                 wrap: true,
               },
             ],
