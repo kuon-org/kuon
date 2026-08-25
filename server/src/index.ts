@@ -54,13 +54,14 @@ app.use("/api", requireSiteAuthentication, commentsRouter);
 app.use("/api", requireSiteAuthentication, stocksRoutes);
 app.use("/api", requireSiteAuthentication, pumlRouter);
 
+// External authentication callbacks must stay public. Shared content and uploads must not.
 app.use("/", authRouter);
-app.use("/", shareRouter);
+app.use("/", requireSiteAuthentication, shareRouter);
 app.get("/api-docs.json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);
 });
-app.use("/uploads", express.static(uploadsPath));
+app.use("/uploads", requireSiteAuthentication, express.static(uploadsPath));
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(distPath));
