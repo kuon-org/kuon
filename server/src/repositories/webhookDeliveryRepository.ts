@@ -19,64 +19,34 @@ export class WebhookDeliveryRepository {
     eventType: WebhookEventType,
     ownerUserId?: string,
   ): Promise<WebhookDeliveryTarget[]> {
-    const rows = await prisma.$queryRawUnsafe<
-      Array<{
-        id: string;
-        scope: WebhookScope;
-        owner_user_id: string | null;
-        url: string;
-        http_method: string;
-        payload_template: unknown;
-      }>
-    >(
-      `
-        SELECT DISTINCT
-          w.id,
-          w.scope,
-          w.owner_user_id,
-          w.url,
-          w.http_method,
-          w.payload_template
-        FROM knowledge.webhooks w
-        INNER JOIN knowledge.webhook_events e
-          ON e.webhook_id = w.id
-        WHERE w.is_active = TRUE
-          AND e.event_type = $1
-          AND (
-            w.scope = 'system'
-            OR (w.scope = 'user' AND w.owner_user_id = $2::uuid)
-          )
-      `,
-      eventType,
-      ownerUserId ?? null,
-    );
+    const rows = await prisma.webhooks.findMany({
+      where: {
+        is_active: true,
+        webhook_events: { some: { event_type: eventType } },
+        OR: [
+          { scope: "system" },
+          ...(ownerUserId
+            ? [{ scope: "user", owner_user_id: ownerUserId }]
+            : []),
+        ],
+      },
+      include: {
+        webhook_headers: { orderBy: { created_at: "asc" } },
+      },
+    });
 
-    const targets: WebhookDeliveryTarget[] = [];
-    for (const row of rows) {
-      const headers = await prisma.$queryRawUnsafe<
-        Array<{ name: string; value: string }>
-      >(
-        `
-          SELECT name, value
-          FROM knowledge.webhook_headers
-          WHERE webhook_id = $1::uuid
-          ORDER BY created_at ASC
-        `,
-        row.id,
-      );
-
-      targets.push({
-        id: row.id,
-        scope: row.scope,
-        ownerUserId: row.owner_user_id,
-        url: row.url,
-        httpMethod: row.http_method,
-        payloadTemplate: row.payload_template,
-        headers,
-      });
-    }
-
-    return targets;
+    return rows.map((row) => ({
+      id: row.id,
+      scope: row.scope as WebhookScope,
+      ownerUserId: row.owner_user_id,
+      url: row.url,
+      httpMethod: row.http_method,
+      payloadTemplate: row.payload_template,
+      headers: row.webhook_headers.map((header) => ({
+        name: header.name,
+        value: header.value,
+      })),
+    }));
   }
 
   async recordDelivery(input: {
@@ -87,24 +57,15 @@ export class WebhookDeliveryRepository {
     durationMs: number;
     errorMessage?: string;
   }): Promise<void> {
-    await prisma.$executeRawUnsafe(
-      `
-        INSERT INTO knowledge.webhook_deliveries (
-          webhook_id,
-          event_type,
-          success,
-          status_code,
-          duration_ms,
-          error_message
-        )
-        VALUES ($1::uuid, $2, $3, $4, $5, $6)
-      `,
-      input.webhookId,
-      input.eventType,
-      input.success,
-      input.statusCode ?? null,
-      input.durationMs,
-      input.errorMessage ?? null,
-    );
+    await prisma.webhook_deliveries.create({
+      data: {
+        webhook_id: input.webhookId,
+        event_type: input.eventType,
+        success: input.success,
+        status_code: input.statusCode ?? null,
+        duration_ms: input.durationMs,
+        error_message: input.errorMessage ?? null,
+      },
+    });
   }
 }
