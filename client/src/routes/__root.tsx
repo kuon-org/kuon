@@ -2,6 +2,7 @@ import {
   createRootRouteWithContext,
   createRoute,
   Outlet,
+  redirect,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Box, Divider } from "@mui/material";
@@ -17,12 +18,24 @@ import { Ranking } from "../components/Ranking";
 
 export interface MyRouterContext {
   user: { id: string; username: string } | null;
+  requireAuthentication: boolean;
 }
+
+const anonymousRoutes = new Set(["/login", "/login/2fa", "/register"]);
 
 /**
  * 完全に素のルート（最上位）
  */
 export const baseRootRoute = createRootRouteWithContext<MyRouterContext>()({
+  beforeLoad: ({ context, location }) => {
+    if (
+      context.requireAuthentication &&
+      !context.user &&
+      !anonymousRoutes.has(location.pathname)
+    ) {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: () => (
     <>
       <NotificationManager />
