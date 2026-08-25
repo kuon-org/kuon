@@ -19,6 +19,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { AvailableVariables } from "../../components/Webhook/AvailableVariables";
 import { PayloadBuilder } from "../../components/Webhook/PayloadBuilder";
 import {
   useWebhookUser,
@@ -265,7 +266,12 @@ export const Webhooks = () => {
             {mode === "builder" ? (
               <PayloadBuilder value={payload} onChange={syncPayload} variables={variables} />
             ) : (
-              <TextField multiline minRows={14} fullWidth value={jsonText} onChange={(e) => applyJson(e.target.value)} error={!!jsonError} helperText={jsonError} sx={{ fontFamily: "monospace" }} />
+              <Stack spacing={1.5}>
+                <Box display="flex" justifyContent="flex-end">
+                  <AvailableVariables variables={variables} />
+                </Box>
+                <TextField multiline minRows={14} fullWidth value={jsonText} onChange={(e) => applyJson(e.target.value)} error={!!jsonError} helperText={jsonError} sx={{ fontFamily: "monospace" }} />
+              </Stack>
             )}
           </Box>
         </Paper>
