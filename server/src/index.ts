@@ -40,11 +40,13 @@ app.use(cookieParser());
 app.use(cors({ origin: "http://localhost:5050", credentials: true }));
 app.use("/api-docs", ...swaggerUiMiddleware());
 
-// Restore uses an in-memory lock so DB replacement cannot reopen the site mid-operation.
-app.use(runtimeMaintenanceGate);
+// Public settings must stay reachable so the SPA can switch to the maintenance screen.
+app.use("/api", serverSettingsRouter);
+
+// Restore uses an in-memory lock to stop DB-backed API access while keeping the SPA alive.
+app.use("/api", runtimeMaintenanceGate);
 
 // Authentication bootstrap endpoints must remain reachable while login is required.
-app.use("/api", serverSettingsRouter);
 app.use("/api", localAuthRoutes);
 app.use("/api", totpRoutes);
 app.use("/api", usersRoutes);
@@ -58,14 +60,23 @@ app.use("/api", requireSiteAuthentication, commentsRouter);
 app.use("/api", requireSiteAuthentication, stocksRoutes);
 app.use("/api", requireSiteAuthentication, pumlRouter);
 
-// External authentication callbacks must stay public. Shared content and uploads must not.
+// External authentication routes are DB-backed and must not run during restore.
+app.use("/auth", runtimeMaintenanceGate);
 app.use("/", authRouter);
+
+// Shared content and uploads depend on the restored DB/files, so block them during restore.
+app.use("/share", runtimeMaintenanceGate);
 app.use("/", requireSiteAuthentication, shareRouter);
 app.get("/api-docs.json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);
 });
-app.use("/uploads", requireSiteAuthentication, express.static(uploadsPath));
+app.use(
+  "/uploads",
+  runtimeMaintenanceGate,
+  requireSiteAuthentication,
+  express.static(uploadsPath),
+);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(distPath));
