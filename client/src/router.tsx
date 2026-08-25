@@ -12,7 +12,11 @@ import { GlobalErrorComponent } from "./components/Error/ErrorComponents";
  */
 export const router = createRouter({
   routeTree,
-  context: { user: null, requireAuthentication: false },
+  context: {
+    user: null,
+    requireAuthentication: false,
+    maintenanceMode: false,
+  },
   defaultErrorComponent: GlobalErrorComponent,
   defaultNotFoundComponent: NotFoundComponent,
 });
@@ -32,11 +36,18 @@ export const AppRouter = () => {
   const publicSettings = usePublicServerSettings();
   const requireAuthentication =
     publicSettings.data?.requireAuthentication ?? false;
+  const maintenanceMode = publicSettings.data?.maintenanceMode ?? false;
 
   useEffect(() => {
     if (user_isLoading || publicSettings.isLoading) return;
     void router.invalidate();
-  }, [user?.id, requireAuthentication, user_isLoading, publicSettings.isLoading]);
+  }, [
+    user?.id,
+    requireAuthentication,
+    maintenanceMode,
+    user_isLoading,
+    publicSettings.isLoading,
+  ]);
 
   if (user_isLoading || publicSettings.isLoading) return null;
 
@@ -46,6 +57,7 @@ export const AppRouter = () => {
       context={{
         user,
         requireAuthentication,
+        maintenanceMode,
       }}
     />
   );
