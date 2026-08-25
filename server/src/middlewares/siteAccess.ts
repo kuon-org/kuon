@@ -12,6 +12,7 @@ const usersRepository = new UsersRepository();
 
 const maintenanceResponse = (res: Response) =>
   res.status(503).json({
+    code: "MAINTENANCE_MODE",
     message: "Kuon is currently under maintenance",
   });
 
