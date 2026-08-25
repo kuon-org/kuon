@@ -67,7 +67,7 @@ export const Webhooks = () => {
   const [name, setName] = useState("My webhook");
   const [provider, setProvider] = useState<WebhookInput["provider"]>("generic");
   const [url, setUrl] = useState("");
-  const [events, setEvents] = useState<string[]>(["article.published"]);
+  const [event, setEvent] = useState("article.published");
   const [headers, setHeaders] = useState<WebhookHeader[]>([]);
   const [payload, setPayload] = useState<unknown>(defaultPayload);
   const [jsonText, setJsonText] = useState(JSON.stringify(defaultPayload, null, 2));
@@ -76,10 +76,9 @@ export const Webhooks = () => {
   const [testResult, setTestResult] = useState<any>();
   const [deliveries, setDeliveries] = useState<any[]>();
 
-  const selectedEvent = events[0];
   const variables = useMemo(
-    () => metadata?.events.find((event) => event.type === selectedEvent)?.variables ?? [],
-    [metadata, selectedEvent],
+    () => metadata?.events.find((item) => item.type === event)?.variables ?? [],
+    [metadata, event],
   );
 
   const syncPayload = (value: unknown) => {
@@ -91,8 +90,7 @@ export const Webhooks = () => {
   const applyJson = (text: string) => {
     setJsonText(text);
     try {
-      const parsed = JSON.parse(text);
-      setPayload(parsed);
+      setPayload(JSON.parse(text));
       setJsonError(undefined);
     } catch (error) {
       setJsonError(error instanceof Error ? error.message : "Invalid JSON");
@@ -104,7 +102,7 @@ export const Webhooks = () => {
     setName("My webhook");
     setProvider("generic");
     setUrl("");
-    setEvents(["article.published"]);
+    setEvent(metadata?.events[0]?.type ?? "article.published");
     setHeaders([]);
     syncPayload(defaultPayload);
     setPreview(undefined);
@@ -119,7 +117,7 @@ export const Webhooks = () => {
     setName(detail.name);
     setProvider(detail.provider);
     setUrl(detail.url);
-    setEvents(detail.events);
+    setEvent(detail.events[0] ?? metadata?.events[0]?.type ?? "article.published");
     setHeaders(detail.headers ?? []);
     syncPayload(detail.payloadTemplate);
     setPreview(undefined);
@@ -140,7 +138,7 @@ export const Webhooks = () => {
     url,
     httpMethod: "POST",
     payloadTemplate: payload,
-    events,
+    events: [event],
     headers,
     isActive: true,
   });
@@ -228,16 +226,12 @@ export const Webhooks = () => {
         </Stack>
 
         <Paper variant="outlined" sx={{ p: 2 }}>
-          <Typography variant="subtitle2" mb={1}>Events</Typography>
-          <Stack>
-            {metadata?.events.map((event) => (
-              <FormControlLabel
-                key={event.type}
-                control={<Checkbox checked={events.includes(event.type)} onChange={(e) => setEvents(e.target.checked ? [...events, event.type] : events.filter((value) => value !== event.type))} />}
-                label={`${event.displayName}${event.category ? ` (${event.category})` : ""}`}
-              />
+          <Typography variant="subtitle2" mb={1}>Event</Typography>
+          <Select fullWidth value={event} onChange={(e) => setEvent(e.target.value)}>
+            {metadata?.events.map((item) => (
+              <MenuItem key={item.type} value={item.type}>{item.displayName}</MenuItem>
             ))}
-          </Stack>
+          </Select>
         </Paper>
 
         <Paper variant="outlined" sx={{ p: 2 }}>
@@ -267,25 +261,19 @@ export const Webhooks = () => {
               <PayloadBuilder value={payload} onChange={syncPayload} variables={variables} />
             ) : (
               <Stack spacing={1.5}>
-                <Box display="flex" justifyContent="flex-end">
-                  <AvailableVariables variables={variables} />
-                </Box>
-                <TextField multiline minRows={14} fullWidth value={jsonText} onChange={(e) => applyJson(e.target.value)} error={!!jsonError} helperText={jsonError} sx={{ fontFamily: "monospace" }} />
+                <Box display="flex" justifyContent="flex-end"><AvailableVariables variables={variables} /></Box>
+                <TextField multiline minRows={14} fullWidth value={jsonText} onChange={(e) => applyJson(e.target.value)} error={!!jsonError} helperText={jsonError} inputProps={{ style: { fontFamily: "monospace" } }} />
               </Stack>
             )}
           </Box>
         </Paper>
 
         <Stack direction="row" spacing={1} flexWrap="wrap">
-          <Button variant="contained" disabled={savePending || !!jsonError || events.length === 0} onClick={async () => { await saveWebhook({ id: editingId, input: input() }); resetEditor(); }}>
+          <Button variant="contained" disabled={savePending || !!jsonError || !event} onClick={async () => { await saveWebhook({ id: editingId, input: input() }); resetEditor(); }}>
             {editingId ? "Save changes" : "Create webhook"}
           </Button>
-          <Button disabled={previewPending || !!jsonError} onClick={async () => setPreview((await previewPayload({ payloadTemplate: payload, eventType: selectedEvent })).payload)}>
-            Preview
-          </Button>
-          <Button disabled={testPending || !url || !!jsonError} onClick={async () => setTestResult(await testSend({ url, headers, payloadTemplate: payload, eventType: selectedEvent }))}>
-            Test Send
-          </Button>
+          <Button disabled={previewPending || !!jsonError} onClick={async () => setPreview((await previewPayload({ payloadTemplate: payload, eventType: event })).payload)}>Preview</Button>
+          <Button disabled={testPending || !url || !!jsonError} onClick={async () => setTestResult(await testSend({ url, headers, payloadTemplate: payload, eventType: event }))}>Test Send</Button>
         </Stack>
 
         {preview !== undefined && (
