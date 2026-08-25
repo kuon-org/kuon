@@ -6,6 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useNotify } from "../../hooks/useNotify";
 import apiClient from "../../api/client";
 import type { HttpError } from "../../api/FetchHttpClient";
+import type { AuthUser } from "../../hooks/useAuth";
 
 const shakeAnimation = keyframes`
   0%, 100% { transform: translateX(0); }
@@ -36,10 +37,11 @@ export const Login2FA = () => {
       return data;
     },
     onSuccess: async () => {
-      success("二段階認証が完了しました！");
-      await queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      const { data: user } = await apiClient.get<AuthUser>("/me");
+      queryClient.setQueryData(["authUser"], user);
       sessionStorage.removeItem("pendingEmail");
-      navigate({ to: "/" });
+      success("二段階認証が完了しました！");
+      await navigate({ to: "/", replace: true });
     },
     onError: (err: HttpError) => {
       error(err.response?.data?.message || "認証コードが正しくありません");
