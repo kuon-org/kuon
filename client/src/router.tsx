@@ -5,6 +5,7 @@ import { usePublicServerSettings } from "./hooks/usePublicServerSettings";
 import { routeTree } from "./routes";
 import { NotFoundComponent } from "./components/Error/NotFoundComponents";
 import { GlobalErrorComponent } from "./components/Error/ErrorComponents";
+import { MAINTENANCE_MODE_EVENT } from "./api/FetchHttpClient/FetchHttpClient";
 
 /**
  * 新しいrouter定義（Code Splitting版）
@@ -12,11 +13,7 @@ import { GlobalErrorComponent } from "./components/Error/ErrorComponents";
  */
 export const router = createRouter({
   routeTree,
-  context: {
-    user: null,
-    requireAuthentication: false,
-    maintenanceMode: false,
-  },
+  context: { user: null, requireAuthentication: false, maintenanceMode: false },
   defaultErrorComponent: GlobalErrorComponent,
   defaultNotFoundComponent: NotFoundComponent,
 });
@@ -43,11 +40,25 @@ export const AppRouter = () => {
     void router.invalidate();
   }, [
     user?.id,
+    user?.role,
     requireAuthentication,
     maintenanceMode,
     user_isLoading,
     publicSettings.isLoading,
   ]);
+
+  useEffect(() => {
+    const handleMaintenanceDetected = () => {
+      void publicSettings.refetch();
+    };
+
+    window.addEventListener(MAINTENANCE_MODE_EVENT, handleMaintenanceDetected);
+    return () =>
+      window.removeEventListener(
+        MAINTENANCE_MODE_EVENT,
+        handleMaintenanceDetected,
+      );
+  }, [publicSettings.refetch]);
 
   if (user_isLoading || publicSettings.isLoading) return null;
 
