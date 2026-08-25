@@ -4,14 +4,15 @@ import apiClient from "../api/client";
 export type WebhookVariable = { key: string; label: string; group: string };
 export type WebhookEventMetadata = {
   type: string;
-  label: string;
+  displayName: string;
   scopes: ("system" | "user")[];
   variables: WebhookVariable[];
 };
 export type WebhookPreset = {
   id: string;
   provider: "generic" | "discord" | "slack" | "teams";
-  label: string;
+  name: string;
+  description: string;
   payloadTemplate: unknown;
 };
 export type WebhookMetadata = {
@@ -31,6 +32,33 @@ export type WebhookInput = {
   headers?: WebhookHeader[];
   isActive?: boolean;
 };
+export type WebhookSummary = {
+  id: string;
+  name: string;
+  scope: "system" | "user";
+  ownerUserId: string | null;
+  provider: WebhookInput["provider"];
+  url: string;
+  httpMethod: string;
+  payloadTemplate: unknown;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+export type WebhookDetail = WebhookSummary & {
+  events: string[];
+  headers: WebhookHeader[];
+};
+export type WebhookDelivery = {
+  id: string;
+  webhookId: string;
+  eventType: string;
+  success: boolean;
+  statusCode: number | null;
+  durationMs: number | null;
+  errorMessage: string | null;
+  createdAt: string;
+};
 
 export const useWebhookAdmin = () => {
   const queryClient = useQueryClient();
@@ -38,7 +66,7 @@ export const useWebhookAdmin = () => {
     queryKey: ["webhookMetadata"],
     queryFn: async () => (await apiClient.get("/admin/webhooks/metadata")).data,
   });
-  const webhooks = useQuery<any[]>({
+  const webhooks = useQuery<WebhookSummary[]>({
     queryKey: ["adminWebhooks"],
     queryFn: async () => (await apiClient.get("/admin/webhooks")).data,
   });
@@ -47,7 +75,22 @@ export const useWebhookAdmin = () => {
       id
         ? (await apiClient.put(`/admin/webhooks/${id}`, input)).data
         : (await apiClient.post("/admin/webhooks", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminWebhooks"] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["adminWebhooks"] });
+    },
+  });
+  const remove = useMutation({
+    mutationFn: async (id: string) => apiClient.delete(`/admin/webhooks/${id}`),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["adminWebhooks"] });
+    },
+  });
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) =>
+      (await apiClient.patch(`/admin/webhooks/${id}/active`, { isActive })).data,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["adminWebhooks"] });
+    },
   });
   const preview = useMutation({
     mutationFn: async (payloadTemplate: unknown) =>
@@ -58,12 +101,24 @@ export const useWebhookAdmin = () => {
       (await apiClient.post("/admin/webhooks/test", input)).data,
   });
 
+  const getWebhook = async (id: string) =>
+    (await apiClient.get(`/admin/webhooks/${id}`)).data as WebhookDetail;
+  const getDeliveries = async (id: string) =>
+    (await apiClient.get(`/admin/webhooks/${id}/deliveries`)).data as WebhookDelivery[];
+
   return {
     metadata: metadata.data,
     metadataLoading: metadata.isLoading,
     webhooks: webhooks.data ?? [],
+    webhooksLoading: webhooks.isLoading,
+    getWebhook,
+    getDeliveries,
     saveWebhook: save.mutateAsync,
     savePending: save.isPending,
+    deleteWebhook: remove.mutateAsync,
+    deletePending: remove.isPending,
+    setWebhookActive: toggleActive.mutateAsync,
+    togglePending: toggleActive.isPending,
     previewPayload: preview.mutateAsync,
     previewPending: preview.isPending,
     testSend: testSend.mutateAsync,
