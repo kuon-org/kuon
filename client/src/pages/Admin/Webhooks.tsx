@@ -4,7 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
   Chip,
   Dialog,
   DialogContent,
@@ -12,21 +11,23 @@ import {
   Divider,
   FormControlLabel,
   IconButton,
-  MenuItem,
   Paper,
-  Select,
   Stack,
   Switch,
-  Tab,
-  Tabs,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { AvailableVariables } from "../../components/Webhook/AvailableVariables";
-import { PayloadBuilder } from "../../components/Webhook/PayloadBuilder";
+import {
+  WebhookDeliveryLog,
+  WebhookEventProviderFields,
+  WebhookHeaderEditor,
+  WebhookPayloadEditor,
+  providerLabel,
+} from "../../components/Webhook/WebhookEditorSections";
 import {
   useWebhookAdmin,
+  type WebhookDelivery,
   type WebhookDetail,
   type WebhookHeader,
   type WebhookInput,
@@ -37,13 +38,6 @@ const defaultPayload = {
   title: "{{article.title}}",
   description: "{{article.summary}}",
   url: "{{article.url}}",
-};
-
-const providerLabel: Record<WebhookInput["provider"], string> = {
-  generic: "Generic",
-  discord: "Discord",
-  slack: "Slack",
-  teams: "Microsoft Teams",
 };
 
 export const Webhooks = () => {
@@ -83,7 +77,7 @@ export const Webhooks = () => {
   const [preview, setPreview] = useState<unknown>();
   const [testResult, setTestResult] = useState<any>();
   const [helpOpen, setHelpOpen] = useState(false);
-  const [deliveries, setDeliveries] = useState<any[]>();
+  const [deliveries, setDeliveries] = useState<WebhookDelivery[]>();
 
   const webhooksEnabled = settings?.find((s) => s.key === "webhooks_enabled")?.value === "true";
   const allowUserWebhooks = settings?.find((s) => s.key === "allow_user_webhooks")?.value === "true";
@@ -235,60 +229,29 @@ export const Webhooks = () => {
         <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} />
         <TextField label="Webhook URL" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." />
 
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Typography variant="subtitle2" mb={1}>Event</Typography>
-          <Select fullWidth value={event} onChange={(e) => setEvent(e.target.value)}>
-            {metadata?.events.map((item) => (
-              <MenuItem key={item.type} value={item.type}>{item.displayName}</MenuItem>
-            ))}
-          </Select>
-        </Paper>
+        <WebhookEventProviderFields
+          events={metadata?.events ?? []}
+          event={event}
+          onEventChange={setEvent}
+          provider={provider}
+          onProviderChange={setProvider}
+          presets={presets}
+          onApplyPreset={applyPreset}
+        />
 
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-          <Select value={provider} onChange={(e) => setProvider(e.target.value as WebhookInput["provider"])} sx={{ minWidth: 180 }}>
-            {Object.entries(providerLabel).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}
-          </Select>
-          <Select displayEmpty value="" onChange={(e) => applyPreset(e.target.value)} sx={{ minWidth: 300 }}>
-            <MenuItem value="" disabled>Apply template...</MenuItem>
-            {presets.map((preset) => (
-              <MenuItem key={preset.id} value={preset.id}>
-                <Box><Typography variant="body2">{preset.name}</Typography><Typography variant="caption" color="text.secondary">{preset.description}</Typography></Box>
-              </MenuItem>
-            ))}
-          </Select>
-        </Stack>
+        <WebhookHeaderEditor headers={headers} onChange={setHeaders} />
 
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="subtitle2">Headers</Typography>
-            <Button onClick={() => setHeaders([...headers, { name: "", value: "" }])}>+ Header</Button>
-          </Stack>
-          <Stack spacing={1} mt={1}>
-            {headers.map((header, index) => (
-              <Stack key={index} direction={{ xs: "column", sm: "row" }} spacing={1}>
-                <TextField size="small" label="Name" value={header.name} onChange={(e) => { const next = [...headers]; next[index] = { ...header, name: e.target.value }; setHeaders(next); }} />
-                <TextField size="small" label="Value" type={header.isSecret ? "password" : "text"} value={header.value} onChange={(e) => { const next = [...headers]; next[index] = { ...header, value: e.target.value }; setHeaders(next); }} sx={{ flex: 1 }} />
-                <FormControlLabel control={<Checkbox checked={header.isSecret ?? false} onChange={(e) => { const next = [...headers]; next[index] = { ...header, isSecret: e.target.checked }; setHeaders(next); }} />} label="Secret" />
-                <Button color="error" onClick={() => setHeaders(headers.filter((_, i) => i !== index))}>Delete</Button>
-              </Stack>
-            ))}
-          </Stack>
-        </Paper>
-
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Tabs value={mode} onChange={(_, value) => setMode(value)} sx={{ mb: 2 }}>
-            <Tab value="builder" label="Visual Builder" />
-            <Tab value="json" label="JSON" />
-          </Tabs>
-          {mode === "builder" ? (
-            <PayloadBuilder value={payload} variables={variables} onChange={syncPayload} />
-          ) : (
-            <Stack spacing={1.5}>
-              <Box display="flex" justifyContent="flex-end"><AvailableVariables variables={variables} /></Box>
-              <TextField multiline minRows={16} fullWidth value={jsonText} onChange={(e) => applyJson(e.target.value)} error={!!jsonError} helperText={jsonError ?? "選択したイベントで利用可能なKuon variableを使用できます"} inputProps={{ style: { fontFamily: "monospace" } }} />
-            </Stack>
-          )}
-        </Paper>
+        <WebhookPayloadEditor
+          mode={mode}
+          onModeChange={setMode}
+          payload={payload}
+          onPayloadChange={syncPayload}
+          variables={variables}
+          jsonText={jsonText}
+          jsonError={jsonError}
+          onJsonChange={applyJson}
+          minRows={16}
+        />
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
           <Button variant="outlined" disabled={!!jsonError || previewPending} onClick={async () => setPreview((await previewPayload({ payloadTemplate: payload, eventType: event })).payload)}>Preview</Button>
@@ -299,18 +262,7 @@ export const Webhooks = () => {
         {preview !== undefined && <Paper variant="outlined" sx={{ p: 2 }}><Typography variant="subtitle2" mb={1}>Preview</Typography><Box component="pre" sx={{ m: 0, overflow: "auto", whiteSpace: "pre-wrap" }}>{JSON.stringify(preview, null, 2)}</Box></Paper>}
         {testResult && <Alert severity={testResult.ok ? "success" : "warning"}>Test Send: HTTP {testResult.status ?? "-"} / {testResult.durationMs ?? "-"}ms</Alert>}
 
-        {editingId && deliveries && (
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Typography variant="subtitle2" mb={1}>Recent deliveries</Typography>
-            {deliveries.length === 0 ? <Typography color="text.secondary">Delivery履歴はありません。</Typography> : deliveries.slice(0, 10).map((delivery) => (
-              <Stack key={delivery.id} direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between" py={0.75} borderBottom={1} borderColor="divider">
-                <Typography variant="body2">{new Date(delivery.createdAt).toLocaleString()}</Typography>
-                <Typography variant="body2">{delivery.eventType}</Typography>
-                <Typography variant="body2" color={delivery.success ? "success.main" : "error.main"}>{delivery.success ? `${delivery.statusCode ?? "OK"}` : delivery.errorMessage ?? "Failed"} / {delivery.durationMs ?? "-"}ms</Typography>
-              </Stack>
-            ))}
-          </Paper>
-        )}
+        {editingId && <WebhookDeliveryLog deliveries={deliveries} title="Recent deliveries" limit={10} />}
       </Stack>
 
       <Dialog open={helpOpen} onClose={() => setHelpOpen(false)} maxWidth="sm" fullWidth>
