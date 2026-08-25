@@ -43,15 +43,6 @@ export type WebhookEventContextMap = {
     article: WebhookArticleContext;
     actor: WebhookActorContext;
   };
-  [WebhookEventType.MentionCreated]: {
-    event: WebhookEventMeta<typeof WebhookEventType.MentionCreated>;
-    article: WebhookArticleContext;
-    actor: WebhookActorContext;
-    mentioned: {
-      username: string | null;
-      displayName: string | null;
-    };
-  };
 };
 
 export type WebhookContext<T extends keyof WebhookEventContextMap> =
