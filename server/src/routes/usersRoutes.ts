@@ -1,5 +1,6 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { authenticateToken } from "../middlewares/auth.js";
+import { requireSiteAuthentication } from "../middlewares/siteAccess.js";
 import { UsersRepository } from "../repositories/usersRepository.js";
 import { UsersService } from "../services/usersService.js";
 import { UsersController } from "../controllers/usersController.js";
@@ -48,9 +49,17 @@ const attachRefreshExpiryHeaders = (
   next();
 };
 
-usersRouter.get("/users", usersCtrl.getUsers);
-usersRouter.get("/users/id/:userId", usersCtrl.getUserById);
-usersRouter.get("/users/:username", usersCtrl.getUserByUsername);
+usersRouter.get("/users", requireSiteAuthentication, usersCtrl.getUsers);
+usersRouter.get(
+  "/users/id/:userId",
+  requireSiteAuthentication,
+  usersCtrl.getUserById,
+);
+usersRouter.get(
+  "/users/:username",
+  requireSiteAuthentication,
+  usersCtrl.getUserByUsername,
+);
 usersRouter.get("/me", authenticateToken, usersCtrl.getMe);
 usersRouter.post("/register", usersCtrl.registerUser);
 
@@ -82,8 +91,16 @@ usersRouter.get(
   authenticateToken,
   usersCtrl.isFollowing,
 );
-usersRouter.get("/users/:userId/follower", usersCtrl.getFollowers);
-usersRouter.get("/users/:userId/follow", usersCtrl.getFollowings);
+usersRouter.get(
+  "/users/:userId/follower",
+  requireSiteAuthentication,
+  usersCtrl.getFollowers,
+);
+usersRouter.get(
+  "/users/:userId/follow",
+  requireSiteAuthentication,
+  usersCtrl.getFollowings,
+);
 
 usersRouter.get(
   "/users/settings/uploaded_images",
@@ -101,14 +118,22 @@ usersRouter.post(
   usersCtrl.uploadLocalAvatar,
 );
 
-usersRouter.get("/users/:userId/following_tags", usersCtrl.getFollowingTags);
+usersRouter.get(
+  "/users/:userId/following_tags",
+  requireSiteAuthentication,
+  usersCtrl.getFollowingTags,
+);
 usersRouter.get(
   "/users/tags/me",
   authenticateToken,
   usersCtrl.getMyFollowingtags,
 );
 
-usersRouter.get("/users/:userId/pickup", usersCtrl.getPickupArticles);
+usersRouter.get(
+  "/users/:userId/pickup",
+  requireSiteAuthentication,
+  usersCtrl.getPickupArticles,
+);
 usersRouter.post(
   "/users/pickup/create",
   authenticateToken,
@@ -120,9 +145,21 @@ usersRouter.post(
   usersCtrl.deletePickupArticle,
 );
 
-usersRouter.get("/users/:userId/comments", usersCtrl.getCommentCount);
-usersRouter.get("/users/:userId/articles", usersCtrl.getArticleCount);
-usersRouter.get("/users/ranking/all", usersCtrl.getAllRanking);
+usersRouter.get(
+  "/users/:userId/comments",
+  requireSiteAuthentication,
+  usersCtrl.getCommentCount,
+);
+usersRouter.get(
+  "/users/:userId/articles",
+  requireSiteAuthentication,
+  usersCtrl.getArticleCount,
+);
+usersRouter.get(
+  "/users/ranking/all",
+  requireSiteAuthentication,
+  usersCtrl.getAllRanking,
+);
 
 usersRouter.get(
   "/users/settings/api-keys",

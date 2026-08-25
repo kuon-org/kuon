@@ -17,6 +17,8 @@ import adminRouter from "./routes/adminRouter.js";
 import shareRouter from "./routes/shareRoutes.js";
 import stocksRoutes from "./routes/stocksRoutes.js";
 import pumlRouter from "./routes/plantumlRouter.js";
+import serverSettingsRouter from "./routes/serverSettingsRouter.js";
+import { requireSiteAuthentication } from "./middlewares/siteAccess.js";
 import { serverSettingsService } from "./services/serverSettingsService.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,23 +38,30 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({ origin: "http://localhost:5050", credentials: true }));
 app.use("/api-docs", ...swaggerUiMiddleware());
+
+// Authentication bootstrap endpoints must remain reachable while login is required.
+app.use("/api", serverSettingsRouter);
 app.use("/api", localAuthRoutes);
 app.use("/api", totpRoutes);
 app.use("/api", usersRoutes);
-app.use("/api", articlesRouter);
-app.use("/api", tagsRouter);
 app.use("/api", idpRouter);
-app.use("/api", commentsRouter);
 app.use("/api", adminRouter);
-app.use("/api", stocksRoutes);
-app.use("/api", pumlRouter);
+
+// Anonymous content APIs are gated only when require_authentication is enabled.
+app.use("/api", requireSiteAuthentication, articlesRouter);
+app.use("/api", requireSiteAuthentication, tagsRouter);
+app.use("/api", requireSiteAuthentication, commentsRouter);
+app.use("/api", requireSiteAuthentication, stocksRoutes);
+app.use("/api", requireSiteAuthentication, pumlRouter);
+
+// External authentication callbacks must stay public. Shared content and uploads must not.
 app.use("/", authRouter);
-app.use("/", shareRouter);
+app.use("/", requireSiteAuthentication, shareRouter);
 app.get("/api-docs.json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);
 });
-app.use("/uploads", express.static(uploadsPath));
+app.use("/uploads", requireSiteAuthentication, express.static(uploadsPath));
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(distPath));

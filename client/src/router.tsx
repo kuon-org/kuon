@@ -1,5 +1,7 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useAuthQuery } from "./hooks/useAuth";
+import { usePublicServerSettings } from "./hooks/usePublicServerSettings";
 import { routeTree } from "./routes";
 import { NotFoundComponent } from "./components/Error/NotFoundComponents";
 import { GlobalErrorComponent } from "./components/Error/ErrorComponents";
@@ -10,7 +12,7 @@ import { GlobalErrorComponent } from "./components/Error/ErrorComponents";
  */
 export const router = createRouter({
   routeTree,
-  context: { user: null },
+  context: { user: null, requireAuthentication: false },
   defaultErrorComponent: GlobalErrorComponent,
   defaultNotFoundComponent: NotFoundComponent,
 });
@@ -27,8 +29,24 @@ declare module "@tanstack/react-router" {
  */
 export const AppRouter = () => {
   const { user, user_isLoading } = useAuthQuery();
+  const publicSettings = usePublicServerSettings();
+  const requireAuthentication =
+    publicSettings.data?.requireAuthentication ?? false;
 
-  if (user_isLoading) return null;
+  useEffect(() => {
+    if (user_isLoading || publicSettings.isLoading) return;
+    void router.invalidate();
+  }, [user?.id, requireAuthentication, user_isLoading, publicSettings.isLoading]);
 
-  return <RouterProvider router={router} context={{ user }} />;
+  if (user_isLoading || publicSettings.isLoading) return null;
+
+  return (
+    <RouterProvider
+      router={router}
+      context={{
+        user,
+        requireAuthentication,
+      }}
+    />
+  );
 };
