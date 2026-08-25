@@ -53,11 +53,10 @@ export const useAdminQuery = (provider_name?: string) => {
 
     const idpConfMutation = useMutation({
         mutationFn: async (values: { provider_name: string;[key: string]: any }) => {
-            // config だけでなく provider_name もトップレベルに置いて送信
             const { provider_name, ...rest } = values;
             const { data } = await apiClient.post(`/admin/idp_settings`, {
                 provider_name,
-                ...rest // ここに client_id, auth_url, mapping などが入る
+                ...rest
             });
             return data;
         },
@@ -66,7 +65,6 @@ export const useAdminQuery = (provider_name?: string) => {
         }
     });
 
-    // 追加: Discovery 取得関数
     const fetchDiscovery = async (issuerHost: string) => {
         const { data } = await apiClient.get(`/admin/idp_settings/discovery`, {
             params: { issuer_host: issuerHost }
@@ -96,7 +94,6 @@ export const useAdminQuery = (provider_name?: string) => {
             return await apiClient.delete(`/admin/idp_settings/${target_name}`);
         },
         onSuccess: async () => {
-            // 一覧と現在の設定キャッシュをクリア
             await queryClient.invalidateQueries({ queryKey: ["allIdpList"] });
             await queryClient.invalidateQueries({ queryKey: ["idpConf"] });
         }
@@ -115,7 +112,7 @@ export const useAdminQuery = (provider_name?: string) => {
         users_isError: getUsers.isError,
         user_toggle_active: toggleUserActive.mutate,
         user_toggle_active_isPending: toggleUserActive.isPending,
-        deleteIdpConf: idpDeleteMutation.mutateAsync, // mutateAsyncにしてawaitできるようにする
+        deleteIdpConf: idpDeleteMutation.mutateAsync,
         deleteIdp_isPending: idpDeleteMutation.isPending
     }
 }
@@ -135,7 +132,10 @@ export const useServerSettingsQuery = () => {
             return data as ServerSetting;
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["serverSettings"] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["serverSettings"] }),
+                queryClient.invalidateQueries({ queryKey: ["publicServerSettings"] }),
+            ]);
         },
     });
 
