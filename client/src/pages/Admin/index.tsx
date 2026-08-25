@@ -14,6 +14,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import {
+  adminBackupRestoreRoute,
   adminRoute,
   adminSecurityRoute,
   adminServerSettingsRoute,
@@ -33,6 +34,7 @@ export const AdminIndex = () => {
     { path: adminTopRoute.to, label: "アプリ設定" },
     { path: adminSecurityRoute.to, label: "セキュリティ設定" },
     { path: adminServerSettingsRoute.to, label: "サーバ設定" },
+    { path: adminBackupRestoreRoute.to, label: "Backup & Restore" },
     { path: adminUserManagementRoute.to, label: "ユーザ管理" },
     // ここにどんどん追加可能
   ];
