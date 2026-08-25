@@ -28,10 +28,16 @@ const anonymousRoutes = new Set(["/login", "/login/2fa", "/register"]);
  */
 export const baseRootRoute = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: ({ context, location }) => {
+    const isAnonymousRoute = anonymousRoutes.has(location.pathname);
+
+    if (context.user && isAnonymousRoute) {
+      throw redirect({ to: "/" });
+    }
+
     if (
       context.requireAuthentication &&
       !context.user &&
-      !anonymousRoutes.has(location.pathname)
+      !isAnonymousRoute
     ) {
       throw redirect({ to: "/login" });
     }
