@@ -20,6 +20,7 @@ import pumlRouter from "./routes/plantumlRouter.js";
 import serverSettingsRouter from "./routes/serverSettingsRouter.js";
 import { requireSiteAuthentication } from "./middlewares/siteAccess.js";
 import { serverSettingsService } from "./services/serverSettingsService.js";
+import { runtimeMaintenanceGate } from "./services/runtimeMaintenanceService.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,6 +39,9 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({ origin: "http://localhost:5050", credentials: true }));
 app.use("/api-docs", ...swaggerUiMiddleware());
+
+// Restore uses an in-memory lock so DB replacement cannot reopen the site mid-operation.
+app.use(runtimeMaintenanceGate);
 
 // Authentication bootstrap endpoints must remain reachable while login is required.
 app.use("/api", serverSettingsRouter);

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { ServerSettingKey } from "../constants/serverSettings.js";
+import { runtimeMaintenanceService } from "../services/runtimeMaintenanceService.js";
 import { serverSettingsService } from "../services/serverSettingsService.js";
 
 const serverSettingsRouter = Router();
@@ -9,9 +10,9 @@ serverSettingsRouter.get("/server/public-settings", (_req, res) => {
     requireAuthentication: serverSettingsService.isEnabled(
       ServerSettingKey.RequireAuthentication,
     ),
-    maintenanceMode: serverSettingsService.isEnabled(
-      ServerSettingKey.MaintenanceMode,
-    ),
+    maintenanceMode:
+      runtimeMaintenanceService.isLocked() ||
+      serverSettingsService.isEnabled(ServerSettingKey.MaintenanceMode),
   });
 });
 
