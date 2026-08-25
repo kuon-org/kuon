@@ -69,6 +69,16 @@ type WebhookApiOptions = {
   userScoped?: boolean;
 };
 
+type PreviewInput = {
+  payloadTemplate: unknown;
+  eventType?: string;
+};
+
+const isPreviewInput = (value: unknown): value is PreviewInput =>
+  typeof value === "object" &&
+  value !== null &&
+  "payloadTemplate" in value;
+
 const useWebhookApi = ({ basePath, queryKey, userScoped = false }: WebhookApiOptions) => {
   const queryClient = useQueryClient();
   const metadata = useQuery<WebhookMetadata>({
@@ -97,8 +107,12 @@ const useWebhookApi = ({ basePath, queryKey, userScoped = false }: WebhookApiOpt
     onSuccess: async () => queryClient.invalidateQueries({ queryKey: [queryKey] }),
   });
   const preview = useMutation({
-    mutationFn: async ({ payloadTemplate, eventType }: { payloadTemplate: unknown; eventType?: string }) =>
-      (await apiClient.post(`${basePath}/preview`, { payloadTemplate, eventType })).data,
+    mutationFn: async (input: PreviewInput | unknown) => {
+      const body = isPreviewInput(input)
+        ? input
+        : { payloadTemplate: input };
+      return (await apiClient.post(`${basePath}/preview`, body)).data;
+    },
   });
   const testSend = useMutation({
     mutationFn: async (input: Pick<WebhookInput, "url" | "headers" | "payloadTemplate"> & { eventType?: string }) =>
