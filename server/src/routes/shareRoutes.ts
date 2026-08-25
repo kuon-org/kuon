@@ -30,7 +30,7 @@ const shareCtrl = new ShareController(articleService);
  *       '404':
  *         description: 記事が見つからない
  */
-shareRouter.get("/share/:articleId", shareCtrl.sharePage);
-shareRouter.get("/share/:articleId/image", shareCtrl.shareImage);
+shareRouter.get("/:articleId", shareCtrl.sharePage);
+shareRouter.get("/:articleId/image", shareCtrl.shareImage);
 
 export default shareRouter;
