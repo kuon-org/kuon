@@ -2,6 +2,7 @@ export const ServerSettingKey = {
   AllowApiKey: "allow_api_key",
   RequireTotpForExternalIdp: "require_totp_for_external_idp",
   RequireAuthentication: "require_authentication",
+  MaintenanceMode: "maintenance_mode",
 } as const;
 
 export type ServerSettingKey =
