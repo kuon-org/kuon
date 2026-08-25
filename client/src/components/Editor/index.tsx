@@ -86,6 +86,12 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
         );
         const tagIds = upsertedTags.map((t) => t.id);
         const webhookPreference = getPublishWebhookPreference();
+        const shouldNotifyWebhooks =
+          mode === "public" &&
+          isPublished &&
+          !isPrivate &&
+          webhookPreference.notify &&
+          webhookPreference.webhookIds.length > 0;
 
         await mutate(
           {
@@ -96,11 +102,10 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
             is_published: isPublished,
             is_private: isPrivate,
             tagIds,
-            // サーバ側もdefault false。下書き保存時は必ず通知しない。
-            notify_webhooks:
-              mode === "public" && webhookPreference.notify,
-            webhook_ids:
-              mode === "public" ? webhookPreference.webhookIds : [],
+            notify_webhooks: shouldNotifyWebhooks,
+            webhook_ids: shouldNotifyWebhooks
+              ? webhookPreference.webhookIds
+              : [],
           },
           {
             onSuccess: () => {
