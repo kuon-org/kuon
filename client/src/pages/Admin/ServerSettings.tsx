@@ -30,6 +30,9 @@ export const ServerSettings = () => {
   const requireAuthentication =
     settings?.find((setting) => setting.key === "require_authentication")
       ?.value === "true";
+  const maintenanceMode =
+    settings?.find((setting) => setting.key === "maintenance_mode")?.value ===
+    "true";
 
   const updateBooleanSetting = async (key: string, enabled: boolean) => {
     setError(null);
@@ -69,6 +72,32 @@ export const ServerSettings = () => {
         </Box>
       ) : (
         <>
+          <Typography variant="h5" sx={{ mb: 1 }}>
+            メンテナンスモード
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            有効にすると、一般ユーザーからのコンテンツアクセスを停止します。管理者は引き続きサーバ設定へアクセスしてメンテナンスモードを解除できます。
+          </Typography>
+          {maintenanceMode && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              現在メンテナンスモードです。一般ユーザーにはメンテナンス画面が表示されます。
+            </Alert>
+          )}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={maintenanceMode}
+                onChange={(event) =>
+                  updateBooleanSetting("maintenance_mode", event.target.checked)
+                }
+                disabled={updateServerSetting_isPending}
+              />
+            }
+            label={maintenanceMode ? "有効" : "無効"}
+          />
+
+          <Divider sx={{ my: 3 }} />
+
           <Typography variant="h5" sx={{ mb: 1 }}>
             ログイン必須
           </Typography>

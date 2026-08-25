@@ -3,6 +3,7 @@ import apiClient from "../api/client";
 
 export interface PublicServerSettings {
   requireAuthentication: boolean;
+  maintenanceMode: boolean;
 }
 
 export const usePublicServerSettings = () =>

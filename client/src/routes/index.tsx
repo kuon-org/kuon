@@ -11,6 +11,7 @@ import {
 } from "./__root";
 
 import { loginRoute, login2faRoute, registerRoute } from "./auth";
+import { maintenanceRoute } from "./maintenance";
 
 import {
   adminRoute,
@@ -70,6 +71,7 @@ export const routeTree = baseRootRoute.addChildren([
     loginRoute,
     login2faRoute,
     registerRoute,
+    maintenanceRoute,
     articleCreateRoute,
     articleEditRoute,
     adminRoute.addChildren([
@@ -139,3 +141,4 @@ export * from "./user";
 export * from "./stocks";
 export * from "./tags";
 export * from "./home";
+export * from "./maintenance";

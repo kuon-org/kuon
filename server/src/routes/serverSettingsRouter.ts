@@ -9,6 +9,9 @@ serverSettingsRouter.get("/server/public-settings", (_req, res) => {
     requireAuthentication: serverSettingsService.isEnabled(
       ServerSettingKey.RequireAuthentication,
     ),
+    maintenanceMode: serverSettingsService.isEnabled(
+      ServerSettingKey.MaintenanceMode,
+    ),
   });
 });
 
