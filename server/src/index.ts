@@ -65,8 +65,12 @@ app.use("/auth", runtimeMaintenanceGate);
 app.use("/", authRouter);
 
 // Shared content and uploads depend on the restored DB/files, so block them during restore.
-app.use("/share", runtimeMaintenanceGate);
-app.use("/", requireSiteAuthentication, shareRouter);
+app.use(
+  "/share",
+  runtimeMaintenanceGate,
+  requireSiteAuthentication,
+  shareRouter,
+);
 app.get("/api-docs.json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);
