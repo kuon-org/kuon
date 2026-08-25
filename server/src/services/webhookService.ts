@@ -36,21 +36,15 @@ export class WebhookService {
       throw new Error("user scopeにはowner userが必要です");
     }
 
-    if (input.events.length === 0) {
-      throw new Error("購読するWebhook eventを1つ以上指定してください");
+    const definition = findWebhookEventDefinition(input.event);
+    if (!definition) {
+      throw new Error(`未対応のWebhook eventです: ${input.event}`);
     }
 
-    for (const eventType of input.events) {
-      const definition = findWebhookEventDefinition(eventType);
-      if (!definition) {
-        throw new Error(`未対応のWebhook eventです: ${eventType}`);
-      }
-
-      if (!definition.scopes.includes(input.scope)) {
-        throw new Error(
-          `${eventType} は ${input.scope} scopeでは利用できません`,
-        );
-      }
+    if (!definition.scopes.includes(input.scope)) {
+      throw new Error(
+        `${input.event} は ${input.scope} scopeでは利用できません`,
+      );
     }
 
     const headerNames = new Set<string>();
