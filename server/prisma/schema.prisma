@@ -267,8 +267,8 @@ model user_roles {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_security {
   user_id        String   @id @db.Uuid
-  is_2fa_enabled Boolean? @default(false)
   totp_secret    String?
+  is_2fa_enabled Boolean? @default(false)
   users          users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("knowledge")
@@ -362,10 +362,10 @@ model stock_lists {
   name             String             @db.VarChar(100)
   description      String?
   visibility       String?            @default("private") @db.VarChar(10)
-  created_at       DateTime?          @default(now()) @db.Timestamp(6)
-  updated_at       DateTime?          @default(now()) @db.Timestamp(6)
   is_system        Boolean?           @default(false)
   is_default       Boolean?           @default(false)
+  created_at       DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?          @default(now()) @db.Timestamp(6)
   stock_items      stock_items[]
   stock_list_likes stock_list_likes[]
   stock_list_tags  stock_list_tags[]
@@ -386,10 +386,10 @@ model webhooks {
   is_active          Boolean              @default(true)
   created_at         DateTime             @default(now()) @db.Timestamptz(6)
   updated_at         DateTime             @default(now()) @db.Timestamptz(6)
-  users              users?               @relation(fields: [owner_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  webhook_deliveries webhook_deliveries[]
   webhook_events     webhook_events[]
   webhook_headers    webhook_headers[]
-  webhook_deliveries webhook_deliveries[]
+  users              users?               @relation(fields: [owner_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([scope], map: "idx_webhooks_scope")
   @@index([owner_user_id], map: "idx_webhooks_owner_user_id")
@@ -478,11 +478,11 @@ model user_sessions {
   id            String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   user_id       String    @db.Uuid
   refresh_token String    @unique
-  expires_at    DateTime  @db.Timestamp(6)
-  created_at    DateTime? @default(now()) @db.Timestamp(6)
   ip_address    String?
   user_agent    String?
   device_name   String?
+  expires_at    DateTime  @db.Timestamp(6)
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
   last_used_at  DateTime? @default(now()) @db.Timestamp(6)
   users         users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
