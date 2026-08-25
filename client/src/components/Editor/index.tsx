@@ -18,7 +18,6 @@ import {
   RadioGroup,
   Radio,
 } from "@mui/material";
-// import MarkdownEditor from "./MarkdownEditor";
 import MarkdownEditor from "./Experimental/MarkdownEditor";
 import { type UseMutateAsyncFunction } from "@tanstack/react-query";
 import { type Article } from "../../hooks/useArticles";
@@ -28,6 +27,10 @@ import { useNotify } from "../../hooks/useNotify";
 import { draftsRoute } from "../../routes";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { ConfirmLeaveDialog } from "../common/ConfirmLeaveDialog";
+import {
+  getPublishWebhookPreference,
+  PublishWebhookSettings,
+} from "./PublishWebhookSettings";
 
 interface ArticleEditorProps {
   mutate: UseMutateAsyncFunction<any, any, any, unknown>;
@@ -35,23 +38,16 @@ interface ArticleEditorProps {
   article?: Article;
 }
 
-export default function ArticleEditor({
-  mutate,
-  isFetching,
-  article,
-}: ArticleEditorProps) {
+export default function ArticleEditor({ mutate, isFetching, article }: ArticleEditorProps) {
   const router = useRouter();
   const navigate = useNavigate();
   const { error, success } = useNotify();
   const [title, setTitle] = useState(article?.title ?? "");
   const [summary, setSummary] = useState(article?.summary ?? "");
   const [text, setText] = useState(article?.raw_content ?? "");
-  const [isPublished, setIsPublished] = useState(
-    article?.is_published ?? false,
-  );
+  const [isPublished, setIsPublished] = useState(article?.is_published ?? false);
   const [isEdited, setIsEdited] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  // 🚀 ダイアログの開閉状態
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { tags, upsertTag } = useTagsQuery();
@@ -60,11 +56,10 @@ export default function ArticleEditor({
   );
   const [isPrivate, setIsPrivate] = useState(article?.is_private ?? false);
 
-  // 🚀 表示用の状態判定（ラジオボタン用）
   const getVisibilityValue = () => {
     if (isPrivate) return "private";
     if (isPublished) return "public";
-    return "unlisted"; // isPublished: false かつ isPrivate: false
+    return "unlisted";
   };
 
   const handleVisibilityChange = (value: string) => {
@@ -75,10 +70,11 @@ export default function ArticleEditor({
       setIsPublished(false);
       setIsPrivate(false);
     } else {
-      setIsPublished(true); // privateの時も窓口自体はtrue（本人のみ鍵で開ける状態）
+      setIsPublished(true);
       setIsPrivate(true);
     }
   };
+
   const handleSave = useCallback(
     async (mode: "draft" | "public") => {
       try {
@@ -89,6 +85,13 @@ export default function ArticleEditor({
           }),
         );
         const tagIds = upsertedTags.map((t) => t.id);
+        const webhookPreference = getPublishWebhookPreference();
+        const shouldNotifyWebhooks =
+          mode === "public" &&
+          isPublished &&
+          !isPrivate &&
+          webhookPreference.notify &&
+          webhookPreference.webhookIds.length > 0;
 
         await mutate(
           {
@@ -96,17 +99,18 @@ export default function ArticleEditor({
             raw_content: text,
             summary,
             status: mode,
-            // 🚀 新しいフラグを送信
             is_published: isPublished,
             is_private: isPrivate,
             tagIds,
+            notify_webhooks: shouldNotifyWebhooks,
+            webhook_ids: shouldNotifyWebhooks
+              ? webhookPreference.webhookIds
+              : [],
           },
           {
-            // 🚀 onSuccess / onError を使うと確実に完了を検知できます
             onSuccess: () => {
               if (mode === "draft") success("下書きを保存しました。");
               if (mode === "public") success("記事を公開しました");
-
               setIsDialogOpen(false);
               setIsEdited(false);
             },
@@ -130,9 +134,11 @@ export default function ArticleEditor({
       selectedTagNames,
       mutate,
       upsertTag,
-      isFetching,
+      success,
+      error,
     ],
   );
+
   const handleBack = () => {
     if (window.history.length > 1) {
       router.history.back();
@@ -140,6 +146,7 @@ export default function ArticleEditor({
     }
     navigate({ to: "/" });
   };
+
   useKey(
     "s",
     async () => {
@@ -152,8 +159,7 @@ export default function ArticleEditor({
       } else {
         if (isDialogOpen) {
           await handleSave("public");
-          if (article) navigate({ to: draftsRoute.to });
-          else navigate({ to: "/" });
+          navigate({ to: "/" });
         } else {
           setIsDialogOpen(true);
         }
@@ -161,67 +167,34 @@ export default function ArticleEditor({
     },
     { ctrlKey: true, preventDefault: true },
   );
+
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        overflow: "hidden",
-      }}
-    >
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       <AppBar position="relative" color="default" elevation={1}>
         <Toolbar sx={{ justifyContent: "space-between" }}>
           <Typography variant="h6">記事執筆</Typography>
           <Box sx={{ display: "flex", gap: 1 }}>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={
-                isEdited ? () => setIsConfirmDialogOpen(true) : handleBack
-              }
-            >
+            <Button variant="contained" color="secondary" onClick={isEdited ? () => setIsConfirmDialogOpen(true) : handleBack}>
               {isEdited ? "キャンセル" : "閉じる"}
             </Button>
-            <Button
-              variant="outlined"
-              onClick={() => handleSave("draft")}
-              disabled={isFetching}
-            >
+            <Button variant="outlined" onClick={() => handleSave("draft")} disabled={isFetching}>
               下書き保存
             </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={() => setIsDialogOpen(true)}
-              disabled={!text.trim()}
-            >
+            <Button variant="contained" color="secondary" onClick={() => setIsDialogOpen(true)} disabled={!text.trim()}>
               投稿設定へ
             </Button>
           </Box>
         </Toolbar>
       </AppBar>
 
-      <Box
-        sx={{
-          flex: 1,
-          py: 1,
-          px: { md: 3 },
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      <Box sx={{ flex: 1, py: 1, px: { md: 3 }, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         <TextField
           fullWidth
           label="タイトル"
           variant="standard"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          sx={{
-            mb: 2,
-            "& .MuiInputBase-root": { fontSize: "1.5rem", fontWeight: "bold" },
-          }}
+          sx={{ mb: 2, "& .MuiInputBase-root": { fontSize: "1.5rem", fontWeight: "bold" } }}
         />
 
         <Autocomplete
@@ -232,23 +205,11 @@ export default function ArticleEditor({
           onChange={(_e, newValue) => setSelectedTagNames(newValue)}
           renderTags={(value, getTagProps) =>
             value.map((option, index) => (
-              <Chip
-                label={option}
-                {...getTagProps({ index })}
-                key={index}
-                variant="outlined"
-                size="small"
-              />
+              <Chip label={option} {...getTagProps({ index })} key={index} variant="outlined" size="small" />
             ))
           }
           renderInput={(params) => (
-            <TextField
-              {...params}
-              label="タグ"
-              placeholder="Enterで追加"
-              variant="standard"
-              sx={{ mb: 2 }}
-            />
+            <TextField {...params} label="タグ" placeholder="Enterで追加" variant="standard" sx={{ mb: 2 }} />
           )}
         />
 
@@ -263,71 +224,37 @@ export default function ArticleEditor({
           sx={{ mb: 2 }}
         />
 
-        <MarkdownEditor
-          text={text}
-          setText={setText}
-          setIsEdited={setIsEdited}
-        />
+        <MarkdownEditor text={text} setText={setText} setIsEdited={setIsEdited} />
       </Box>
 
-      <Dialog
-        open={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
+      <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>投稿設定</DialogTitle>
         <DialogContent dividers>
           <FormControl component="fieldset">
-            <FormLabel component="legend" sx={{ mb: 1 }}>
-              公開範囲の設定
-            </FormLabel>
-            <RadioGroup
-              value={getVisibilityValue()}
-              onChange={(e) => handleVisibilityChange(e.target.value)}
-            >
-              <FormControlLabel
-                value="public"
-                control={<Radio />}
-                label="🌐 全体に公開（一覧に表示）"
-              />
-              <FormControlLabel
-                value="unlisted"
-                control={<Radio />}
-                label="🔗 限定公開（URLを知っている人のみ）"
-              />
-              <FormControlLabel
-                value="private"
-                control={<Radio />}
-                label="🔒 非公開（自分のみ閲覧）"
-              />
+            <FormLabel component="legend" sx={{ mb: 1 }}>公開範囲の設定</FormLabel>
+            <RadioGroup value={getVisibilityValue()} onChange={(e) => handleVisibilityChange(e.target.value)}>
+              <FormControlLabel value="public" control={<Radio />} label="🌐 全体に公開（一覧に表示）" />
+              <FormControlLabel value="unlisted" control={<Radio />} label="🔗 限定公開（URLを知っている人のみ）" />
+              <FormControlLabel value="private" control={<Radio />} label="🔒 非公開（自分のみ閲覧）" />
             </RadioGroup>
           </FormControl>
+
+          <PublishWebhookSettings disabled={isPrivate || !isPublished} />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setIsDialogOpen(false)} color="inherit">
-            戻る
-          </Button>
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => handleSave("public")}
-            disabled={isFetching || !title.trim()}
-          >
+          <Button onClick={() => setIsDialogOpen(false)} color="inherit">戻る</Button>
+          <Button variant="contained" color="secondary" onClick={() => handleSave("public")} disabled={isFetching || !title.trim()}>
             {isFetching
               ? "送信中..."
-              : (() => {
-                  if (isPrivate) return "保存（非公開）";
-                  if (isPublished) return "保存して公開";
-                  return "保存して限定公開"; // isPublished: false かつ isPrivate: false
-                })()}
+              : isPrivate
+                ? "保存（非公開）"
+                : isPublished
+                  ? "保存して公開"
+                  : "保存して限定公開"}
           </Button>
         </DialogActions>
       </Dialog>
-      <ConfirmLeaveDialog
-        open={isConfirmDialogOpen}
-        onClose={() => setIsConfirmDialogOpen(false)}
-      />
+      <ConfirmLeaveDialog open={isConfirmDialogOpen} onClose={() => setIsConfirmDialogOpen(false)} />
     </Box>
   );
 }
