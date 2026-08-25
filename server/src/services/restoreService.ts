@@ -232,12 +232,12 @@ export class RestoreService {
       // Restored sessions must never remain valid on a new/restored instance.
       await prisma.user_sessions.deleteMany();
       await serverSettingsService.initialize();
-      await serverSettingsService.set(ServerSettingKey.MaintenanceMode, "true");
+      await serverSettingsService.set(ServerSettingKey.MaintenanceMode, "false");
 
       return {
         success: true,
         manifest,
-        message: "Restore completed. All sessions were invalidated and maintenance mode remains enabled.",
+        message: "Restore completed. All sessions were invalidated.",
       };
     } catch (error) {
       if (uploadsRestoreStarted) {
