@@ -7,7 +7,7 @@ import { loginRoute, login2faRoute, registerRoute } from "./auth";
 import { maintenanceRoute } from "./maintenance";
 import { adminRoute, adminTopRoute, adminSecurityRoute, adminServerSettingsRoute, adminBackupRestoreRoute, adminWebhooksRoute, adminUserManagementRoute } from "./admin";
 import { articleCreateRoute, articleEditRoute, draftsRoute, trashRoute, articleRoute, articleIndexRoute, articleLikerRoute } from "./articles";
-import { userRoute, userProfileIndexRoute, userFollowerRoute, userFollowingRoute, userFollowingTagsRoute, userStockRoute, userStockIndexRoute, userSettingsRoute, accountSettingRoute, accountCustomImageRoute, publicProfileRoute, user2faSettingRoute, uploadedImagesRoute, securityRoute, apiKeySettingsRoute } from "./user";
+import { userRoute, userProfileIndexRoute, userFollowerRoute, userFollowingRoute, userFollowingTagsRoute, userStockRoute, userStockIndexRoute, userSettingsRoute, accountSettingRoute, accountCustomImageRoute, publicProfileRoute, user2faSettingRoute, uploadedImagesRoute, securityRoute, apiKeySettingsRoute, userWebhooksRoute } from "./user";
 import { stockListRoute, stocksRoute, stocksIndexRoute, stocksNewRoute, stocksDetailsRoute, stockEditRoute } from "./stocks";
 import { tagsRoute, tagProfileRoute, tagEditRoute } from "./tags";
 import { indexRoute, searchRoute, trendRoute, timelineRoute } from "./home";
@@ -23,7 +23,7 @@ export const routeTree = baseRootRoute.addChildren([
     tagsRoute, tagProfileRoute, tagEditRoute,
     articleRoute.addChildren([articleIndexRoute, articleLikerRoute]),
     userStockRoute.addChildren([userStockIndexRoute]),
-    userSettingsRoute.addChildren([accountSettingRoute, accountCustomImageRoute, publicProfileRoute, securityRoute, user2faSettingRoute, apiKeySettingsRoute, uploadedImagesRoute]),
+    userSettingsRoute.addChildren([accountSettingRoute, accountCustomImageRoute, publicProfileRoute, securityRoute, user2faSettingRoute, apiKeySettingsRoute, userWebhooksRoute, uploadedImagesRoute]),
     draftsRoute, trashRoute,
     userRoute.addChildren([userProfileIndexRoute, userFollowerRoute, userFollowingRoute, userFollowingTagsRoute]),
   ]),

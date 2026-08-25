@@ -7,54 +7,80 @@ import { serverSettingsService } from "./serverSettingsService.js";
 import {
   WebhookEventType,
   WebhookScope,
+  findWebhookEventDefinition,
 } from "../webhooks/events.js";
-import type { WebhookContext } from "../webhooks/context.js";
+import type {
+  AnyWebhookContext,
+  WebhookContext,
+} from "../webhooks/context.js";
 import { evaluateWebhookTemplate } from "../webhooks/templateEvaluator.js";
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
+export type WebhookDispatchOptions = {
+  recipientUserId?: string | null;
+  selectedWebhookIds?: string[];
+};
+
 export class WebhookDispatcherService {
   constructor(private deliveryRepo: WebhookDeliveryRepository) {}
+
+  async dispatch<TEvent extends WebhookEventType>(
+    eventType: TEvent,
+    context: WebhookContext<TEvent>,
+    options: WebhookDispatchOptions = {},
+  ): Promise<void> {
+    if (!serverSettingsService.isEnabled(ServerSettingKey.WebhooksEnabled)) {
+      return;
+    }
+
+    const definition = findWebhookEventDefinition(eventType);
+    if (!definition) {
+      throw new Error(`Unknown webhook event: ${eventType}`);
+    }
+
+    const allowUserWebhooks = serverSettingsService.isEnabled(
+      ServerSettingKey.AllowUserWebhooks,
+    );
+    const recipientUserId = allowUserWebhooks
+      ? (options.recipientUserId ?? undefined)
+      : undefined;
+
+    const targets = await this.deliveryRepo.findActiveTargets(
+      eventType,
+      recipientUserId,
+    );
+    const selected = options.selectedWebhookIds
+      ? new Set(options.selectedWebhookIds)
+      : null;
+
+    await Promise.allSettled(
+      targets
+        .filter((target) => {
+          if (selected && !selected.has(target.id)) return false;
+          if (target.scope === WebhookScope.User && !allowUserWebhooks) return false;
+          if (!definition.scopes.includes(target.scope)) return false;
+          return true;
+        })
+        .map((target) => this.deliver(target, eventType, context)),
+    );
+  }
 
   async dispatchArticlePublished(
     context: WebhookContext<typeof WebhookEventType.ArticlePublished>,
     ownerUserId: string,
     selectedWebhookIds: string[],
   ): Promise<void> {
-    if (
-      selectedWebhookIds.length === 0 ||
-      !serverSettingsService.isEnabled(ServerSettingKey.WebhooksEnabled)
-    ) {
-      return;
-    }
-
-    const allowUserWebhooks = serverSettingsService.isEnabled(
-      ServerSettingKey.AllowUserWebhooks,
-    );
-
-    const selected = new Set(selectedWebhookIds);
-    const targets = await this.deliveryRepo.findActiveTargets(
-      WebhookEventType.ArticlePublished,
-      allowUserWebhooks ? ownerUserId : undefined,
-    );
-
-    await Promise.allSettled(
-      targets
-        .filter(
-          (target) =>
-            selected.has(target.id) &&
-            (target.scope === WebhookScope.System || allowUserWebhooks),
-        )
-        .map((target) =>
-          this.deliver(target, WebhookEventType.ArticlePublished, context),
-        ),
-    );
+    return this.dispatch(WebhookEventType.ArticlePublished, context, {
+      recipientUserId: ownerUserId,
+      selectedWebhookIds,
+    });
   }
 
   private async deliver(
     target: WebhookDeliveryTarget,
-    eventType: typeof WebhookEventType.ArticlePublished,
-    context: WebhookContext<typeof WebhookEventType.ArticlePublished>,
+    eventType: WebhookEventType,
+    context: AnyWebhookContext,
   ): Promise<void> {
     const startedAt = performance.now();
 
