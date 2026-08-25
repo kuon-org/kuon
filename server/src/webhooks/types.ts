@@ -16,7 +16,7 @@ export type CreateWebhookInput = {
   url: string;
   httpMethod?: "POST";
   payloadTemplate: unknown;
-  events: WebhookEventType[];
+  event: WebhookEventType;
   headers?: WebhookHeaderInput[];
 };
 
@@ -33,13 +33,13 @@ export type WebhookRecord = {
   url: string;
   httpMethod: string;
   payloadTemplate: unknown;
+  event: WebhookEventType;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
 
 export type WebhookDetail = WebhookRecord & {
-  events: WebhookEventType[];
   headers: WebhookHeaderInput[];
 };
 
