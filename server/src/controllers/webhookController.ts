@@ -58,6 +58,7 @@ export class WebhookController {
 
       const payload = this.previewService.preview({
         payloadTemplate: req.body?.payloadTemplate,
+        eventType: req.body?.eventType,
       });
       return res.status(200).json({ payload });
     } catch (error) {
@@ -76,6 +77,7 @@ export class WebhookController {
         url: req.body?.url,
         headers: req.body?.headers,
         payloadTemplate: req.body?.payloadTemplate,
+        eventType: req.body?.eventType,
       });
       return res.status(200).json(result);
     } catch (error) {
