@@ -29,6 +29,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { AvailableVariables } from "../../components/Webhook/AvailableVariables";
 import { PayloadBuilder } from "../../components/Webhook/PayloadBuilder";
 import {
   useWebhookAdmin,
@@ -92,10 +93,11 @@ export const Webhooks = () => {
 
   const webhooksEnabled = settings?.find((s) => s.key === "webhooks_enabled")?.value === "true";
   const allowUserWebhooks = settings?.find((s) => s.key === "allow_user_webhooks")?.value === "true";
+  const selectedEvent = events[0];
 
   const variables = useMemo(
-    () => metadata?.events.find((event) => events.includes(event.type))?.variables ?? [],
-    [metadata, events],
+    () => metadata?.events.find((event) => event.type === selectedEvent)?.variables ?? [],
+    [metadata, selectedEvent],
   );
 
   const syncPayload = (value: unknown) => {
@@ -286,13 +288,18 @@ export const Webhooks = () => {
           {mode === "builder" ? (
             <PayloadBuilder value={payload} variables={variables} onChange={syncPayload} />
           ) : (
-            <TextField multiline minRows={16} fullWidth value={jsonText} onChange={(e) => applyJson(e.target.value)} error={!!jsonError} helperText={jsonError ?? "{{article.title}} などのKuon variableを利用できます"} inputProps={{ style: { fontFamily: "monospace" } }} />
+            <Stack spacing={1.5}>
+              <Box display="flex" justifyContent="flex-end">
+                <AvailableVariables variables={variables} />
+              </Box>
+              <TextField multiline minRows={16} fullWidth value={jsonText} onChange={(e) => applyJson(e.target.value)} error={!!jsonError} helperText={jsonError ?? "{{article.title}} などのKuon variableを利用できます"} inputProps={{ style: { fontFamily: "monospace" } }} />
+            </Stack>
           )}
         </Paper>
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-          <Button variant="outlined" disabled={!!jsonError || previewPending} onClick={async () => setPreview((await previewPayload(payload)).payload)}>Preview</Button>
-          <Button variant="outlined" disabled={!url || !!jsonError || testPending} onClick={async () => setTestResult(await testSend({ url, headers, payloadTemplate: payload }))}>Test Send</Button>
+          <Button variant="outlined" disabled={!!jsonError || previewPending} onClick={async () => setPreview((await previewPayload({ payloadTemplate: payload, eventType: selectedEvent })).payload)}>Preview</Button>
+          <Button variant="outlined" disabled={!url || !!jsonError || testPending} onClick={async () => setTestResult(await testSend({ url, headers, payloadTemplate: payload, eventType: selectedEvent }))}>Test Send</Button>
           <Button variant="contained" disabled={!url || !name || events.length === 0 || !!jsonError || savePending} onClick={async () => { await saveWebhook({ id: editingId, input: input() }); resetEditor(); }}>{editingId ? "Update" : "Save"}</Button>
         </Stack>
 
