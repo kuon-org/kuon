@@ -10,11 +10,13 @@ export type ServerSetting = {
 export type ServerSettings = {
   allowApiKey: boolean;
   requireTotpForExternalIdp: boolean;
+  requireAuthentication: boolean;
 };
 
 const defaultSettings: ServerSettings = {
   allowApiKey: false,
   requireTotpForExternalIdp: false,
+  requireAuthentication: false,
 };
 
 export class ServerSettingsService {
@@ -33,6 +35,9 @@ export class ServerSettingsService {
       if (setting.key === ServerSettingKey.RequireTotpForExternalIdp) {
         this.settings.requireTotpForExternalIdp = setting.value === "true";
       }
+      if (setting.key === ServerSettingKey.RequireAuthentication) {
+        this.settings.requireAuthentication = setting.value === "true";
+      }
     }
   }
 
@@ -46,6 +51,8 @@ export class ServerSettingsService {
         return this.settings.allowApiKey;
       case ServerSettingKey.RequireTotpForExternalIdp:
         return this.settings.requireTotpForExternalIdp;
+      case ServerSettingKey.RequireAuthentication:
+        return this.settings.requireAuthentication;
     }
   }
 
@@ -81,6 +88,9 @@ export class ServerSettingsService {
     if (normalizedKey === ServerSettingKey.RequireTotpForExternalIdp) {
       this.settings.requireTotpForExternalIdp = value === "true";
     }
+    if (normalizedKey === ServerSettingKey.RequireAuthentication) {
+      this.settings.requireAuthentication = value === "true";
+    }
 
     return {
       key: setting.key,
@@ -98,6 +108,9 @@ export class ServerSettingsService {
     if (key === ServerSettingKey.RequireTotpForExternalIdp) {
       this.settings.requireTotpForExternalIdp =
         defaultSettings.requireTotpForExternalIdp;
+    }
+    if (key === ServerSettingKey.RequireAuthentication) {
+      this.settings.requireAuthentication = defaultSettings.requireAuthentication;
     }
   }
 }

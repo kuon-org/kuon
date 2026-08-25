@@ -135,7 +135,10 @@ export const useServerSettingsQuery = () => {
             return data as ServerSetting;
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["serverSettings"] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["serverSettings"] }),
+                queryClient.invalidateQueries({ queryKey: ["publicServerSettings"] }),
+            ]);
         },
     });
 

@@ -27,6 +27,9 @@ export const ServerSettings = () => {
     settings?.find(
       (setting) => setting.key === "require_totp_for_external_idp",
     )?.value === "true";
+  const requireAuthentication =
+    settings?.find((setting) => setting.key === "require_authentication")
+      ?.value === "true";
 
   const updateBooleanSetting = async (key: string, enabled: boolean) => {
     setError(null);
@@ -66,6 +69,30 @@ export const ServerSettings = () => {
         </Box>
       ) : (
         <>
+          <Typography variant="h5" sx={{ mb: 1 }}>
+            ログイン必須
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            有効にすると、未ログインユーザーによる記事・タグ・ユーザー情報などの閲覧を禁止し、ログイン画面へ誘導します。ログインや外部IdP認証に必要なエンドポイントは引き続き利用できます。
+          </Typography>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={requireAuthentication}
+                onChange={(event) =>
+                  updateBooleanSetting(
+                    "require_authentication",
+                    event.target.checked,
+                  )
+                }
+                disabled={updateServerSetting_isPending}
+              />
+            }
+            label={requireAuthentication ? "要求する" : "要求しない"}
+          />
+
+          <Divider sx={{ my: 3 }} />
+
           <Typography variant="h5" sx={{ mb: 1 }}>
             API Key
           </Typography>
