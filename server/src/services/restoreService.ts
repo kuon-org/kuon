@@ -7,12 +7,10 @@ import {
   mkdtemp,
   readFile,
   readdir,
-  rename,
   rm,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import crypto from "node:crypto";
 import prisma from "../prisma/client.js";
 import { runMigrations } from "../database/migrationRunner.js";
 import { ServerSettingKey } from "../constants/serverSettings.js";
@@ -99,6 +97,32 @@ const assertNoLinks = async (directory: string): Promise<void> => {
   }
 };
 
+const directoryExists = async (directory: string) => {
+  try {
+    const stat = await lstat(directory);
+    return stat.isDirectory();
+  } catch {
+    return false;
+  }
+};
+
+const clearDirectory = async (directory: string) => {
+  await mkdir(directory, { recursive: true });
+  for (const entry of await readdir(directory)) {
+    await rm(path.join(directory, entry), { recursive: true, force: true });
+  }
+};
+
+const copyDirectoryContents = async (source: string, destination: string) => {
+  await mkdir(destination, { recursive: true });
+  for (const entry of await readdir(source)) {
+    await cp(path.join(source, entry), path.join(destination, entry), {
+      recursive: true,
+      force: true,
+    });
+  }
+};
+
 export class RestoreService {
   private uploadsPath = path.resolve(process.cwd(), "public/uploads");
 
@@ -110,12 +134,8 @@ export class RestoreService {
     const workDir = await mkdtemp(path.join(tmpdir(), "kuon-restore-"));
     const extractedDir = path.join(workDir, "extracted");
     const safetyDumpPath = path.join(workDir, "pre-restore.dump");
-    const uploadsParent = path.dirname(this.uploadsPath);
-    const token = crypto.randomUUID();
-    const stagedUploads = path.join(uploadsParent, `.uploads-restore-${token}`);
-    const previousUploads = path.join(uploadsParent, `.uploads-previous-${token}`);
-    let originalUploadsMoved = false;
-    let uploadsSwapped = false;
+    const safetyUploadsPath = path.join(workDir, "pre-restore-uploads");
+    let uploadsRestoreStarted = false;
     let databaseRestoreStarted = false;
 
     try {
@@ -171,14 +191,16 @@ export class RestoreService {
         );
       }
 
-      // Prepare uploads on the same filesystem before entering the destructive phase.
-      await rm(stagedUploads, { recursive: true, force: true });
-      await cp(restoredUploadsPath, stagedUploads, { recursive: true, force: true });
+      // Prepare an uploads rollback copy before entering the destructive phase.
+      await mkdir(safetyUploadsPath, { recursive: true });
+      if (await directoryExists(this.uploadsPath)) {
+        await copyDirectoryContents(this.uploadsPath, safetyUploadsPath);
+      }
 
       runtimeMaintenanceService.lock("instance-restore");
       const databaseUri = createPgConnectionUri();
 
-      // Safety snapshot for best-effort rollback if restore fails.
+      // Safety DB snapshot for best-effort rollback if restore fails.
       await runCommand(getPgDumpCommand(), [
         "--format=custom",
         "--file",
@@ -201,24 +223,16 @@ export class RestoreService {
 
       await runMigrations();
 
-      await mkdir(uploadsParent, { recursive: true });
-      await rm(previousUploads, { recursive: true, force: true });
-      try {
-        await rename(this.uploadsPath, previousUploads);
-        originalUploadsMoved = true;
-      } catch (error: any) {
-        if (error?.code !== "ENOENT") throw error;
-      }
-      await rename(stagedUploads, this.uploadsPath);
-      uploadsSwapped = true;
+      // Replace contents rather than renaming the directory itself because uploads
+      // can be a Docker bind/named-volume mount point.
+      uploadsRestoreStarted = true;
+      await clearDirectory(this.uploadsPath);
+      await copyDirectoryContents(restoredUploadsPath, this.uploadsPath);
 
       // Restored sessions must never remain valid on a new/restored instance.
       await prisma.user_sessions.deleteMany();
       await serverSettingsService.initialize();
       await serverSettingsService.set(ServerSettingKey.MaintenanceMode, "true");
-
-      await rm(previousUploads, { recursive: true, force: true });
-      originalUploadsMoved = false;
 
       return {
         success: true,
@@ -226,25 +240,11 @@ export class RestoreService {
         message: "Restore completed. All sessions were invalidated and maintenance mode remains enabled.",
       };
     } catch (error) {
-      if (uploadsSwapped) {
-        await rm(this.uploadsPath, { recursive: true, force: true }).catch(() => {});
-        if (originalUploadsMoved) {
-          await rename(previousUploads, this.uploadsPath)
-            .then(() => {
-              originalUploadsMoved = false;
-            })
-            .catch((rollbackError) => {
-              console.error("❌ Uploads rollback failed; previous uploads preserved at:", previousUploads, rollbackError);
-            });
-        }
-      } else if (originalUploadsMoved) {
-        await rename(previousUploads, this.uploadsPath)
-          .then(() => {
-            originalUploadsMoved = false;
-          })
-          .catch((rollbackError) => {
-            console.error("❌ Uploads rollback failed; previous uploads preserved at:", previousUploads, rollbackError);
-          });
+      if (uploadsRestoreStarted) {
+        await clearDirectory(this.uploadsPath).catch(() => {});
+        await copyDirectoryContents(safetyUploadsPath, this.uploadsPath).catch((rollbackError) => {
+          console.error("❌ Uploads rollback failed:", rollbackError);
+        });
       }
 
       // Best-effort DB rollback using the snapshot made immediately before restore.
@@ -268,11 +268,6 @@ export class RestoreService {
       throw error;
     } finally {
       runtimeMaintenanceService.unlock();
-      await rm(stagedUploads, { recursive: true, force: true }).catch(() => {});
-      // Do not delete previousUploads here: if rollback rename failed it is the recovery copy.
-      if (!originalUploadsMoved) {
-        await rm(previousUploads, { recursive: true, force: true }).catch(() => {});
-      }
       await rm(workDir, { recursive: true, force: true }).catch(() => {});
     }
   }
