@@ -19,8 +19,12 @@ export class WebhookDispatcherService {
   async dispatchArticlePublished(
     context: WebhookContext<typeof WebhookEventType.ArticlePublished>,
     ownerUserId: string,
+    selectedWebhookIds: string[],
   ): Promise<void> {
-    if (!serverSettingsService.isEnabled(ServerSettingKey.WebhooksEnabled)) {
+    if (
+      selectedWebhookIds.length === 0 ||
+      !serverSettingsService.isEnabled(ServerSettingKey.WebhooksEnabled)
+    ) {
       return;
     }
 
@@ -28,6 +32,7 @@ export class WebhookDispatcherService {
       ServerSettingKey.AllowUserWebhooks,
     );
 
+    const selected = new Set(selectedWebhookIds);
     const targets = await this.deliveryRepo.findActiveTargets(
       WebhookEventType.ArticlePublished,
       allowUserWebhooks ? ownerUserId : undefined,
@@ -37,7 +42,8 @@ export class WebhookDispatcherService {
       targets
         .filter(
           (target) =>
-            target.scope === WebhookScope.System || allowUserWebhooks,
+            selected.has(target.id) &&
+            (target.scope === WebhookScope.System || allowUserWebhooks),
         )
         .map((target) =>
           this.deliver(target, WebhookEventType.ArticlePublished, context),
