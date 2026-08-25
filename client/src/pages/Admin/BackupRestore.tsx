@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import apiClient from "../../api/client";
+import { RestorePanel } from "./RestorePanel";
 
 const getFileName = (contentDisposition?: string) => {
   const match = contentDisposition?.match(/filename="?([^";]+)"?/i);
@@ -61,7 +62,7 @@ export const BackupRestore = () => {
         Backup & Restore
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Kuonのデータベースとアップロード済みファイルを、移行・障害復旧用のバックアップとして保存できます。
+        Kuonのデータベースとアップロード済みファイルを、移行・障害復旧用のバックアップとして保存・復元できます。
       </Typography>
 
       {error && (
@@ -90,14 +91,7 @@ export const BackupRestore = () => {
         </Button>
       </Box>
 
-      <Box>
-        <Typography variant="h5" sx={{ mb: 1 }}>
-          Restore
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          バックアップからの復元は今後のアップデートで対応予定です。
-        </Typography>
-      </Box>
+      <RestorePanel onError={setError} />
     </Paper>
   );
 };
