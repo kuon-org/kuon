@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import prisma from "../prisma/client.js";
 import type {
   CreateWebhookInput,
@@ -233,7 +234,7 @@ export class WebhookRepository {
   }
 
   private async replaceChildren(
-    tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+    tx: Prisma.TransactionClient,
     webhookId: string,
     events: WebhookEventType[],
     headers: WebhookHeaderInput[],
