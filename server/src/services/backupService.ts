@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import prisma from "../prisma/client.js";
 
 export interface BackupArchive {
   fileName: string;
@@ -14,6 +15,7 @@ interface BackupManifest {
   createdAt: string;
   kuonVersion: string;
   postgresVersion: string;
+  pgDumpVersion: string;
 }
 
 const runCommand = (
@@ -56,7 +58,6 @@ const createPgConnectionUri = () => {
   if (!databaseUrl) throw new Error("DATABASE_URL is not configured");
 
   const url = new URL(databaseUrl);
-  // Prisma-specific parameters are not understood by libpq / pg_dump.
   url.searchParams.delete("schema");
   return url.toString();
 };
@@ -87,16 +88,20 @@ export class BackupService {
         databaseUri,
       ]);
 
-      const versionOutput = await runCommand(pgDump, ["--version"]);
+      const pgDumpVersion = await runCommand(pgDump, ["--version"]);
+      const [postgres] = await prisma.$queryRaw<Array<{ version: string }>>`
+        SELECT current_setting('server_version') AS version
+      `;
+
       const manifest: BackupManifest = {
         formatVersion: 1,
         createdAt: createdAt.toISOString(),
         kuonVersion: process.env.KUON_VERSION ?? "unknown",
-        postgresVersion: versionOutput,
+        postgresVersion: postgres?.version ?? "unknown",
+        pgDumpVersion,
       };
       await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
-      // Ensure the uploads directory exists so every backup has a stable structure.
       await mkdir(this.uploadsPath, { recursive: true });
 
       await runCommand("tar", [
