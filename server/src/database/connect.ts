@@ -52,7 +52,12 @@ export const connectDatabaseWithRetry = async () => {
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       console.log(`🔌 Connecting to database (${attempt}/${maxAttempts})...`);
-      await prisma.$connect();
+
+      // With Prisma driver adapters, $connect() alone does not necessarily prove
+      // that the database can actually execute a query. Use a lightweight query
+      // as the readiness check so migration starts only after PostgreSQL is usable.
+      await prisma.$queryRaw`SELECT 1`;
+
       console.log("✅ Database connection established");
       return;
     } catch (error) {
@@ -69,6 +74,7 @@ export const connectDatabaseWithRetry = async () => {
         );
         throw new Error(
           `Database connection failed after ${maxAttempts} attempt(s)`,
+          { cause: error },
         );
       }
 
