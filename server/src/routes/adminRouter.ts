@@ -1,7 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
 import { tmpdir } from "node:os";
-import { UsersRepository } from "../repositories/usersRepository.js";
 import { AdminService } from "../services/adminService.js";
 import { AdminController } from "../controllers/adminController.js";
 import { BackupController } from "../controllers/backupController.js";
@@ -25,9 +24,8 @@ const restoreUpload = multer({
   limits: { fileSize: 2 * 1024 * 1024 * 1024 },
 });
 
-const usersRepo = new UsersRepository();
 const adminRepo = new AdminRepository();
-const adminService = new AdminService(usersRepo, adminRepo);
+const adminService = new AdminService(adminRepo);
 const adminController = new AdminController(adminService, serverSettingsService);
 const backupController = new BackupController(backupService);
 const restoreController = new RestoreController(restoreService);
