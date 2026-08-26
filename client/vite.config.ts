@@ -11,6 +11,17 @@ export default defineConfig({
     }),
   ],
 
+  build: {
+    rolldownOptions: {
+      output: {
+        minify: {
+          compress: {
+            dropConsole: true,
+          },
+        },
+      },
+    },
+  },
   resolve: {
     dedupe: ["react", "react-dom", "@emotion/react", "@emotion/styled"],
   },
