@@ -11,12 +11,6 @@ export default defineConfig({
     }),
   ],
 
-  build: {
-    minify: "esbuild",
-  },
-  esbuild: {
-    drop: ["console", "debugger"],
-  },
   resolve: {
     dedupe: ["react", "react-dom", "@emotion/react", "@emotion/styled"],
   },
