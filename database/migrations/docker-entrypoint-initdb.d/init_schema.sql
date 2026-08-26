@@ -279,7 +279,7 @@ COMMENT ON COLUMN articles.comment_count IS 'コメント数';
 -- stock_lists テーブル
 CREATE TABLE IF NOT EXISTS stock_lists (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
-    user_id UUID REFERENCES stock_lists(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
     name VARCHAR(100) NOT NULL,
     description TEXT,
     -- 'public' (公開), 'limited' (限定公開), 'private' (非公開)
