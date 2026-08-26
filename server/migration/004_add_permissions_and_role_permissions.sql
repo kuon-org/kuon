@@ -5,7 +5,7 @@ ALTER TABLE knowledge.roles
 -- so their Permission mappings are available on the very first startup.
 INSERT INTO knowledge.roles (name, display_name, description, is_builtin) VALUES
   ('admin', 'Admin', '全権限。ユーザ管理、設定変更、コンテンツ編集・削除など', TRUE),
-  ('moderator', 'Moderator', '投稿やコメントの管理・削除', TRUE),
+  ('moderator', 'Moderator', '投稿やコメント、タグの管理・削除', TRUE),
   ('general', 'General', '自分のコンテンツの作成・編集', TRUE),
   ('readonly', 'Readonly', '閲覧専用。編集・削除不可', TRUE)
 ON CONFLICT (name) DO UPDATE SET is_builtin = TRUE;
@@ -43,6 +43,7 @@ INSERT INTO knowledge.permissions (key, display_name, category, description) VAL
   ('comment.create', 'コメントを作成', 'comment', 'コメントを投稿できます'),
   ('comment.delete.own', '自分のコメントを削除', 'comment', '自分のコメントを削除できます'),
   ('comment.delete.any', 'すべてのコメントを削除', 'comment', '所有者に関係なくコメントを削除できます'),
+  ('tag.manage', 'タグを管理', 'tag', 'タグ情報とタグ画像を編集できます'),
   ('user.read', 'ユーザー一覧を閲覧', 'user', '管理画面からユーザー情報を確認できます'),
   ('user.manage', 'ユーザーを管理', 'user', 'ユーザーの有効・無効などを管理できます'),
   ('role.read', 'ロールを閲覧', 'role', 'ロールとPermissionの設定を確認できます'),
@@ -54,6 +55,7 @@ INSERT INTO knowledge.permissions (key, display_name, category, description) VAL
   ('system.idp.manage', 'IdP設定を管理', 'system', '外部IdP設定を変更できます'),
   ('system.webhook.manage', 'Webhookを管理', 'system', 'Webhook設定を変更できます'),
   ('system.backup.execute', 'Backup / Restoreを実行', 'system', 'バックアップの作成とリストアを実行できます'),
+  ('system.maintenance.bypass', 'メンテナンスモードを回避', 'system', 'メンテナンスモード中も管理操作のため画面へアクセスできます'),
   ('eventlog.read', 'イベントログを閲覧', 'system', 'サーバイベントログを閲覧できます')
 ON CONFLICT (key) DO UPDATE SET
   display_name = EXCLUDED.display_name,
@@ -68,14 +70,14 @@ CROSS JOIN knowledge.permissions p
 WHERE r.name = 'admin'
 ON CONFLICT DO NOTHING;
 
--- Moderator can manage content, but not users or system settings.
+-- Moderator can manage content and tags, but not users or system settings.
 INSERT INTO knowledge.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM knowledge.roles r
 JOIN knowledge.permissions p ON p.key IN (
   'article.read', 'article.create', 'article.update.own', 'article.update.any',
   'article.delete.own', 'article.delete.any', 'comment.create',
-  'comment.delete.own', 'comment.delete.any'
+  'comment.delete.own', 'comment.delete.any', 'tag.manage'
 )
 WHERE r.name = 'moderator'
 ON CONFLICT DO NOTHING;
