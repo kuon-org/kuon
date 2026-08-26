@@ -21,6 +21,12 @@ const errorResponse = (error: unknown) => {
       if (message.startsWith("UnknownPermission:")) {
         return { status: 400, message: "不明なPermissionが指定されています" };
       }
+      if (message.startsWith("PermissionEscalation:")) {
+        return {
+          status: 403,
+          message: "自分が持っていないPermissionをロールへ付与・割り当てることはできません",
+        };
+      }
       return { status: 500, message: "ロール設定の処理に失敗しました" };
   }
 };
@@ -51,6 +57,9 @@ export class RoleController {
   };
 
   createRole = async (req: AuthRequest, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ message: "未ログインです" });
+    }
     try {
       const { name, displayName, description, permissions } = req.body ?? {};
       if (
@@ -60,7 +69,7 @@ export class RoleController {
       ) {
         return res.status(400).json({ message: "入力内容が不正です" });
       }
-      const role = await permissionService.createRole({
+      const role = await permissionService.createRole(req.user.userId, {
         name,
         displayName,
         description: typeof description === "string" ? description : null,
@@ -74,13 +83,16 @@ export class RoleController {
   };
 
   updateRole = async (req: AuthRequest, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ message: "未ログインです" });
+    }
     try {
       const roleId = String(req.params.roleId);
       const { displayName, description, permissions } = req.body ?? {};
       if (typeof displayName !== "string" || !Array.isArray(permissions)) {
         return res.status(400).json({ message: "入力内容が不正です" });
       }
-      const role = await permissionService.updateRole(roleId, {
+      const role = await permissionService.updateRole(req.user.userId, roleId, {
         displayName,
         description: typeof description === "string" ? description : null,
         permissions,
