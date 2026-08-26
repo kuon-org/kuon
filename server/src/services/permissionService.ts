@@ -44,17 +44,22 @@ export class PermissionService {
     return permissions.some((permission) => current.has(permission));
   }
 
-  async createRole(input: {
-    name: string;
-    displayName: string;
-    description?: string | null;
-    permissions: string[];
-  }) {
+  async createRole(
+    actorUserId: string,
+    input: {
+      name: string;
+      displayName: string;
+      description?: string | null;
+      permissions: string[];
+    },
+  ) {
     const name = input.name.trim().toLowerCase();
     if (!/^[a-z0-9][a-z0-9_-]{1,49}$/.test(name)) {
       throw new Error("InvalidRoleName");
     }
     const permissions = this.validateAndNormalize(input.permissions);
+    await this.assertActorCanGrantPermissions(actorUserId, permissions);
+
     const roleId = await this.repository.createRole({
       name,
       displayName: input.displayName.trim() || name,
@@ -65,6 +70,7 @@ export class PermissionService {
   }
 
   async updateRole(
+    actorUserId: string,
     roleId: string,
     input: {
       displayName: string;
@@ -76,6 +82,8 @@ export class PermissionService {
     if (!role) throw new Error("RoleNotFound");
 
     const permissions = this.validateAndNormalize(input.permissions);
+    await this.assertActorCanGrantPermissions(actorUserId, permissions);
+
     if (role.name === "admin") {
       const missing = ADMIN_REQUIRED_PERMISSIONS.filter(
         (permission) => !permissions.includes(permission),
@@ -107,6 +115,13 @@ export class PermissionService {
       throw new Error("RoleNotFound");
     }
 
+    const roles = await this.repository.getRoles();
+    const selectedRoles = roles.filter((role) => uniqueRoleIds.includes(role.id));
+    const grantedPermissions = [
+      ...new Set(selectedRoles.flatMap((role) => role.permissions)),
+    ];
+    await this.assertActorCanGrantPermissions(actorUserId, grantedPermissions);
+
     const adminRoleIds = await this.repository.getRoleIdsByName(["admin"]);
     const adminRoleId = adminRoleIds.get("admin");
     const currentRoleIds = await this.repository.getUserRoleIds(userId);
@@ -122,6 +137,19 @@ export class PermissionService {
 
     await this.repository.replaceUserRoles(userId, uniqueRoleIds, actorUserId);
     return this.repository.getUserRoleIds(userId);
+  }
+
+  private async assertActorCanGrantPermissions(
+    actorUserId: string,
+    requested: readonly PermissionKey[],
+  ) {
+    const actorPermissions = new Set(await this.getUserPermissions(actorUserId));
+    const unauthorized = requested.filter(
+      (permission) => !actorPermissions.has(permission),
+    );
+    if (unauthorized.length > 0) {
+      throw new Error(`PermissionEscalation:${unauthorized.join(",")}`);
+    }
   }
 
   private validateAndNormalize(permissions: string[]): PermissionKey[] {
