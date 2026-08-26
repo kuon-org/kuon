@@ -29,10 +29,9 @@ const usersRepo = new UsersRepository();
 const adminRepo = new AdminRepository();
 const adminService = new AdminService(usersRepo, adminRepo);
 const adminController = new AdminController(adminService, serverSettingsService);
-const backupController = new BackupController(adminService, backupService);
-const restoreController = new RestoreController(adminService, restoreService);
+const backupController = new BackupController(backupService);
+const restoreController = new RestoreController(restoreService);
 const webhookController = new WebhookController(
-  adminService,
   webhookService,
   webhookPreviewService,
 );
