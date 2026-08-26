@@ -1,3 +1,5 @@
+-- 004適用済み環境向けの追補Permission。
+-- タグ管理とメンテナンスモード回避を既存Permission基盤へ追加する。
 INSERT INTO knowledge.permissions (key, display_name, category, description) VALUES
   ('tag.manage', 'タグを管理', 'tag', 'タグ情報とタグ画像を編集できます'),
   ('system.maintenance.bypass', 'メンテナンスモードを回避', 'system', 'メンテナンスモード中も管理操作のため画面へアクセスできます')
@@ -6,7 +8,7 @@ ON CONFLICT (key) DO UPDATE SET
   category = EXCLUDED.category,
   description = EXCLUDED.description;
 
--- Admin receives both permissions.
+-- Adminにはタグ管理とメンテナンスモード回避の両方を付与する
 INSERT INTO knowledge.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM knowledge.roles r
@@ -14,7 +16,7 @@ JOIN knowledge.permissions p ON p.key IN ('tag.manage', 'system.maintenance.bypa
 WHERE r.name = 'admin'
 ON CONFLICT DO NOTHING;
 
--- Moderator keeps the existing tag-management capability.
+-- Moderatorには従来のタグ管理権限を維持する
 INSERT INTO knowledge.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM knowledge.roles r
