@@ -22,10 +22,11 @@ export const useAdminPermissions = (enabled = true) => {
   const query = useQuery<{ permissions: string[] }>({
     queryKey: ["myPermissions"],
     queryFn: async () => {
-      const { data } = await apiClient.get("/admin/permissions/me");
+      const { data } = await apiClient.get("/permissions/me");
       return data;
     },
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: "always",
     enabled,
   });
 
