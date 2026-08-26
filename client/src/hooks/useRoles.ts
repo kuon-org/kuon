@@ -35,7 +35,7 @@ export const useAdminPermissions = () => {
   };
 };
 
-export const useRoleManagement = () => {
+export const useRoleManagement = (enabled = true) => {
   const queryClient = useQueryClient();
 
   const permissionsQuery = useQuery<PermissionDefinition[]>({
@@ -44,6 +44,7 @@ export const useRoleManagement = () => {
       const { data } = await apiClient.get("/admin/permissions");
       return data;
     },
+    enabled,
   });
 
   const rolesQuery = useQuery<RoleDefinition[]>({
@@ -52,6 +53,7 @@ export const useRoleManagement = () => {
       const { data } = await apiClient.get("/admin/roles");
       return data;
     },
+    enabled,
   });
 
   const createRoleMutation = useMutation({
@@ -116,8 +118,8 @@ export const useRoleManagement = () => {
   return {
     permissions: permissionsQuery.data ?? [],
     roles: rolesQuery.data ?? [],
-    isLoading: permissionsQuery.isLoading || rolesQuery.isLoading,
-    isError: permissionsQuery.isError || rolesQuery.isError,
+    isLoading: enabled && (permissionsQuery.isLoading || rolesQuery.isLoading),
+    isError: enabled && (permissionsQuery.isError || rolesQuery.isError),
     createRole: createRoleMutation.mutateAsync,
     createRole_isPending: createRoleMutation.isPending,
     updateRole: updateRoleMutation.mutateAsync,
