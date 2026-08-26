@@ -24,7 +24,10 @@ export const requireArticlePermission = (
       const permissions = new Set(
         await permissionService.getUserPermissions(req.user.userId),
       );
-      if (permissions.has(anyPermission)) return next();
+      if (permissions.has(anyPermission)) {
+        req.authorization = { resourceScope: "any" };
+        return next();
+      }
       if (!permissions.has(ownPermission)) return deny(res, ownPermission);
 
       const articleId = String(req.params.articleId);
@@ -34,6 +37,7 @@ export const requireArticlePermission = (
       });
       if (!article) return res.status(404).json({ message: "記事が見つかりません" });
       if (article.user_id !== req.user.userId) return deny(res, ownPermission);
+      req.authorization = { resourceScope: "own" };
       return next();
     } catch (error) {
       console.error("Article permission check failed", error);
@@ -55,7 +59,10 @@ export const requireCommentPermission = (
       const permissions = new Set(
         await permissionService.getUserPermissions(req.user.userId),
       );
-      if (permissions.has(anyPermission)) return next();
+      if (permissions.has(anyPermission)) {
+        req.authorization = { resourceScope: "any" };
+        return next();
+      }
       if (!permissions.has(ownPermission)) return deny(res, ownPermission);
 
       const commentId = String(req.params.commentId);
@@ -65,6 +72,7 @@ export const requireCommentPermission = (
       });
       if (!comment) return res.status(404).json({ message: "コメントが見つかりません" });
       if (comment.user_id !== req.user.userId) return deny(res, ownPermission);
+      req.authorization = { resourceScope: "own" };
       return next();
     } catch (error) {
       console.error("Comment permission check failed", error);
