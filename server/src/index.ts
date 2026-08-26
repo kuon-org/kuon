@@ -11,6 +11,7 @@ import { swaggerSpec, swaggerUiMiddleware } from "./swagger.js";
 import authRouter from "./routes/authRouter.js";
 import idpRouter from "./routes/idpRouter.js";
 import { init } from "./repositories/initRepository.js";
+import { connectDatabaseWithRetry } from "./database/connect.js";
 import { runMigrations } from "./database/migrationRunner.js";
 import commentsRouter from "./routes/commentsRouter.js";
 import adminRouter from "./routes/adminRouter.js";
@@ -88,6 +89,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 async function main() {
+  await connectDatabaseWithRetry();
   await runMigrations();
   await init();
   await serverSettingsService.initialize();
