@@ -1,8 +1,11 @@
+-- roles テーブルへ組み込みロール判定フラグを追加
 ALTER TABLE knowledge.roles
   ADD COLUMN IF NOT EXISTS is_builtin BOOLEAN NOT NULL DEFAULT FALSE;
 
--- Migrations run before the normal init seed. Ensure the preset roles exist here
--- so their Permission mappings are available on the very first startup.
+COMMENT ON COLUMN knowledge.roles.is_builtin IS 'Kuon標準の組み込みロールかどうか';
+
+-- migrationは通常の初期データ投入より先に実行されるため、
+-- Permission割り当てに必要な組み込みロールをここで保証する。
 INSERT INTO knowledge.roles (name, display_name, description, is_builtin) VALUES
   ('admin', 'Admin', '全権限。ユーザ管理、設定変更、コンテンツ編集・削除など', TRUE),
   ('moderator', 'Moderator', '投稿やコメント、タグの管理・削除', TRUE),
@@ -10,6 +13,7 @@ INSERT INTO knowledge.roles (name, display_name, description, is_builtin) VALUES
   ('readonly', 'Readonly', '閲覧専用。編集・削除不可', TRUE)
 ON CONFLICT (name) DO UPDATE SET is_builtin = TRUE;
 
+-- permissions
 CREATE TABLE IF NOT EXISTS knowledge.permissions (
   id UUID PRIMARY KEY DEFAULT uuidv7(),
   key VARCHAR(100) NOT NULL UNIQUE,
@@ -19,6 +23,15 @@ CREATE TABLE IF NOT EXISTS knowledge.permissions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+COMMENT ON TABLE knowledge.permissions IS 'Kuonで利用可能な操作権限のマスタ';
+COMMENT ON COLUMN knowledge.permissions.id IS 'Permission ID';
+COMMENT ON COLUMN knowledge.permissions.key IS 'Permissionの内部識別キー';
+COMMENT ON COLUMN knowledge.permissions.display_name IS '管理画面に表示するPermission名';
+COMMENT ON COLUMN knowledge.permissions.category IS 'Permissionの機能カテゴリ';
+COMMENT ON COLUMN knowledge.permissions.description IS 'Permissionの説明';
+COMMENT ON COLUMN knowledge.permissions.created_at IS '作成日時';
+
+-- role_permissions
 CREATE TABLE IF NOT EXISTS knowledge.role_permissions (
   role_id UUID NOT NULL REFERENCES knowledge.roles(id) ON DELETE CASCADE,
   permission_id UUID NOT NULL REFERENCES knowledge.permissions(id) ON DELETE CASCADE,
@@ -26,13 +39,21 @@ CREATE TABLE IF NOT EXISTS knowledge.role_permissions (
   PRIMARY KEY (role_id, permission_id)
 );
 
+COMMENT ON TABLE knowledge.role_permissions IS 'ロールとPermissionの紐付け';
+COMMENT ON COLUMN knowledge.role_permissions.role_id IS 'ロールID';
+COMMENT ON COLUMN knowledge.role_permissions.permission_id IS 'Permission ID';
+COMMENT ON COLUMN knowledge.role_permissions.created_at IS '紐付け日時';
+
+-- Permissionからロールを逆引きするためのインデックス
 CREATE INDEX IF NOT EXISTS idx_role_permissions_permission_id
   ON knowledge.role_permissions(permission_id);
 
+-- 既存環境の組み込みロールも標準ロールとしてマークする
 UPDATE knowledge.roles
 SET is_builtin = TRUE
 WHERE name IN ('admin', 'moderator', 'general', 'readonly');
 
+-- Kuonが提供するPermissionマスタ
 INSERT INTO knowledge.permissions (key, display_name, category, description) VALUES
   ('article.read', '記事を閲覧', 'article', '公開範囲内の記事を閲覧できます'),
   ('article.create', '記事を作成', 'article', '記事を新規作成できます'),
@@ -62,7 +83,7 @@ ON CONFLICT (key) DO UPDATE SET
   category = EXCLUDED.category,
   description = EXCLUDED.description;
 
--- Admin is a preset containing all permissions.
+-- AdminはすべてのPermissionを持つ標準ロール
 INSERT INTO knowledge.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM knowledge.roles r
@@ -70,7 +91,7 @@ CROSS JOIN knowledge.permissions p
 WHERE r.name = 'admin'
 ON CONFLICT DO NOTHING;
 
--- Moderator can manage content and tags, but not users or system settings.
+-- Moderatorはコンテンツとタグの管理権限を持つ
 INSERT INTO knowledge.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM knowledge.roles r
@@ -82,7 +103,7 @@ JOIN knowledge.permissions p ON p.key IN (
 WHERE r.name = 'moderator'
 ON CONFLICT DO NOTHING;
 
--- General users can manage their own content.
+-- Generalは自分自身のコンテンツを操作できる
 INSERT INTO knowledge.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM knowledge.roles r
@@ -93,7 +114,7 @@ JOIN knowledge.permissions p ON p.key IN (
 WHERE r.name = 'general'
 ON CONFLICT DO NOTHING;
 
--- Readonly users only receive read permission.
+-- Readonlyは記事閲覧のみ許可する
 INSERT INTO knowledge.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM knowledge.roles r
