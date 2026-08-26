@@ -18,7 +18,7 @@ export interface RoleDefinition {
   permissions: string[];
 }
 
-export const useAdminPermissions = () => {
+export const useAdminPermissions = (enabled = true) => {
   const query = useQuery<{ permissions: string[] }>({
     queryKey: ["myPermissions"],
     queryFn: async () => {
@@ -26,12 +26,13 @@ export const useAdminPermissions = () => {
       return data;
     },
     staleTime: 60_000,
+    enabled,
   });
 
   return {
     permissions: query.data?.permissions ?? [],
-    permissions_isLoading: query.isLoading,
-    permissions_isError: query.isError,
+    permissions_isLoading: enabled && query.isLoading,
+    permissions_isError: enabled && query.isError,
   };
 };
 
