@@ -16,6 +16,12 @@ services:
       PRJ_DB_NAME: ${PRJ_DB_NAME}
       # タイムゾーン
       TZ: "Asia/Tokyo"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     volumes:
       - db-data:/var/lib/postgresql
       - ./migrations/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
