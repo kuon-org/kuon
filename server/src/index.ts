@@ -14,6 +14,7 @@ import { init } from "./repositories/initRepository.js";
 import { runMigrations } from "./database/migrationRunner.js";
 import commentsRouter from "./routes/commentsRouter.js";
 import adminRouter from "./routes/adminRouter.js";
+import contentAuthorizationRouter from "./routes/contentAuthorizationRouter.js";
 import shareRouter from "./routes/shareRoutes.js";
 import stocksRoutes from "./routes/stocksRoutes.js";
 import pumlRouter from "./routes/plantumlRouter.js";
@@ -52,6 +53,10 @@ app.use("/api", totpRoutes);
 app.use("/api", usersRoutes);
 app.use("/api", idpRouter);
 app.use("/api", adminRouter);
+
+// Permission guards are mounted ahead of the existing content routers. They only
+// match mutating routes that require an explicit Kuon capability.
+app.use("/api", requireSiteAuthentication, contentAuthorizationRouter);
 
 // Anonymous content APIs are gated only when require_authentication is enabled.
 app.use("/api", requireSiteAuthentication, articlesRouter);
