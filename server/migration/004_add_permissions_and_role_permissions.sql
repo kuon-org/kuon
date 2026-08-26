@@ -1,6 +1,15 @@
 ALTER TABLE knowledge.roles
   ADD COLUMN IF NOT EXISTS is_builtin BOOLEAN NOT NULL DEFAULT FALSE;
 
+-- Migrations run before the normal init seed. Ensure the preset roles exist here
+-- so their Permission mappings are available on the very first startup.
+INSERT INTO knowledge.roles (name, display_name, description, is_builtin) VALUES
+  ('admin', 'Admin', '全権限。ユーザ管理、設定変更、コンテンツ編集・削除など', TRUE),
+  ('moderator', 'Moderator', '投稿やコメントの管理・削除', TRUE),
+  ('general', 'General', '自分のコンテンツの作成・編集', TRUE),
+  ('readonly', 'Readonly', '閲覧専用。編集・削除不可', TRUE)
+ON CONFLICT (name) DO UPDATE SET is_builtin = TRUE;
+
 CREATE TABLE IF NOT EXISTS knowledge.permissions (
   id UUID PRIMARY KEY DEFAULT uuidv7(),
   key VARCHAR(100) NOT NULL UNIQUE,
