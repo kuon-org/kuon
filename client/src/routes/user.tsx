@@ -16,6 +16,7 @@ const Security = lazy(() => import("../pages/UserSettings/Security").then((mod) 
 const TwoFASetting = lazy(() => import("../pages/UserSettings/twoFASetting").then((mod) => ({ default: mod.TwoFASetting })));
 const APIKeySettings = lazy(() => import("../pages/UserSettings/APIKeySettings").then((mod) => ({ default: mod.APIKeySettings })));
 const UserWebhooks = lazy(() => import("../pages/UserSettings/Webhooks").then((mod) => ({ default: mod.Webhooks })));
+const Notifications = lazy(() => import("../pages/UserSettings/Notifications").then((mod) => ({ default: mod.Notifications })));
 const UploadedImages = lazy(() => import("../pages/UserSettings/UploadedImages").then((mod) => ({ default: mod.UploadedImages })));
 const StockPage = lazy(() => import("../pages/Stock/StockPage").then((mod) => ({ default: mod.StockPage })));
 const StockDetail = lazy(() => import("../pages/Stock/StockDetails").then((mod) => ({ default: mod.StockDetail })));
@@ -116,6 +117,12 @@ export const userWebhooksRoute = createRoute({
   getParentRoute: () => userSettingsRoute,
   path: "webhooks",
   component: () => <Suspense fallback={<LoadingFallback />}><UserWebhooks /></Suspense>,
+});
+
+export const userNotificationsRoute = createRoute({
+  getParentRoute: () => userSettingsRoute,
+  path: "notifications",
+  component: () => <Suspense fallback={<LoadingFallback />}><Notifications /></Suspense>,
 });
 
 export const uploadedImagesRoute = createRoute({

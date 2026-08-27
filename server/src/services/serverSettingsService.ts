@@ -14,6 +14,7 @@ export type ServerSettings = {
   maintenanceMode: boolean;
   webhooksEnabled: boolean;
   allowUserWebhooks: boolean;
+  notificationsEnabled: boolean;
 };
 
 const defaultSettings: ServerSettings = {
@@ -23,6 +24,7 @@ const defaultSettings: ServerSettings = {
   maintenanceMode: false,
   webhooksEnabled: false,
   allowUserWebhooks: false,
+  notificationsEnabled: true,
 };
 
 export class ServerSettingsService {
@@ -57,6 +59,8 @@ export class ServerSettingsService {
         return this.settings.webhooksEnabled;
       case ServerSettingKey.AllowUserWebhooks:
         return this.settings.allowUserWebhooks;
+      case ServerSettingKey.NotificationsEnabled:
+        return this.settings.notificationsEnabled;
     }
   }
 
@@ -121,6 +125,9 @@ export class ServerSettingsService {
       case ServerSettingKey.AllowUserWebhooks:
         this.settings.allowUserWebhooks = enabled;
         break;
+      case ServerSettingKey.NotificationsEnabled:
+        this.settings.notificationsEnabled = enabled;
+        break;
     }
   }
 
@@ -144,6 +151,9 @@ export class ServerSettingsService {
         break;
       case ServerSettingKey.AllowUserWebhooks:
         this.settings.allowUserWebhooks = defaultSettings.allowUserWebhooks;
+        break;
+      case ServerSettingKey.NotificationsEnabled:
+        this.settings.notificationsEnabled = defaultSettings.notificationsEnabled;
         break;
     }
   }

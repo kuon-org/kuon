@@ -14,6 +14,7 @@ import {
   securityRoute,
   uploadedImagesRoute,
   user2faSettingRoute,
+  userNotificationsRoute,
   userWebhooksRoute,
 } from "../../routes";
 export const UserSettings = () => {
@@ -51,6 +52,9 @@ export const UserSettings = () => {
           </ListItemButton>
           <ListItemButton onClick={() => navigate({ to: publicProfileRoute.to })} selected={isSelected(publicProfileRoute.to)}>
             <ListItemText>公開用プロフィール</ListItemText>
+          </ListItemButton>
+          <ListItemButton onClick={() => navigate({ to: userNotificationsRoute.to })} selected={isSelected(userNotificationsRoute.to)}>
+            <ListItemText>通知</ListItemText>
           </ListItemButton>
           <ListItemButton onClick={() => navigate({ to: securityRoute.to })} selected={isSelected(securityRoute.to)}>
             <ListItemText>セキュリティ</ListItemText>
