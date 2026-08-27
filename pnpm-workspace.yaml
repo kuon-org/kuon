@@ -1,6 +1,7 @@
 packages:
   - client
   - server
+  - e2e
 allowBuilds:
   '@prisma/engines': true
   '@scarf/scarf': false
