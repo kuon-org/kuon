@@ -475,10 +475,12 @@ COMMENT ON COLUMN upload_images.created_at IS 'アップロード日時';
 CREATE TABLE IF NOT EXISTS user_notifications (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
     user_id UUID REFERENCES users(id),
-    type VARCHAR(50),                         -- 通知種別 (like, comment, follow, system, etc.)
+    type VARCHAR(50),                         -- 通知種別 (article.comment.created, comment.reply.created, article.published, user.followed, etc.)
     title TEXT,
     message TEXT,
-    reference_id UUID,                        -- 関連する記事やコメントのIDなど
+    reference_id UUID,                        -- 関連する記事・コメント・ユーザのID
+    reference_type VARCHAR(30),               -- 参照先種別(article/comment/user等)
+    reasons JSONB NOT NULL DEFAULT '[]'::jsonb, -- 同一通知が生成された理由の一覧
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -489,8 +491,15 @@ COMMENT ON COLUMN user_notifications.type IS '通知種別';
 COMMENT ON COLUMN user_notifications.title IS '通知タイトル';
 COMMENT ON COLUMN user_notifications.message IS '通知メッセージ';
 COMMENT ON COLUMN user_notifications.reference_id IS '関連リソースID';
+COMMENT ON COLUMN user_notifications.reference_type IS '通知の参照先種別(article/comment/user等)';
+COMMENT ON COLUMN user_notifications.reasons IS '同一通知が生成された理由の一覧(JSON配列)';
 COMMENT ON COLUMN user_notifications.is_read IS '既読フラグ';
 COMMENT ON COLUMN user_notifications.created_at IS '通知作成日時';
+
+-- 同一ユーザ・同一記事の公開通知は1件に集約する
+CREATE UNIQUE INDEX IF NOT EXISTS uq_user_notifications_article_published
+    ON knowledge.user_notifications(user_id, reference_type, reference_id)
+    WHERE type = 'article.published';
 
 -- user_settings
 CREATE TABLE IF NOT EXISTS user_settings (
@@ -500,6 +509,11 @@ CREATE TABLE IF NOT EXISTS user_settings (
     notify_on_like BOOLEAN DEFAULT TRUE,
     notify_on_comment BOOLEAN DEFAULT TRUE,
     notify_on_follow BOOLEAN DEFAULT TRUE,
+    notify_on_article_comment BOOLEAN DEFAULT TRUE,
+    notify_on_comment_reply BOOLEAN DEFAULT TRUE,
+    notify_on_followed_tag_article BOOLEAN DEFAULT TRUE,
+    notify_on_followed_user_article BOOLEAN DEFAULT TRUE,
+    notify_on_user_follow BOOLEAN DEFAULT TRUE,
     notify_via_email BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -512,6 +526,11 @@ COMMENT ON COLUMN user_settings.theme IS 'テーマ設定';
 COMMENT ON COLUMN user_settings.notify_on_like IS 'いいね通知';
 COMMENT ON COLUMN user_settings.notify_on_comment IS 'コメント通知';
 COMMENT ON COLUMN user_settings.notify_on_follow IS 'フォロー通知';
+COMMENT ON COLUMN user_settings.notify_on_article_comment IS '自分の記事へのコメントをアプリ内通知するか';
+COMMENT ON COLUMN user_settings.notify_on_comment_reply IS '自分のコメントへの返信をアプリ内通知するか';
+COMMENT ON COLUMN user_settings.notify_on_followed_tag_article IS 'フォロー中タグの新着記事をアプリ内通知するか';
+COMMENT ON COLUMN user_settings.notify_on_followed_user_article IS 'フォロー中ユーザの新着記事をアプリ内通知するか';
+COMMENT ON COLUMN user_settings.notify_on_user_follow IS '他ユーザからフォローされたときにアプリ内通知するか';
 COMMENT ON COLUMN user_settings.notify_via_email IS 'メール通知を有効にするか';
 COMMENT ON COLUMN user_settings.created_at IS '作成日時';
 COMMENT ON COLUMN user_settings.updated_at IS '更新日時';
