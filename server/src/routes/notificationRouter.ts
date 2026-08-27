@@ -11,6 +11,8 @@ router.get("/notifications/preferences", authenticateToken, controller.getPrefer
 router.put("/notifications/preferences", authenticateToken, controller.updatePreferences);
 router.patch("/notifications/:notificationId/read", authenticateToken, controller.markRead);
 router.patch("/notifications/read-all", authenticateToken, controller.markAllRead);
+router.delete("/notifications/:notificationId", authenticateToken, controller.deleteOne);
+router.delete("/notifications", authenticateToken, controller.deleteAll);
 router.get("/notifications/stream", authenticateToken, controller.stream);
 
 export default router;
