@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { eventLogger } from "./eventLogger.js";
 
 const RUNTIME_MAINTENANCE_CODE = "RUNTIME_MAINTENANCE";
 
@@ -14,11 +15,24 @@ class RuntimeMaintenanceService {
     if (this.locked) throw new Error("Runtime maintenance lock is already active");
     this.locked = true;
     this.reason = reason;
+
+    void eventLogger.warning("runtime_maintenance.enabled", {
+      source: "runtime-maintenance",
+      message: "Runtime maintenance mode enabled",
+      metadata: { reason },
+    });
   }
 
   unlock() {
+    const reason = this.reason;
     this.locked = false;
     this.reason = null;
+
+    void eventLogger.info("runtime_maintenance.disabled", {
+      source: "runtime-maintenance",
+      message: "Runtime maintenance mode disabled",
+      metadata: { reason },
+    });
   }
 
   getReason() {
