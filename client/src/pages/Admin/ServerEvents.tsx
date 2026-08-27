@@ -20,9 +20,16 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useServerEvents, type ServerEvent, type ServerEventLevel } from "../../hooks/useServerEvents";
+import {
+  useServerEvents,
+  type ServerEvent,
+  type ServerEventCategory,
+  type ServerEventLevel,
+} from "../../hooks/useServerEvents";
 
-const levelColor = (level: ServerEventLevel): "default" | "info" | "warning" | "error" => {
+const levelColor = (
+  level: ServerEventLevel,
+): "default" | "info" | "warning" | "error" => {
   if (level === "error") return "error";
   if (level === "warning") return "warning";
   return "info";
@@ -49,6 +56,7 @@ const JsonBlock = ({ value }: { value: unknown }) => (
 export const ServerEvents = () => {
   const [page, setPage] = useState(1);
   const [level, setLevel] = useState<ServerEventLevel | "">("");
+  const [category, setCategory] = useState<ServerEventCategory | "">("");
   const [eventType, setEventType] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -58,6 +66,7 @@ export const ServerEvents = () => {
     page,
     limit: 50,
     level,
+    category,
     eventType,
     from: from ? new Date(from).toISOString() : undefined,
     to: to ? new Date(to).toISOString() : undefined,
@@ -73,7 +82,7 @@ export const ServerEvents = () => {
       </Typography>
 
       <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-        <Stack direction={{ xs: "column", lg: "row" }} spacing={2}>
+        <Stack direction={{ xs: "column", lg: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
           <TextField
             select
             size="small"
@@ -89,6 +98,21 @@ export const ServerEvents = () => {
             <MenuItem value="info">info</MenuItem>
             <MenuItem value="warning">warning</MenuItem>
             <MenuItem value="error">error</MenuItem>
+          </TextField>
+          <TextField
+            select
+            size="small"
+            label="Category"
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value as ServerEventCategory | "");
+              setPage(1);
+            }}
+            sx={{ minWidth: 140 }}
+          >
+            <MenuItem value="">すべて</MenuItem>
+            <MenuItem value="system">system</MenuItem>
+            <MenuItem value="audit">audit</MenuItem>
           </TextField>
           <TextField
             size="small"
@@ -132,7 +156,9 @@ export const ServerEvents = () => {
         </Box>
       )}
 
-      {query.isError && <Alert severity="error">イベントログの取得に失敗しました。</Alert>}
+      {query.isError && (
+        <Alert severity="error">イベントログの取得に失敗しました。</Alert>
+      )}
 
       {query.data && (
         <>
@@ -142,6 +168,7 @@ export const ServerEvents = () => {
                 <TableRow>
                   <TableCell>日時</TableCell>
                   <TableCell>Level</TableCell>
+                  <TableCell>Category</TableCell>
                   <TableCell>Event type</TableCell>
                   <TableCell>Source</TableCell>
                   <TableCell>Message</TableCell>
@@ -159,7 +186,14 @@ export const ServerEvents = () => {
                       {new Date(event.created_at).toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      <Chip size="small" label={event.level} color={levelColor(event.level)} />
+                      <Chip
+                        size="small"
+                        label={event.level}
+                        color={levelColor(event.level)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip size="small" label={event.category} variant="outlined" />
                     </TableCell>
                     <TableCell>{event.event_type}</TableCell>
                     <TableCell>{event.source ?? "-"}</TableCell>
@@ -168,7 +202,7 @@ export const ServerEvents = () => {
                 ))}
                 {query.data.events.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={6} align="center">
                       イベントはありません。
                     </TableCell>
                   </TableRow>
@@ -189,39 +223,57 @@ export const ServerEvents = () => {
         </>
       )}
 
-      <Dialog open={!!selected} onClose={() => setSelected(null)} fullWidth maxWidth="md">
+      <Dialog
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        fullWidth
+        maxWidth="md"
+      >
         <DialogTitle>Server Event Detail</DialogTitle>
         <DialogContent>
           {selected && (
             <Stack spacing={2} sx={{ mt: 1 }}>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                 <Chip label={selected.level} color={levelColor(selected.level)} />
+                <Chip label={selected.category} variant="outlined" />
                 <Chip label={selected.event_type} variant="outlined" />
-                {selected.source && <Chip label={selected.source} variant="outlined" />}
+                {selected.source && (
+                  <Chip label={selected.source} variant="outlined" />
+                )}
               </Stack>
               <Typography>{selected.message}</Typography>
               <Typography variant="caption" color="text.secondary">
                 {new Date(selected.created_at).toLocaleString()} / {selected.id}
               </Typography>
               <Box>
-                <Typography variant="subtitle2" gutterBottom>Metadata</Typography>
+                <Typography variant="subtitle2" gutterBottom>
+                  Metadata
+                </Typography>
                 <JsonBlock value={selected.metadata} />
               </Box>
               {(selected.before_data !== null || selected.after_data !== null) && (
                 <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2" gutterBottom>Before</Typography>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Before
+                    </Typography>
                     <JsonBlock value={selected.before_data} />
                   </Box>
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2" gutterBottom>After</Typography>
+                    <Typography variant="subtitle2" gutterBottom>
+                      After
+                    </Typography>
                     <JsonBlock value={selected.after_data} />
                   </Box>
                 </Stack>
               )}
-              {(selected.actor_user_id || selected.subject_type || selected.correlation_id) && (
+              {(selected.actor_user_id ||
+                selected.subject_type ||
+                selected.correlation_id) && (
                 <Box>
-                  <Typography variant="subtitle2" gutterBottom>Context</Typography>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Context
+                  </Typography>
                   <JsonBlock
                     value={{
                       actorUserId: selected.actor_user_id,
