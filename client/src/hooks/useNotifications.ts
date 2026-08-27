@@ -88,7 +88,14 @@ export const useNotifications = (enabled: boolean) => {
       });
       return data;
     },
-    onSuccess: invalidate,
+    onSuccess: async (_data, targetUserId) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+        queryClient.invalidateQueries({ queryKey: ["isFollowing", targetUserId] }),
+        queryClient.invalidateQueries({ queryKey: ["following"] }),
+        queryClient.invalidateQueries({ queryKey: ["follower"] }),
+      ]);
+    },
   });
 
   useEffect(() => {
