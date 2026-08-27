@@ -38,6 +38,11 @@ const settings: Array<{
     label: "フォロー中ユーザーの新着記事",
     description: "フォローしているユーザーが記事を公開したときに通知します。",
   },
+  {
+    key: "notifyOnUserFollow",
+    label: "ユーザーからのフォロー",
+    description: "ほかのユーザーからフォローされたときに通知します。",
+  },
 ];
 
 export const Notifications = () => {
