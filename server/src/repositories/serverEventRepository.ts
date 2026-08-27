@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../prisma/client.js";
 
 export type ServerEventLevel = "info" | "warning" | "error";
@@ -47,72 +48,71 @@ export interface CreateServerEventInput {
   correlationId?: string | null;
 }
 
+const asJson = (value: unknown): Prisma.InputJsonValue =>
+  JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue;
+
+const toRecord = (event: Awaited<ReturnType<typeof prisma.server_events.findFirstOrThrow>>): ServerEventRecord => ({
+  ...event,
+  category: event.category as ServerEventCategory,
+  level: event.level as ServerEventLevel,
+});
+
 export class ServerEventRepository {
   async create(input: CreateServerEventInput) {
-    const rows = await prisma.$queryRaw<ServerEventRecord[]>`
-      INSERT INTO knowledge.server_events (
-        category, event_type, level, source, message, metadata,
-        actor_user_id, ip_address, subject_type, subject_id,
-        before_data, after_data, correlation_id
-      ) VALUES (
-        ${input.category ?? "system"},
-        ${input.eventType},
-        ${input.level},
-        ${input.source ?? null},
-        ${input.message},
-        ${JSON.stringify(input.metadata ?? {})}::jsonb,
-        ${input.actorUserId ?? null}::uuid,
-        ${input.ipAddress ?? null}::inet,
-        ${input.subjectType ?? null},
-        ${input.subjectId ?? null}::uuid,
-        ${input.before === undefined ? null : JSON.stringify(input.before)}::jsonb,
-        ${input.after === undefined ? null : JSON.stringify(input.after)}::jsonb,
-        ${input.correlationId ?? null}::uuid
-      )
-      RETURNING *
-    `;
-    return rows[0];
+    const event = await prisma.server_events.create({
+      data: {
+        category: input.category ?? "system",
+        event_type: input.eventType,
+        level: input.level,
+        source: input.source ?? null,
+        message: input.message,
+        metadata: asJson(input.metadata ?? {}),
+        actor_user_id: input.actorUserId ?? null,
+        ip_address: input.ipAddress ?? null,
+        subject_type: input.subjectType ?? null,
+        subject_id: input.subjectId ?? null,
+        ...(input.before === undefined ? {} : { before_data: asJson(input.before) }),
+        ...(input.after === undefined ? {} : { after_data: asJson(input.after) }),
+        correlation_id: input.correlationId ?? null,
+      },
+    });
+    return toRecord(event);
   }
 
   async findById(id: string) {
-    const rows = await prisma.$queryRaw<ServerEventRecord[]>`
-      SELECT * FROM knowledge.server_events
-      WHERE id = ${id}::uuid
-      LIMIT 1
-    `;
-    return rows[0] ?? null;
+    const event = await prisma.server_events.findUnique({ where: { id } });
+    return event ? toRecord(event) : null;
   }
 
   async findMany(filters: ServerEventFilters) {
     const page = Math.max(filters.page ?? 1, 1);
     const limit = Math.min(Math.max(filters.limit ?? 50, 1), 100);
-    const offset = (page - 1) * limit;
+    const where: Prisma.server_eventsWhereInput = {
+      ...(filters.level ? { level: filters.level } : {}),
+      ...(filters.eventType ? { event_type: filters.eventType } : {}),
+      ...(filters.category ? { category: filters.category } : {}),
+      ...(filters.from || filters.to
+        ? {
+            created_at: {
+              ...(filters.from ? { gte: filters.from } : {}),
+              ...(filters.to ? { lte: filters.to } : {}),
+            },
+          }
+        : {}),
+    };
 
-    const rows = await prisma.$queryRaw<ServerEventRecord[]>`
-      SELECT *
-      FROM knowledge.server_events
-      WHERE (${filters.level ?? null}::text IS NULL OR level = ${filters.level ?? null})
-        AND (${filters.eventType ?? null}::text IS NULL OR event_type = ${filters.eventType ?? null})
-        AND (${filters.category ?? null}::text IS NULL OR category = ${filters.category ?? null})
-        AND (${filters.from?.toISOString() ?? null}::timestamptz IS NULL OR created_at >= ${filters.from?.toISOString() ?? null}::timestamptz)
-        AND (${filters.to?.toISOString() ?? null}::timestamptz IS NULL OR created_at <= ${filters.to?.toISOString() ?? null}::timestamptz)
-      ORDER BY created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
+    const [events, total] = await Promise.all([
+      prisma.server_events.findMany({
+        where,
+        orderBy: { created_at: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.server_events.count({ where }),
+    ]);
 
-    const countRows = await prisma.$queryRaw<{ count: bigint }[]>`
-      SELECT COUNT(*) AS count
-      FROM knowledge.server_events
-      WHERE (${filters.level ?? null}::text IS NULL OR level = ${filters.level ?? null})
-        AND (${filters.eventType ?? null}::text IS NULL OR event_type = ${filters.eventType ?? null})
-        AND (${filters.category ?? null}::text IS NULL OR category = ${filters.category ?? null})
-        AND (${filters.from?.toISOString() ?? null}::timestamptz IS NULL OR created_at >= ${filters.from?.toISOString() ?? null}::timestamptz)
-        AND (${filters.to?.toISOString() ?? null}::timestamptz IS NULL OR created_at <= ${filters.to?.toISOString() ?? null}::timestamptz)
-    `;
-
-    const total = Number(countRows[0]?.count ?? 0);
     return {
-      events: rows,
+      events: events.map(toRecord),
       total,
       page,
       limit,
