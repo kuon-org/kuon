@@ -2,15 +2,26 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../api/client";
 
+export type NotificationReason = "followed_tag" | "followed_user";
+
 export interface AppNotification {
   id: string;
   type: string | null;
   title: string | null;
   message: string | null;
   reference_id: string | null;
+  reference_type: string | null;
+  reasons: NotificationReason[];
   is_read: boolean | null;
   created_at: string | null;
   href: string | null;
+}
+
+export interface NotificationPreferences {
+  notifyOnArticleComment: boolean;
+  notifyOnCommentReply: boolean;
+  notifyOnFollowedTagArticle: boolean;
+  notifyOnFollowedUserArticle: boolean;
 }
 
 export const useNotifications = (enabled: boolean) => {
@@ -66,5 +77,39 @@ export const useNotifications = (enabled: boolean) => {
     isLoading: notificationsQuery.isLoading,
     markRead: markReadMutation.mutateAsync,
     markAllRead: markAllReadMutation.mutateAsync,
+  };
+};
+
+export const useNotificationPreferences = () => {
+  const queryClient = useQueryClient();
+
+  const preferencesQuery = useQuery({
+    queryKey: ["notifications", "preferences"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<NotificationPreferences>(
+        "/notifications/preferences",
+      );
+      return data;
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (preferences: NotificationPreferences) => {
+      const { data } = await apiClient.put<NotificationPreferences>(
+        "/notifications/preferences",
+        preferences,
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["notifications", "preferences"], data);
+    },
+  });
+
+  return {
+    preferences: preferencesQuery.data,
+    isLoading: preferencesQuery.isLoading,
+    updatePreferences: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
   };
 };
