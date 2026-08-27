@@ -4,7 +4,7 @@ import { UsersRepository } from "../repositories/usersRepository.js";
 export class IdpConfigurationsService {
   constructor(
     private repo: IdpConfigurationRepository,
-    private urepo: UsersRepository,
+    private _urepo: UsersRepository,
   ) {}
 
   async getProviders() {
@@ -20,10 +20,7 @@ export class IdpConfigurationsService {
     return activeProviders;
   }
 
-  async getAllProvidersList(userId: string) {
-    const isAdmin = await this.urepo.isAdmin(userId);
-    if (!isAdmin) throw new Error("権限がありません");
-
+  async getAllProvidersList(_userId: string) {
     const providers = await this.repo.getAllProviders();
     return providers.map((p) => ({
       provider_name: p.provider_name,
@@ -31,16 +28,12 @@ export class IdpConfigurationsService {
       is_active: p.idp_configurations?.is_active ?? false,
     }));
   }
-  async getProviderConfiguration(userId: string, provider_name: string) {
-    const isAdmin = await this.urepo.isAdmin(userId);
-    if (!isAdmin) throw new Error("権限がありません");
+
+  async getProviderConfiguration(_userId: string, provider_name: string) {
     return await this.repo.getConfiguration(provider_name);
   }
 
-  async upsertIdp(userId: string, provider_name: string, data: any) {
-    const isAdmin = await this.urepo.isAdmin(userId);
-    if (!isAdmin) throw new Error("権限がありません");
-
+  async upsertIdp(_userId: string, provider_name: string, data: any) {
     const existing = await this.repo.getConfiguration(provider_name);
     const rawConfig = existing?.idp_configurations?.config;
     const existingConfig =
@@ -50,7 +43,6 @@ export class IdpConfigurationsService {
       process.env.BACKEND_URL ??
       "http://localhost:3000";
     const generatedRedirectUri = `${baseUrl.replace(/\/$/, "")}/auth/${provider_name}/callback`;
-    // 修正: client_id/secret だけでなく、渡された config 全体をマージする
     const mergedConfig = {
       ...existingConfig,
       ...data.config,
@@ -59,27 +51,22 @@ export class IdpConfigurationsService {
       mergedConfig.redirect_uri = generatedRedirectUri;
     }
 
-    // upsert用データ
     const combineData = {
       ...existing,
       config: mergedConfig,
       updated_at: new Date(),
-      // 必要に応じて display_name などをデフォルトセット
       display_name: existing?.display_name || provider_name,
       provider_type: data.provider_type || existing?.provider_type || "OIDC",
     };
 
     return await this.repo.upsertIdp(provider_name, combineData);
   }
-  async toggleActive(userId: string, provider_name: string) {
-    const isAdmin = await this.urepo.isAdmin(userId);
-    if (!isAdmin) throw new Error("権限がありません");
+
+  async toggleActive(_userId: string, provider_name: string) {
     return await this.repo.toggleIdpActive(provider_name);
   }
 
-  async deleteIdp(userId: string, provider_name: string) {
-    const isAdmin = await this.urepo.isAdmin(userId);
-    if (!isAdmin) throw new Error("権限がありません");
+  async deleteIdp(_userId: string, provider_name: string) {
     return await this.repo.deleteIdp(provider_name);
   }
 }

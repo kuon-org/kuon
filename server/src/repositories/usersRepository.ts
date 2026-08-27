@@ -229,7 +229,6 @@ export class UsersRepository {
       },
       create: {
         user_id: userId,
-        totp_secret: secret,
         is_2fa_enabled: isEnabled ?? false,
       },
     });
@@ -404,22 +403,6 @@ export class UsersRepository {
     });
   }
 
-  async isAdmin(userId: string) {
-    const user = await prisma.users.findUnique({
-      where: { id: userId },
-      include: {
-        user_roles: {
-          include: { roles: true },
-        },
-      },
-    });
-    if (!user) return false;
-    return user.user_roles.some(
-      (ur): ur is { roles: { name: string } } & typeof ur =>
-        !!ur.roles && ur.roles.name === "admin",
-    );
-  }
-
   async updateLastLogin(userId: string) {
     return await prisma.users.update({
       where: { id: userId },
@@ -473,7 +456,7 @@ export class UsersRepository {
   async allRanking() {
     return await prisma.users.findMany({
       where: {
-        is_active: true, // アクティブなユーザーのみ
+        is_active: true,
       },
       select: {
         id: true,
@@ -493,14 +476,11 @@ export class UsersRepository {
           },
         },
       },
-      take: 10, // 上位10名
+      take: 10,
     });
   }
 
   // --- api_keys ---
-  /**
-   * ユーザーに紐づくAPIキー一覧を取得する
-   */
   async findApiKeysByUserId(userId: string) {
     return prisma.user_api_keys.findMany({
       where: { user_id: userId },
@@ -508,25 +488,19 @@ export class UsersRepository {
     });
   }
 
-  /**
-   * 新しいAPIキーを保存する
-   */
   async createApiKey(data: {
     user_id: string;
     name: string;
     api_key_hash: string;
     prefix: string;
-    expires_at: Date | null; // 追加
-    created_by: string; // DDLに合わせて追加
+    expires_at: Date | null;
+    created_by: string;
   }) {
     return prisma.user_api_keys.create({
       data,
     });
   }
 
-  /**
-   * APIキーを削除（無効化）する
-   */
   async deleteApiKey(id: string, userId: string) {
     return prisma.user_api_keys.delete({
       where: { id, user_id: userId },

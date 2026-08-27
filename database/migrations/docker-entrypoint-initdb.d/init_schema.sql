@@ -172,6 +172,7 @@ CREATE TABLE IF NOT EXISTS roles (
     name VARCHAR(50) UNIQUE,
     display_name VARCHAR(50),
     description TEXT,
+    is_builtin BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -181,8 +182,43 @@ COMMENT ON COLUMN roles.id IS 'ロールID';
 COMMENT ON COLUMN roles.name IS '内部識別名';
 COMMENT ON COLUMN roles.display_name IS '表示名';
 COMMENT ON COLUMN roles.description IS '説明';
+COMMENT ON COLUMN roles.is_builtin IS 'Kuon標準の組み込みロールかどうか';
 COMMENT ON COLUMN roles.created_at IS '作成日時';
 COMMENT ON COLUMN roles.updated_at IS '更新日時';
+
+-- permissions
+CREATE TABLE IF NOT EXISTS permissions (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    key VARCHAR(100) NOT NULL UNIQUE,
+    display_name VARCHAR(100) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON TABLE permissions IS 'Kuonで利用可能な操作権限のマスタ';
+COMMENT ON COLUMN permissions.id IS 'Permission ID';
+COMMENT ON COLUMN permissions.key IS 'Permissionの内部識別キー';
+COMMENT ON COLUMN permissions.display_name IS '管理画面に表示するPermission名';
+COMMENT ON COLUMN permissions.category IS 'Permissionの機能カテゴリ';
+COMMENT ON COLUMN permissions.description IS 'Permissionの説明';
+COMMENT ON COLUMN permissions.created_at IS '作成日時';
+
+-- role_permissions
+CREATE TABLE IF NOT EXISTS role_permissions (
+    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (role_id, permission_id)
+);
+
+COMMENT ON TABLE role_permissions IS 'ロールとPermissionの紐付け';
+COMMENT ON COLUMN role_permissions.role_id IS 'ロールID';
+COMMENT ON COLUMN role_permissions.permission_id IS 'Permission ID';
+COMMENT ON COLUMN role_permissions.created_at IS '紐付け日時';
+
+CREATE INDEX IF NOT EXISTS idx_role_permissions_permission_id
+    ON role_permissions(permission_id);
 
 -- user_roles
 CREATE TABLE IF NOT EXISTS user_roles (

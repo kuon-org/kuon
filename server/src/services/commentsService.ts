@@ -36,8 +36,8 @@ export class CommentsService {
     }
   }
 
-  async deleteComment(commentId: string, userId: string) {
-    return await this.commentsRepo.softDelete(commentId, userId);
+  async deleteComment(commentId: string, userId: string, allowAny = false) {
+    return await this.commentsRepo.softDelete(commentId, userId, allowAny);
   }
 
   async getCommentLikeUserWithCount(commentId: string) {

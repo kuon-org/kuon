@@ -1,6 +1,7 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuthQuery } from "./hooks/useAuth";
+import { useAdminPermissions } from "./hooks/useRoles";
 import { usePublicServerSettings } from "./hooks/usePublicServerSettings";
 import { routeTree } from "./routes";
 import { NotFoundComponent } from "./components/Error/NotFoundComponents";
@@ -13,7 +14,12 @@ import { MAINTENANCE_MODE_EVENT } from "./api/FetchHttpClient/FetchHttpClient";
  */
 export const router = createRouter({
   routeTree,
-  context: { user: null, requireAuthentication: false, maintenanceMode: false },
+  context: {
+    user: null,
+    permissions: [],
+    requireAuthentication: false,
+    maintenanceMode: false,
+  },
   defaultErrorComponent: GlobalErrorComponent,
   defaultNotFoundComponent: NotFoundComponent,
 });
@@ -30,20 +36,22 @@ declare module "@tanstack/react-router" {
  */
 export const AppRouter = () => {
   const { user, user_isLoading } = useAuthQuery();
+  const { permissions, permissions_isLoading } = useAdminPermissions(!!user);
   const publicSettings = usePublicServerSettings();
   const requireAuthentication =
     publicSettings.data?.requireAuthentication ?? false;
   const maintenanceMode = publicSettings.data?.maintenanceMode ?? false;
 
   useEffect(() => {
-    if (user_isLoading || publicSettings.isLoading) return;
+    if (user_isLoading || permissions_isLoading || publicSettings.isLoading) return;
     void router.invalidate();
   }, [
     user?.id,
-    user?.role,
+    permissions.join("|"),
     requireAuthentication,
     maintenanceMode,
     user_isLoading,
+    permissions_isLoading,
     publicSettings.isLoading,
   ]);
 
@@ -60,13 +68,14 @@ export const AppRouter = () => {
       );
   }, [publicSettings.refetch]);
 
-  if (user_isLoading || publicSettings.isLoading) return null;
+  if (user_isLoading || permissions_isLoading || publicSettings.isLoading) return null;
 
   return (
     <RouterProvider
       router={router}
       context={{
         user,
+        permissions,
         requireAuthentication,
         maintenanceMode,
       }}
