@@ -38,7 +38,7 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
     useComments(comment.article_id, comment.id); // 削除用関数を取得
   const isReply = depth > 0;
   const marginLeft = isReply ? 4 : 0;
-  const isMyComment = user?.id === comment.user_id; // 自分のコメントかどうか判定
+  const isMyComment = !!comment.user_id && user?.id === comment.user_id; // 自分のコメントかどうか判定
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -70,8 +70,6 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
       sx={{
         ml: marginLeft,
         mb: 2,
-        // width: "100%" を削除し、width: "auto" もしくは指定なしにする
-        // これにより、親の幅から ml を引いた値に自動調整されます
         display: "flex",
         flexDirection: "column",
       }}
@@ -85,10 +83,9 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
           borderLeft: isReply ? "3px solid" : "none",
           borderColor: "primary.light",
           scrollMarginTop: "100px",
-          position: "relative", // メニューボタン配置のため
+          position: "relative",
         }}
       >
-        {/* 右上のメニューボタン */}
         <Box sx={{ position: "absolute", top: 8, right: 8 }}>
           <IconButton size="small" onClick={handleMenuOpen}>
             <MoreVertIcon fontSize="small" />
@@ -105,7 +102,6 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
               <ListItemText primary="リンクをコピー" />
             </MenuItem>
 
-            {/* 自分のコメントかつ削除されていない場合のみ削除メニューを表示 */}
             {isMyComment && !comment.is_deleted && (
               <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
                 <ListItemIcon>
@@ -116,39 +112,41 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
             )}
           </Menu>
         </Box>
-        <Link
-          to={userProfileIndexRoute.to}
-          params={{ username: comment.users.username }}
-          style={{ textDecoration: "none", color: "inherit" }}
-        >
-          {/* ユーザ情報ヘッダー */}
-          <Stack
-            direction="row"
-            spacing={2}
-            alignItems="center"
-            mb={1}
-            sx={{ pr: 4 }}
+
+        {!comment.is_deleted && comment.users && (
+          <Link
+            to={userProfileIndexRoute.to}
+            params={{ username: comment.users.username }}
+            style={{ textDecoration: "none", color: "inherit" }}
           >
-            <Avatar
-              src={comment.users.avatar_url}
-              alt={comment.users.username}
-              sx={{ width: 32, height: 32 }}
-            />
-            <Box sx={{ display: "flex" }}>
-              <Typography variant="subtitle2">
-                @{comment.users.username}
-              </Typography>
-              <Typography
-                variant="subtitle2"
-                component="span"
-                sx={{ ml: 1, fontWeight: "bold" }}
-              >
-                ({comment.users.display_name})
-              </Typography>
-            </Box>
-          </Stack>
-        </Link>
-        {/* コメント本文 */}
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+              mb={1}
+              sx={{ pr: 4 }}
+            >
+              <Avatar
+                src={comment.users.avatar_url}
+                alt={comment.users.username}
+                sx={{ width: 32, height: 32 }}
+              />
+              <Box sx={{ display: "flex" }}>
+                <Typography variant="subtitle2">
+                  @{comment.users.username}
+                </Typography>
+                <Typography
+                  variant="subtitle2"
+                  component="span"
+                  sx={{ ml: 1, fontWeight: "bold" }}
+                >
+                  ({comment.users.display_name})
+                </Typography>
+              </Box>
+            </Stack>
+          </Link>
+        )}
+
         <Typography
           variant="body2"
           sx={{ whiteSpace: "pre-wrap", color: "text.primary", mb: 1, pr: 1 }}
@@ -162,17 +160,24 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
           )}
         </Typography>
 
-        {/* フッター（日付と返信ボタン） */}
         <Stack direction="row" alignItems="center">
-          <LikeButton
-            isLiked={isLiked}
-            isLikePending={isLikePending}
-            likeCount={likeCount}
-            mutateLike={mutateLike}
-          />
-          <Typography sx={{ fontSize: "0.9rem" }}>{likeCount}</Typography>
+          {!comment.is_deleted && (
+            <>
+              <LikeButton
+                isLiked={isLiked}
+                isLikePending={isLikePending}
+                likeCount={likeCount}
+                mutateLike={mutateLike}
+              />
+              <Typography sx={{ fontSize: "0.9rem" }}>{likeCount}</Typography>
+            </>
+          )}
 
-          <Typography variant="caption" color="text.secondary" ml={2}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            ml={comment.is_deleted ? 0 : 2}
+          >
             {new Date(comment.created_at).toLocaleString()}
           </Typography>
 
@@ -189,8 +194,7 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
         </Stack>
       </Box>
 
-      {/* 返信エディタ */}
-      {isReplyOpen && user && (
+      {isReplyOpen && user && comment.users && (
         <Box sx={{ mt: 1, ml: 2 }}>
           <CommentEditor
             articleId={comment.article_id}
@@ -201,7 +205,6 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
         </Box>
       )}
 
-      {/* 子コメントの再帰表示 */}
       {comment.replies && comment.replies.length > 0 && (
         <Box sx={{ mt: 1 }}>
           {comment.replies.map((reply) => (
