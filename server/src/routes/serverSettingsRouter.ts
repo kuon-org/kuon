@@ -13,6 +13,9 @@ serverSettingsRouter.get("/server/public-settings", (_req, res) => {
     maintenanceMode:
       runtimeMaintenanceService.isLocked() ||
       serverSettingsService.isEnabled(ServerSettingKey.MaintenanceMode),
+    notificationsEnabled: serverSettingsService.isEnabled(
+      ServerSettingKey.NotificationsEnabled,
+    ),
   });
 });
 
