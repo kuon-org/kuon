@@ -24,6 +24,8 @@ class RuntimeMaintenanceService {
   }
 
   unlock() {
+    if (!this.locked) return;
+
     const reason = this.reason;
     this.locked = false;
     this.reason = null;
