@@ -1,4 +1,8 @@
-import { serverEventRepository, type ServerEventFilters } from "../repositories/serverEventRepository.js";
+import {
+  serverEventRepository,
+  type ServerEventFilters,
+} from "../repositories/serverEventRepository.js";
+import { asUUID } from "../utils/uuid/index.js";
 
 export class ServerEventService {
   list(filters: ServerEventFilters) {
@@ -6,6 +10,7 @@ export class ServerEventService {
   }
 
   async detail(id: string) {
+    if (!asUUID(id)) throw new Error("ServerEventNotFound");
     const event = await serverEventRepository.findById(id);
     if (!event) throw new Error("ServerEventNotFound");
     return event;
