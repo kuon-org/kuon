@@ -6,6 +6,11 @@ ALTER TABLE knowledge.user_notifications
 COMMENT ON COLUMN knowledge.user_notifications.reference_type IS '通知の参照先種別(article/comment等)';
 COMMENT ON COLUMN knowledge.user_notifications.reasons IS '同一通知が生成された理由の一覧(JSON配列)';
 
+-- 同一ユーザ・同一記事の公開通知は1件に集約する
+CREATE UNIQUE INDEX IF NOT EXISTS uq_user_notifications_article_published
+    ON knowledge.user_notifications(user_id, reference_type, reference_id)
+    WHERE type = 'article.published';
+
 -- ユーザ単位のアプリ内通知設定を細分化
 ALTER TABLE knowledge.user_settings
     ADD COLUMN IF NOT EXISTS notify_on_article_comment BOOLEAN DEFAULT TRUE,
