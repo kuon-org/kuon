@@ -18,6 +18,7 @@ import { Ranking } from "../components/Ranking";
 
 export interface MyRouterContext {
   user: { id: string; username: string; role: string } | null;
+  permissions: string[];
   requireAuthentication: boolean;
   maintenanceMode: boolean;
 }
@@ -34,11 +35,13 @@ const maintenancePublicRoutes = new Set([
  */
 export const baseRootRoute = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: ({ context, location }) => {
-    const isAdmin = context.user?.role === "admin";
+    const canBypassMaintenance = context.permissions.includes(
+      "system.maintenance.bypass",
+    );
 
     if (
       context.maintenanceMode &&
-      !isAdmin &&
+      !canBypassMaintenance &&
       !maintenancePublicRoutes.has(location.pathname)
     ) {
       throw redirect({ to: "/maintenance" });

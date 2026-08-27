@@ -6,6 +6,7 @@ import { TagEditForm } from "./TagEditForm";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { Navigate } from "@tanstack/react-router";
 import { useNotify } from "../../hooks/useNotify";
+import { useAdminPermissions } from "../../hooks/useRoles";
 
 export const TagEdit = () => {
   const { slug } = tagEditRoute.useParams();
@@ -18,10 +19,12 @@ export const TagEdit = () => {
     uploadImage,
   } = useTagsQuery(slug);
   const { user } = useAuthQuery();
+  const { permissions, permissions_isLoading } = useAdminPermissions(!!user);
   const { error } = useNotify();
-  const isEditor =
-    user?.role === "admin" ? true : user?.role === "moderator" ? true : false;
-  if (!isEditor) {
+  const canManageTag = permissions.includes("tag.manage");
+
+  if (permissions_isLoading) return <Loading />;
+  if (!canManageTag) {
     error("権限がありません");
     return (
       <Navigate

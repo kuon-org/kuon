@@ -18,7 +18,7 @@ export class ArticlesController {
     try {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
-      const q = req.query.q as string; // 検索クエリ文字列を取得
+      const q = req.query.q as string;
 
       const result = await this.articlesService.getPublishedArticleList(
         page,
@@ -30,21 +30,16 @@ export class ArticlesController {
       res.status(500).json({ message: error.message });
     }
   };
+
   getTrendingArticles = async (req: Request, res: Response) => {
     try {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
-
-      // スライダー等の比重設定を取得
       const weights = {
         like: req.query.like ? parseFloat(req.query.like as string) : undefined,
         view: req.query.view ? parseFloat(req.query.view as string) : undefined,
-        stock: req.query.stock
-          ? parseFloat(req.query.stock as string)
-          : undefined,
-        comment: req.query.comment
-          ? parseFloat(req.query.comment as string)
-          : undefined,
+        stock: req.query.stock ? parseFloat(req.query.stock as string) : undefined,
+        comment: req.query.comment ? parseFloat(req.query.comment as string) : undefined,
       };
 
       const result = await this.articlesService.getTrendingArticleList(
@@ -63,13 +58,11 @@ export class ArticlesController {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
       const userId = req.user?.userId ?? null;
-
       const result = await this.articlesService.getRecommendArticleList(
         userId,
         page,
         limit,
       );
-
       res.status(200).json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -94,7 +87,7 @@ export class ArticlesController {
       const userId = String(req.params.userId);
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
-      const q = req.query.q as string; // 検索クエリ文字列を取得
+      const q = req.query.q as string;
 
       const result = await this.articlesService.getArticlesByUserId(
         userId,
@@ -216,6 +209,7 @@ export class ArticlesController {
         String(req.params.articleId),
         req.user.userId,
         req.body,
+        req.authorization?.resourceScope === "any",
       );
       res.json(updated);
     } catch (error: any) {
@@ -231,17 +225,16 @@ export class ArticlesController {
     try {
       if (!isAuthenticated(req))
         return res.status(401).json({ message: "未ログインです" });
-      const userId = req.user.userId;
       const rollback = await this.articlesService.rollbackDraft(
         articleId,
-        userId,
+        req.user.userId,
+        req.authorization?.resourceScope === "any",
       );
       res.json(rollback);
     } catch (error: any) {
       let status = 500;
-      if (error.message === "Unauthorized or Not Found") status === 401;
-      if (error.message === "No published version to rollback to")
-        status === 404;
+      if (error.message === "Unauthorized or Not Found") status = 403;
+      if (error.message === "No published version to rollback to") status = 404;
       res.status(status).json({ message: error.message });
     }
   };
@@ -250,10 +243,11 @@ export class ArticlesController {
     try {
       if (!isAuthenticated(req))
         return res.status(401).json({ message: "未ログインです" });
-      const articleId = String(req.params.articleId);
-      const userId = req.user.userId;
-
-      await this.articlesService.deleteArticle(articleId, userId);
+      await this.articlesService.deleteArticle(
+        String(req.params.articleId),
+        req.user.userId,
+        req.authorization?.resourceScope === "any",
+      );
       res.json({ message: "記事を削除しました" });
     } catch (error: any) {
       let status = 500;
@@ -277,34 +271,34 @@ export class ArticlesController {
 
   restoreArticle = async (req: AuthRequest, res: Response) => {
     try {
-      const articleId = String(req.params.articleId);
       if (!isAuthenticated(req))
         return res.status(401).json({ message: "未ログインです" });
       const restored = await this.articlesService.restoreArticle(
-        articleId,
+        String(req.params.articleId),
         req.user.userId,
+        req.authorization?.resourceScope === "any",
       );
       res.json(restored);
     } catch (error: any) {
       let status = 500;
-      if (error.message === "Unauthorized or Not Found") status = 403;
+      if (error.message === "Unauthorized") status = 403;
       res.status(status).json({ message: error.message });
     }
   };
 
   hardDeleteArticle = async (req: AuthRequest, res: Response) => {
     try {
-      const articleId = String(req.params.articleId);
       if (!isAuthenticated(req))
         return res.status(401).json({ message: "未ログインです" });
       const hardDeleted = await this.articlesService.hardDeleteArticle(
-        articleId,
+        String(req.params.articleId),
         req.user.userId,
+        req.authorization?.resourceScope === "any",
       );
       res.json(hardDeleted);
     } catch (error: any) {
       let status = 500;
-      if (error.message === "Unauthorized or Not Found") status = 403;
+      if (error.message === "Unauthorized") status = 403;
       res.status(status).json({ message: error.message });
     }
   };
@@ -338,7 +332,7 @@ export class ArticlesController {
           "article",
         );
         res.status(200).json({ url: `/uploads/${req.file.filename}` });
-      } catch (dbError) {
+      } catch {
         res.status(500).json({ message: "DB登録エラー" });
       }
     });

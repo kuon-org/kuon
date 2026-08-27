@@ -1,14 +1,10 @@
 import type { Response } from "express";
 import type { AuthRequest } from "../middlewares/auth.js";
 import { isAuthenticated } from "../middlewares/auth.js";
-import type { AdminService } from "../services/adminService.js";
 import type { BackupService } from "../services/backupService.js";
 
 export class BackupController {
-  constructor(
-    private adminService: AdminService,
-    private backupService: BackupService,
-  ) {}
+  constructor(private backupService: BackupService) {}
 
   exportBackup = async (req: AuthRequest, res: Response) => {
     if (!isAuthenticated(req)) {
@@ -18,11 +14,6 @@ export class BackupController {
     // Backups contain sensitive instance data and must never be exportable via API keys.
     if (req.user.sessionId === "apikey") {
       return res.status(403).json({ message: "APIキーではバックアップを作成できません" });
-    }
-
-    const isAdmin = await this.adminService.isAdmin(req.user.userId);
-    if (!isAdmin) {
-      return res.status(403).json({ message: "権限がありません" });
     }
 
     let backup: Awaited<ReturnType<BackupService["createArchive"]>> | null = null;

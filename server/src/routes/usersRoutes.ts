@@ -1,5 +1,5 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { authenticateToken } from "../middlewares/auth.js";
+import { authenticateToken, type AuthRequest } from "../middlewares/auth.js";
 import { requireSiteAuthentication } from "../middlewares/siteAccess.js";
 import { UsersRepository } from "../repositories/usersRepository.js";
 import { UsersService } from "../services/usersService.js";
@@ -10,6 +10,7 @@ import { TagsRepository } from "../repositories/tagsRepository.js";
 import { TagsService } from "../services/tagsService.js";
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
 import { serverSettingsService } from "../services/serverSettingsService.js";
+import { permissionService } from "../services/permissionService.js";
 import { userWebhookService } from "../services/userWebhookService.js";
 import { webhookPreviewService } from "../services/webhookPreviewService.js";
 import { UserWebhookController } from "../controllers/userWebhookController.js";
@@ -60,6 +61,24 @@ usersRouter.get("/users", requireSiteAuthentication, usersCtrl.getUsers);
 usersRouter.get("/users/id/:userId", requireSiteAuthentication, usersCtrl.getUserById);
 usersRouter.get("/users/:username", requireSiteAuthentication, usersCtrl.getUserByUsername);
 usersRouter.get("/me", authenticateToken, usersCtrl.getMe);
+usersRouter.get(
+  "/permissions/me",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "未ログインです" });
+      }
+      const permissions = await permissionService.getUserPermissions(
+        req.user.userId,
+      );
+      return res.status(200).json({ permissions });
+    } catch (error) {
+      console.error("Failed to get current user permissions", error);
+      return res.status(500).json({ message: "Permissionの取得に失敗しました" });
+    }
+  },
+);
 usersRouter.post("/register", usersCtrl.registerUser);
 usersRouter.post("/refresh", attachRefreshExpiryHeaders, usersCtrl.refreshToken);
 usersRouter.post("/logout", usersCtrl.logoutUser);

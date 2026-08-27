@@ -14,10 +14,16 @@ interface JwtPayload {
 
 export interface AuthRequest extends Request {
   user?: { userId: string; sessionId: string };
+  authorization?: {
+    resourceScope?: "own" | "any";
+  };
 }
 
 export interface AuthenticatedRequest extends Request {
   user: { userId: string; sessionId: string };
+  authorization?: {
+    resourceScope?: "own" | "any";
+  };
 }
 
 const clearAuthCookies = (res: Response) => {

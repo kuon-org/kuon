@@ -1,6 +1,5 @@
 import type { Response } from "express";
-import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
-import { AdminService } from "../services/adminService.js";
+import type { AuthRequest } from "../middlewares/auth.js";
 import { WebhookService } from "../services/webhookService.js";
 import { WebhookPreviewService } from "../services/webhookPreviewService.js";
 import { webhookEventDefinitions } from "../webhooks/events.js";
@@ -13,30 +12,12 @@ import type {
 
 export class WebhookController {
   constructor(
-    private adminService: AdminService,
     private webhookService: WebhookService,
     private previewService: WebhookPreviewService,
   ) {}
 
-  private ensureAdmin = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) {
-      res.status(401).json({ message: "未ログインです" });
-      return false;
-    }
-
-    const isAdmin = await this.adminService.isAdmin(req.user.userId);
-    if (!isAdmin) {
-      res.status(403).json({ message: "権限がありません" });
-      return false;
-    }
-
-    return true;
-  };
-
-  getMetadata = async (req: AuthRequest, res: Response) => {
+  getMetadata = async (_req: AuthRequest, res: Response) => {
     try {
-      if (!(await this.ensureAdmin(req, res))) return;
-
       const events = webhookEventDefinitions
         .filter((event) => event.scopes.includes("system"))
         .map((event) => ({
@@ -59,8 +40,6 @@ export class WebhookController {
 
   preview = async (req: AuthRequest, res: Response) => {
     try {
-      if (!(await this.ensureAdmin(req, res))) return;
-
       const payload = this.previewService.preview({
         payloadTemplate: req.body?.payloadTemplate,
         eventType: req.body?.eventType,
@@ -76,8 +55,6 @@ export class WebhookController {
 
   testSend = async (req: AuthRequest, res: Response) => {
     try {
-      if (!(await this.ensureAdmin(req, res))) return;
-
       const result = await this.previewService.testSend({
         url: req.body?.url,
         headers: req.body?.headers,
@@ -93,9 +70,8 @@ export class WebhookController {
     }
   };
 
-  getAll = async (req: AuthRequest, res: Response) => {
+  getAll = async (_req: AuthRequest, res: Response) => {
     try {
-      if (!(await this.ensureAdmin(req, res))) return;
       return res.status(200).json(await this.webhookService.getAll());
     } catch (error) {
       return res.status(500).json({
@@ -107,13 +83,10 @@ export class WebhookController {
 
   getById = async (req: AuthRequest, res: Response) => {
     try {
-      if (!(await this.ensureAdmin(req, res))) return;
-
       const webhook = await this.webhookService.getById(String(req.params.id));
       if (!webhook) {
         return res.status(404).json({ message: "Webhookが見つかりません" });
       }
-
       return res.status(200).json(webhook);
     } catch (error) {
       return res.status(500).json({
@@ -125,8 +98,6 @@ export class WebhookController {
 
   create = async (req: AuthRequest, res: Response) => {
     try {
-      if (!(await this.ensureAdmin(req, res))) return;
-
       const webhook = await this.webhookService.create(
         req.body as CreateWebhookInput,
       );
@@ -141,8 +112,6 @@ export class WebhookController {
 
   update = async (req: AuthRequest, res: Response) => {
     try {
-      if (!(await this.ensureAdmin(req, res))) return;
-
       const webhook = await this.webhookService.update(
         String(req.params.id),
         req.body as UpdateWebhookInput,
@@ -158,8 +127,6 @@ export class WebhookController {
 
   setActive = async (req: AuthRequest, res: Response) => {
     try {
-      if (!(await this.ensureAdmin(req, res))) return;
-
       if (typeof req.body?.isActive !== "boolean") {
         return res.status(400).json({ message: "isActiveを指定してください" });
       }
@@ -179,8 +146,6 @@ export class WebhookController {
 
   getDeliveries = async (req: AuthRequest, res: Response) => {
     try {
-      if (!(await this.ensureAdmin(req, res))) return;
-
       const parsedLimit = Number(req.query.limit ?? 50);
       const limit = Number.isFinite(parsedLimit) ? parsedLimit : 50;
       const deliveries = await this.webhookService.getDeliveries(
@@ -198,8 +163,6 @@ export class WebhookController {
 
   delete = async (req: AuthRequest, res: Response) => {
     try {
-      if (!(await this.ensureAdmin(req, res))) return;
-
       await this.webhookService.delete(String(req.params.id));
       return res.status(204).send();
     } catch (error) {

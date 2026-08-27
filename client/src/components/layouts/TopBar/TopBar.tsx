@@ -11,6 +11,7 @@ import {
   Fade,
 } from "@mui/material";
 import { useAuthQuery } from "../../../hooks/useAuth";
+import { useAdminPermissions } from "../../../hooks/useRoles";
 import { NavButton } from "../../common/NavButton";
 import EditIcon from "@mui/icons-material/Edit";
 import { UserIcon } from "./UserIcon";
@@ -24,6 +25,7 @@ import { KuonLogo } from "../../Logo/Kuon";
 
 const TopBar = () => {
   const { user } = useAuthQuery();
+  const { permissions } = useAdminPermissions(!!user);
   const [searchValue, setSearchValue] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const navigate = useNavigate();
@@ -35,7 +37,14 @@ const TopBar = () => {
     setShowSearch(false);
   };
 
-  const isAdmin = user?.role === "admin";
+  const hasAdminAccess = permissions.some(
+    (permission) =>
+      permission.startsWith("system.") ||
+      permission.startsWith("user.") ||
+      permission.startsWith("role.") ||
+      permission === "eventlog.read",
+  );
+  const canCreateArticle = permissions.includes("article.create");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -49,7 +58,6 @@ const TopBar = () => {
           px: isMobile ? 1 : 3,
         }}
       >
-        {/* 左側：ロゴ */}
         <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
           <Box sx={{ display: "flex", gap: 2 }}>
             <KuonLogo size={32} variant="accent" />
@@ -65,7 +73,7 @@ const TopBar = () => {
             </Typography>
           </Box>
         </Link>
-        {/* 中央：検索アイコンまたは検索バー */}
+
         {isMobile ? (
           <IconButton
             onClick={() => setShowSearch((prev) => !prev)}
@@ -74,9 +82,7 @@ const TopBar = () => {
             {showSearch ? <CloseIcon /> : <SearchIcon />}
           </IconButton>
         ) : (
-          <Box
-            sx={{ flex: 1, display: "flex", justifyContent: "center", mx: 4 }}
-          >
+          <Box sx={{ flex: 1, display: "flex", justifyContent: "center", mx: 4 }}>
             <Paper
               component="form"
               onSubmit={handleSearch}
@@ -114,9 +120,8 @@ const TopBar = () => {
           </Box>
         )}
 
-        {/* 右側：ボタン群 */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {isAdmin && (
+          {hasAdminAccess && (
             <Link
               to={adminRoute.to}
               style={{ textDecoration: "none", color: "inherit" }}
@@ -127,13 +132,15 @@ const TopBar = () => {
           {user ? (
             <>
               <UserIcon />
-              <NavButton
-                path="/drafts/new"
-                message="記事を作成"
-                Icon={<EditIcon />}
-                variant="contained"
-                color="secondary"
-              />
+              {canCreateArticle && (
+                <NavButton
+                  path="/drafts/new"
+                  message="記事を作成"
+                  Icon={<EditIcon />}
+                  variant="contained"
+                  color="secondary"
+                />
+              )}
             </>
           ) : (
             <>
@@ -154,7 +161,6 @@ const TopBar = () => {
         </Box>
       </Toolbar>
 
-      {/* スマホ用：下にフル幅の検索バーを展開 */}
       {isMobile && (
         <Fade in={showSearch}>
           <Box

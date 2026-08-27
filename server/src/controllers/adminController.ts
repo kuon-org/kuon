@@ -14,9 +14,6 @@ export class AdminController {
       if (!isAuthenticated(req)) {
         return res.status(401).json({ message: "未ログインです" });
       }
-      const isAdmin = await this.adminService.isAdmin(req.user.userId);
-      if (!isAdmin)
-        return res.status(403).json({ message: "権限がありません" });
       const users = await this.adminService.getUserList();
       res.status(200).json(users);
     } catch (error) {
@@ -33,9 +30,6 @@ export class AdminController {
       if (!isAuthenticated(req)) {
         return res.status(401).json({ message: "未ログインです" });
       }
-      const isAdmin = await this.adminService.isAdmin(req.user.userId);
-      if (!isAdmin)
-        return res.status(403).json({ message: "権限がありません" });
       const result = await this.adminService.toggleUserActive(userId);
       res.status(200).json(result);
     } catch (error) {
@@ -51,9 +45,6 @@ export class AdminController {
       if (!isAuthenticated(req)) {
         return res.status(401).json({ message: "未ログインです" });
       }
-      const isAdmin = await this.adminService.isAdmin(req.user.userId);
-      if (!isAdmin)
-        return res.status(403).json({ message: "権限がありません" });
 
       const settings = await this.serverSettingsService.getAll();
       return res.status(200).json(settings);
@@ -70,9 +61,6 @@ export class AdminController {
       if (!isAuthenticated(req)) {
         return res.status(401).json({ message: "未ログインです" });
       }
-      const isAdmin = await this.adminService.isAdmin(req.user.userId);
-      if (!isAdmin)
-        return res.status(403).json({ message: "権限がありません" });
 
       const { key, value } = req.body as { key?: unknown; value?: unknown };
       if (typeof key !== "string" || typeof value !== "string") {

@@ -3,6 +3,8 @@ import { IdpConfigurationRepository } from "../repositories/idpConfigurationsRep
 import { IdpConfigurationsService } from "../services/idpConfigurationsService.js";
 import { IdpController } from "../controllers/idpControllers.js";
 import { authenticateToken } from "../middlewares/auth.js";
+import { requirePermission } from "../middlewares/permission.js";
+import { Permissions } from "../constants/permissions.js";
 import { UsersRepository } from "../repositories/usersRepository.js";
 
 const idpRouter = Router();
@@ -29,6 +31,14 @@ const idpConfController = new IdpController(idpConfService);
  *               items: { $ref: '#/components/schemas/IdpProvider' }
  */
 idpRouter.get("/idp/active", idpConfController.getActiveIdp);
+
+// All /admin IdP routes require the same capability. Individual authenticateToken
+// middleware is kept below for compatibility and to keep route definitions explicit.
+idpRouter.use(
+  "/admin",
+  authenticateToken,
+  requirePermission(Permissions.System.IdpManage),
+);
 
 /**
  * @openapi

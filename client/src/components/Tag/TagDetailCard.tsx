@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { useTagsQuery, type Tag } from "../../hooks/useTags";
 import { useAuthQuery } from "../../hooks/useAuth";
+import { useAdminPermissions } from "../../hooks/useRoles";
 import { MoreHButton } from "../common/MoreHbutton";
 import Loading from "../common/Loading/Loading";
 import { useNavigate } from "@tanstack/react-router";
@@ -21,29 +22,29 @@ interface TagDetailCardProps {
 export const TagDetailCard = ({ tag, slug }: TagDetailCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuthQuery();
+  const { permissions } = useAdminPermissions(!!user);
   const { isFollowing, isFollowingIsError, isFollowingIsLoading, followTag } =
     useTagsQuery(slug);
-  const isEditor =
-    user?.role === "admin" ? true : user?.role === "moderator" ? true : false;
-  console.log(user);
+  const canManageTag = permissions.includes("tag.manage");
+
   if (isFollowingIsLoading) return <Loading />;
   if (isFollowingIsError) return <>エラー</>;
   if (!tag) return <>{slug}タグは存在しません</>;
-  console.log(tag);
+
   const handleEdit = () => {
     navigate({ to: tagEditRoute.to, params: { slug } });
   };
   return (
     <Paper
       sx={{
-        width: { xs: "100%", sm: "360px" }, // 👈 スマホでは横いっぱい、PCでは固定幅
-        maxWidth: { xs: "100%", sm: "360px" }, // 👈 同じくmaxWidthも調整
+        width: { xs: "100%", sm: "360px" },
+        maxWidth: { xs: "100%", sm: "360px" },
         minHeight: "400px",
         display: "flex",
         flexDirection: "column",
       }}
     >
-      {isEditor && (
+      {canManageTag && (
         <Box sx={{ display: "flex", justifyContent: "end" }}>
           <MoreHButton
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
