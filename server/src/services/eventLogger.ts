@@ -6,9 +6,11 @@ import {
 
 type EventLoggerOptions = Omit<CreateServerEventInput, "eventType" | "level">;
 
-const SENSITIVE_KEY_PATTERN = /(password|token|secret|cookie|authorization|api[_-]?key)/i;
+const SENSITIVE_KEY_PATTERN =
+  /(password|token|secret|cookie|authorization|api[_-]?key)/i;
 
 const sanitize = (value: unknown): unknown => {
+  if (value instanceof Date) return value.toISOString();
   if (Array.isArray(value)) return value.map(sanitize);
   if (!value || typeof value !== "object") return value;
 
@@ -33,10 +35,12 @@ class EventLogger {
         level,
         category: options.category ?? "system",
         metadata: sanitize(options.metadata ?? {}),
-        before: options.before === undefined ? undefined : sanitize(options.before),
+        before:
+          options.before === undefined ? undefined : sanitize(options.before),
         after: options.after === undefined ? undefined : sanitize(options.after),
       });
     } catch (error) {
+      // Event logging must never turn an otherwise successful operation into a failure.
       console.error(`[eventLogger] failed to persist ${eventType}`, error);
       return null;
     }
