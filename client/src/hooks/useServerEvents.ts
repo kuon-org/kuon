@@ -2,10 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import apiClient from "../api/client";
 
 export type ServerEventLevel = "info" | "warning" | "error";
+export type ServerEventCategory = "system" | "audit";
 
 export interface ServerEvent {
   id: string;
-  category: "system" | "audit";
+  category: ServerEventCategory;
   event_type: string;
   level: ServerEventLevel;
   source: string | null;
@@ -33,6 +34,7 @@ export interface ServerEventFilters {
   page?: number;
   limit?: number;
   level?: ServerEventLevel | "";
+  category?: ServerEventCategory | "";
   eventType?: string;
   from?: string;
   to?: string;
@@ -46,6 +48,7 @@ export const useServerEvents = (filters: ServerEventFilters) => {
       if (filters.page) params.set("page", String(filters.page));
       if (filters.limit) params.set("limit", String(filters.limit));
       if (filters.level) params.set("level", filters.level);
+      if (filters.category) params.set("category", filters.category);
       if (filters.eventType?.trim()) params.set("eventType", filters.eventType.trim());
       if (filters.from) params.set("from", filters.from);
       if (filters.to) params.set("to", filters.to);
