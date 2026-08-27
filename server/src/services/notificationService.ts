@@ -12,6 +12,7 @@ export const NotificationType = {
   ArticleCommented: "article.comment.created",
   CommentReplied: "comment.reply.created",
   ArticlePublished: "article.published",
+  UserFollowed: "user.followed",
 } as const;
 
 class NotificationService {
@@ -26,6 +27,7 @@ class NotificationService {
     return Promise.all(
       notifications.map(async (notification) => {
         let href: string | null = null;
+        let action: { type: "follow_back"; targetUserId: string; isFollowing: boolean } | null = null;
 
         if (
           notification.reference_id &&
@@ -60,7 +62,36 @@ class NotificationService {
           }
         }
 
-        return { ...notification, href };
+        if (
+          notification.reference_id &&
+          notification.reference_type === "user"
+        ) {
+          const target = await prisma.users.findUnique({
+            where: { id: notification.reference_id },
+            select: { id: true, username: true },
+          });
+          if (target?.username) {
+            href = `/${encodeURIComponent(target.username)}`;
+          }
+          if (notification.type === NotificationType.UserFollowed && target) {
+            const following = await prisma.user_follows.findUnique({
+              where: {
+                follower_id_followee_id: {
+                  follower_id: userId,
+                  followee_id: target.id,
+                },
+              },
+              select: { follower_id: true },
+            });
+            action = {
+              type: "follow_back",
+              targetUserId: target.id,
+              isFollowing: !!following,
+            };
+          }
+        }
+
+        return { ...notification, href, action };
       }),
     );
   }
@@ -88,6 +119,16 @@ class NotificationService {
     notificationStreamService.notify(userId);
   }
 
+  async deleteOne(userId: string, notificationId: string) {
+    await notificationRepository.deleteOne(userId, notificationId);
+    notificationStreamService.notify(userId);
+  }
+
+  async deleteAll(userId: string) {
+    await notificationRepository.deleteAll(userId);
+    notificationStreamService.notify(userId);
+  }
+
   private async create(data: {
     userId: string;
     type: string;
@@ -107,6 +148,30 @@ class NotificationService {
     });
     notificationStreamService.notify(data.userId);
     return notification;
+  }
+
+  async userFollowed(followerUserId: string, followeeUserId: string) {
+    if (!this.isEnabled() || followerUserId === followeeUserId) return;
+    try {
+      const preferences = await this.getPreferences(followeeUserId);
+      if (!preferences.notifyOnUserFollow) return;
+
+      const follower = await prisma.users.findUnique({
+        where: { id: followerUserId },
+        select: { display_name: true, username: true },
+      });
+      const followerName = follower?.display_name ?? follower?.username ?? "ユーザー";
+
+      await this.create({
+        userId: followeeUserId,
+        type: NotificationType.UserFollowed,
+        title: `${followerName}さんにフォローされました`,
+        referenceId: followerUserId,
+        referenceType: "user",
+      });
+    } catch (error) {
+      console.error("Failed to create user follow notification", error);
+    }
   }
 
   async commentCreated(commentId: string, actorUserId: string) {
