@@ -10,7 +10,54 @@ export const NotificationType = {
 
 class NotificationService {
   async list(userId: string, limit?: number) {
-    return notificationRepository.findByUserId(userId, limit);
+    const notifications = await notificationRepository.findByUserId(userId, limit);
+
+    return Promise.all(
+      notifications.map(async (notification) => {
+        let href: string | null = null;
+
+        if (
+          notification.reference_id &&
+          (notification.type === NotificationType.ArticleCommented ||
+            notification.type === NotificationType.CommentReplied)
+        ) {
+          const comment = await prisma.comments.findUnique({
+            where: { id: notification.reference_id },
+            select: {
+              id: true,
+              article_id: true,
+              articles: {
+                select: {
+                  users: { select: { username: true } },
+                },
+              },
+            },
+          });
+          const username = comment?.articles?.users?.username;
+          if (comment?.article_id && username) {
+            href = `/${encodeURIComponent(username)}/${comment.article_id}#comment-${comment.id}`;
+          }
+        }
+
+        if (
+          notification.reference_id &&
+          notification.type === NotificationType.FollowedTagPublished
+        ) {
+          const article = await prisma.articles.findUnique({
+            where: { id: notification.reference_id },
+            select: {
+              id: true,
+              users: { select: { username: true } },
+            },
+          });
+          if (article?.users?.username) {
+            href = `/${encodeURIComponent(article.users.username)}/${article.id}`;
+          }
+        }
+
+        return { ...notification, href };
+      }),
+    );
   }
 
   async unreadCount(userId: string) {
