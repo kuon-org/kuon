@@ -2,6 +2,7 @@ import { access, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import prisma from "../prisma/client.js";
+import { eventLogger } from "../services/eventLogger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,15 +60,32 @@ const applyMigration = async (directory: string, name: string) => {
     throw new Error(`Migration file is empty: ${name}`);
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.$executeRawUnsafe(sql);
-    await tx.$executeRawUnsafe(
-      `INSERT INTO ${MIGRATION_TABLE} (name) VALUES ($1)`,
-      name,
-    );
-  });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(sql);
+      await tx.$executeRawUnsafe(
+        `INSERT INTO ${MIGRATION_TABLE} (name) VALUES ($1)`,
+        name,
+      );
+    });
 
-  console.log(`✅ Migration applied: ${name}`);
+    console.log(`✅ Migration applied: ${name}`);
+    void eventLogger.info("migration.completed", {
+      source: "migration",
+      message: `Migration applied: ${name}`,
+      metadata: { migration: name },
+    });
+  } catch (error) {
+    void eventLogger.error("migration.failed", {
+      source: "migration",
+      message: `Migration failed: ${name}`,
+      metadata: {
+        migration: name,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    });
+    throw error;
+  }
 };
 
 export const runMigrations = async () => {
