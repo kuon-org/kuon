@@ -18,6 +18,38 @@ export class NotificationController {
     res.json(await notificationService.unreadCount(req.user.userId));
   };
 
+  getPreferences = async (req: AuthRequest, res: Response) => {
+    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
+    res.json(await notificationService.getPreferences(req.user.userId));
+  };
+
+  updatePreferences = async (req: AuthRequest, res: Response) => {
+    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
+    const {
+      notifyOnArticleComment,
+      notifyOnCommentReply,
+      notifyOnFollowedTagArticle,
+      notifyOnFollowedUserArticle,
+    } = req.body;
+    const values = [
+      notifyOnArticleComment,
+      notifyOnCommentReply,
+      notifyOnFollowedTagArticle,
+      notifyOnFollowedUserArticle,
+    ];
+    if (values.some((value) => typeof value !== "boolean")) {
+      return res.status(400).json({ message: "通知設定はbooleanで指定してください" });
+    }
+    res.json(
+      await notificationService.updatePreferences(req.user.userId, {
+        notifyOnArticleComment,
+        notifyOnCommentReply,
+        notifyOnFollowedTagArticle,
+        notifyOnFollowedUserArticle,
+      }),
+    );
+  };
+
   markRead = async (req: AuthRequest, res: Response) => {
     if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
     await notificationService.markRead(req.user.userId, req.params.notificationId);
@@ -32,6 +64,9 @@ export class NotificationController {
 
   stream = (req: AuthRequest, res: Response) => {
     if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
+    if (!notificationService.isEnabled()) {
+      return res.status(503).json({ message: "アプリ内通知は無効です" });
+    }
 
     const userId = req.user.userId;
     res.status(200);
