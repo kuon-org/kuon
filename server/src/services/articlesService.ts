@@ -6,6 +6,8 @@ import { webhookDispatcherService } from "./webhookDispatcherService.js";
 import { webhookEventContextService } from "./webhookEventContextService.js";
 import { WebhookEventType } from "../webhooks/events.js";
 import { buildWebhookArticleUrl, toWebhookExternalUrl } from "../webhooks/url.js";
+import { notificationService } from "./notificationService.js";
+import prisma from "../prisma/client.js";
 
 export class ArticlesService {
   constructor(private articlesRepo: ArticlesRepository) {}
@@ -136,6 +138,10 @@ export class ArticlesService {
       void this.dispatchArticlePublished(article.id, userId, selectedWebhookIds);
     }
 
+    if (isPublicMode && is_published === true && is_private !== true) {
+      void notificationService.articlePublished(article.id, userId);
+    }
+
     return article;
   }
 
@@ -183,6 +189,11 @@ export class ArticlesService {
     if (!existing) throw new Error("ArticleNotFound");
     if (!allowAny && existing.user_id !== userId) throw new Error("Forbidden");
 
+    const existingPublicationState = await prisma.articles.findUnique({
+      where: { id: articleId },
+      select: { status: true },
+    });
+
     const {
       tagIds,
       raw_content,
@@ -218,6 +229,14 @@ export class ArticlesService {
       is_private !== true
     ) {
       void this.dispatchArticleUpdated(articleId);
+
+      const wasPublic =
+        existingPublicationState?.status === "public" &&
+        existing.is_published === true &&
+        existing.is_private !== true;
+      if (!wasPublic) {
+        void notificationService.articlePublished(articleId, userId);
+      }
     }
 
     return updated;
