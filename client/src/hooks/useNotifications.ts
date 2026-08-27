@@ -4,6 +4,12 @@ import apiClient from "../api/client";
 
 export type NotificationReason = "followed_tag" | "followed_user";
 
+export interface NotificationAction {
+  type: "follow_back";
+  targetUserId: string;
+  isFollowing: boolean;
+}
+
 export interface AppNotification {
   id: string;
   type: string | null;
@@ -15,6 +21,7 @@ export interface AppNotification {
   is_read: boolean | null;
   created_at: string | null;
   href: string | null;
+  action: NotificationAction | null;
 }
 
 export interface NotificationPreferences {
@@ -22,6 +29,7 @@ export interface NotificationPreferences {
   notifyOnCommentReply: boolean;
   notifyOnFollowedTagArticle: boolean;
   notifyOnFollowedUserArticle: boolean;
+  notifyOnUserFollow: boolean;
 }
 
 export const useNotifications = (enabled: boolean) => {
@@ -62,6 +70,27 @@ export const useNotifications = (enabled: boolean) => {
     onSuccess: invalidate,
   });
 
+  const deleteNotificationMutation = useMutation({
+    mutationFn: (notificationId: string) =>
+      apiClient.delete(`/notifications/${notificationId}`),
+    onSuccess: invalidate,
+  });
+
+  const deleteAllMutation = useMutation({
+    mutationFn: () => apiClient.delete("/notifications"),
+    onSuccess: invalidate,
+  });
+
+  const followBackMutation = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      const { data } = await apiClient.post<{ isFollow: boolean }>("/users/follow", {
+        followeeId: targetUserId,
+      });
+      return data;
+    },
+    onSuccess: invalidate,
+  });
+
   useEffect(() => {
     if (!enabled) return;
 
@@ -77,6 +106,10 @@ export const useNotifications = (enabled: boolean) => {
     isLoading: notificationsQuery.isLoading,
     markRead: markReadMutation.mutateAsync,
     markAllRead: markAllReadMutation.mutateAsync,
+    deleteNotification: deleteNotificationMutation.mutateAsync,
+    deleteAll: deleteAllMutation.mutateAsync,
+    followBack: followBackMutation.mutateAsync,
+    isFollowBackPending: followBackMutation.isPending,
   };
 };
 
