@@ -5,6 +5,7 @@ export const ServerSettingKey = {
   MaintenanceMode: "maintenance_mode",
   WebhooksEnabled: "webhooks_enabled",
   AllowUserWebhooks: "allow_user_webhooks",
+  NotificationsEnabled: "notifications_enabled",
 } as const;
 
 export type ServerSettingKey =
