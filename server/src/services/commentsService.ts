@@ -2,6 +2,7 @@ import { CommentsRepository } from "../repositories/commentsRepository.js";
 import { webhookDispatcherService } from "./webhookDispatcherService.js";
 import { webhookEventContextService } from "./webhookEventContextService.js";
 import { WebhookEventType } from "../webhooks/events.js";
+import { notificationService } from "./notificationService.js";
 
 type CommentRecord = Awaited<
   ReturnType<CommentsRepository["findByArticleId"]>
@@ -42,6 +43,7 @@ export class CommentsService {
     });
 
     void this.dispatchCommentCreated(comment.id);
+    void notificationService.commentCreated(comment.id, userId);
     return comment;
   }
 
