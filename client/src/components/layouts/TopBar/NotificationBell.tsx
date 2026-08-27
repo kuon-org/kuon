@@ -13,7 +13,6 @@ import {
   Typography,
 } from "@mui/material";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import { useNavigate } from "@tanstack/react-router";
 import { useNotifications } from "../../../hooks/useNotifications";
 
 interface NotificationBellProps {
@@ -22,7 +21,6 @@ interface NotificationBellProps {
 
 export const NotificationBell = ({ enabled }: NotificationBellProps) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const navigate = useNavigate();
   const { notifications, unreadCount, isLoading, markRead, markAllRead } =
     useNotifications(enabled);
 
