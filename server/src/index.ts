@@ -20,6 +20,7 @@ import shareRouter from "./routes/shareRoutes.js";
 import stocksRoutes from "./routes/stocksRoutes.js";
 import pumlRouter from "./routes/plantumlRouter.js";
 import serverSettingsRouter from "./routes/serverSettingsRouter.js";
+import notificationRouter from "./routes/notificationRouter.js";
 import { requireSiteAuthentication } from "./middlewares/siteAccess.js";
 import { serverSettingsService } from "./services/serverSettingsService.js";
 import { runtimeMaintenanceGate } from "./services/runtimeMaintenanceService.js";
@@ -54,6 +55,7 @@ app.use("/api", totpRoutes);
 app.use("/api", usersRoutes);
 app.use("/api", idpRouter);
 app.use("/api", adminRouter);
+app.use("/api", notificationRouter);
 
 // Permission guards are mounted ahead of the existing content routers. They only
 // match mutating routes that require an explicit Kuon capability.
