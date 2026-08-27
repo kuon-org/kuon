@@ -28,14 +28,14 @@ export interface CommentUser {
 export interface Comment {
   id: string;
   article_id: string;
-  user_id: string;
-  body: string;
+  user_id: string | null;
+  body: string | null;
   parent_comment_id: string | null;
   like_count: number;
   created_at: string;
   updated_at: string;
   is_deleted: boolean;
-  users: CommentUser;
+  users: CommentUser | null;
   replies?: Comment[]; // フロントエンドでツリー化した後に追加される
 }
 
