@@ -173,10 +173,15 @@ export class ArticlesService {
     }
   }
 
-  async updateArticle(articleId: string, userId: string, payload: any) {
+  async updateArticle(
+    articleId: string,
+    userId: string,
+    payload: any,
+    allowAny = false,
+  ) {
     const existing = await this.articlesRepo.findArticleById(articleId);
     if (!existing) throw new Error("ArticleNotFound");
-    if (existing.user_id !== userId) throw new Error("Forbidden");
+    if (!allowAny && existing.user_id !== userId) throw new Error("Forbidden");
 
     const {
       tagIds,
@@ -243,9 +248,9 @@ export class ArticlesService {
     }
   }
 
-  async rollbackDraft(articleId: string, userId: string) {
+  async rollbackDraft(articleId: string, userId: string, allowAny = false) {
     const existing = await this.articlesRepo.findArticleById(articleId);
-    if (!existing || existing.user_id !== userId)
+    if (!existing || (!allowAny && existing.user_id !== userId))
       throw new Error("Unauthorized or Not Found");
     if (!existing.last_published_raw_content)
       throw new Error("No published version to rollback to");
@@ -257,9 +262,10 @@ export class ArticlesService {
 
     return this.articlesRepo.updateArticles(articleId, rollbackData);
   }
-  async deleteArticle(articleId: string, userId: string) {
+
+  async deleteArticle(articleId: string, userId: string, allowAny = false) {
     const existing = await this.articlesRepo.findArticleById(articleId);
-    if (!existing || existing.user_id !== userId) {
+    if (!existing || (!allowAny && existing.user_id !== userId)) {
       throw new Error("Unauthorized or Not Found");
     }
     return await this.articlesRepo.softDeleteArticle(articleId);
@@ -269,16 +275,16 @@ export class ArticlesService {
     return await this.articlesRepo.findDeletedArticlesByUserId(userId);
   }
 
-  async restoreArticle(articleId: string, userId: string) {
+  async restoreArticle(articleId: string, userId: string, allowAny = false) {
     const existing = await this.articlesRepo.findArticleById(articleId);
-    if (!existing || existing.user_id !== userId)
+    if (!existing || (!allowAny && existing.user_id !== userId))
       throw new Error("Unauthorized");
     return await this.articlesRepo.restoreArticle(articleId);
   }
 
-  async hardDeleteArticle(articleId: string, userId: string) {
+  async hardDeleteArticle(articleId: string, userId: string, allowAny = false) {
     const existing = await this.articlesRepo.findArticleById(articleId);
-    if (!existing || existing.user_id !== userId)
+    if (!existing || (!allowAny && existing.user_id !== userId))
       throw new Error("Unauthorized");
     return await this.articlesRepo.hardDeleteArticle(articleId);
   }

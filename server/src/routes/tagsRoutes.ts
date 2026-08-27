@@ -3,6 +3,8 @@ import { TagsController } from "../controllers/tagsController.js";
 import { TagsRepository } from "../repositories/tagsRepository.js";
 import { TagsService } from "../services/tagsService.js";
 import { authenticateToken } from "../middlewares/auth.js";
+import { requirePermission } from "../middlewares/permission.js";
+import { Permissions } from "../constants/permissions.js";
 
 const tagsRouter = Router();
 
@@ -79,8 +81,15 @@ tagsRouter.get("/tags/:slug", tagsController.getTag);
  *             schema: { $ref: '#/components/schemas/Tag' }
  *       '401':
  *         description: 未ログイン
+ *       '403':
+ *         description: 権限なし
  */
-tagsRouter.post("/tags", authenticateToken, tagsController.upsertTag);
+tagsRouter.post(
+  "/tags",
+  authenticateToken,
+  requirePermission(Permissions.Tag.Manage),
+  tagsController.upsertTag,
+);
 
 /**
  * @openapi
@@ -179,10 +188,13 @@ tagsRouter.post(
  *                 url: { type: string }
  *       '401':
  *         description: 未ログイン
+ *       '403':
+ *         description: 権限なし
  */
 tagsRouter.post(
   "/tags/:slug/upload_avatar",
   authenticateToken,
+  requirePermission(Permissions.Tag.Manage),
   tagsController.uploadTagAvatar,
 );
 

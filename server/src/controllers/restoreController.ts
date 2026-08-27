@@ -2,14 +2,10 @@ import type { Response } from "express";
 import { rm } from "node:fs/promises";
 import type { AuthRequest } from "../middlewares/auth.js";
 import { isAuthenticated } from "../middlewares/auth.js";
-import type { AdminService } from "../services/adminService.js";
 import type { RestoreService } from "../services/restoreService.js";
 
 export class RestoreController {
-  constructor(
-    private adminService: AdminService,
-    private restoreService: RestoreService,
-  ) {}
+  constructor(private restoreService: RestoreService) {}
 
   restoreBackup = async (req: AuthRequest, res: Response) => {
     const uploadedPath = req.file?.path;
@@ -20,11 +16,6 @@ export class RestoreController {
       }
       if (req.user.sessionId === "apikey") {
         return res.status(403).json({ message: "API KeyではRestoreを実行できません" });
-      }
-
-      const isAdmin = await this.adminService.isAdmin(req.user.userId);
-      if (!isAdmin) {
-        return res.status(403).json({ message: "権限がありません" });
       }
       if (!uploadedPath) {
         return res.status(400).json({ message: "バックアップファイルを指定してください" });

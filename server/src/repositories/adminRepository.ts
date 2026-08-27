@@ -1,4 +1,3 @@
-import { users } from "@prisma/client";
 import prisma from "../prisma/client.js";
 
 export class AdminRepository {
@@ -13,15 +12,21 @@ export class AdminRepository {
       },
     });
 
-    // user_rolesを除外してroleだけ残す
     return users.map(({ user_roles, ...user }) => ({
       ...user,
+      // Keep role for compatibility with the existing client while exposing
+      // complete role information for multi-role assignment.
       role: user_roles.map((ur) => ur.roles?.name).filter(Boolean),
+      roles: user_roles
+        .filter((ur) => ur.roles)
+        .map((ur) => ({
+          id: ur.roles!.id,
+          name: ur.roles!.name,
+          display_name: ur.roles!.display_name,
+        })),
     }));
   }
-  /**
-   * 現在の状態を反転させる (Toggle)
-   */
+
   async toggleUserActiveStatus(userId: string) {
     const user = await prisma.users.findUnique({
       where: { id: userId },
