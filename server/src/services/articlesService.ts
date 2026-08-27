@@ -6,6 +6,7 @@ import { webhookDispatcherService } from "./webhookDispatcherService.js";
 import { webhookEventContextService } from "./webhookEventContextService.js";
 import { WebhookEventType } from "../webhooks/events.js";
 import { buildWebhookArticleUrl, toWebhookExternalUrl } from "../webhooks/url.js";
+import { notificationService } from "./notificationService.js";
 
 export class ArticlesService {
   constructor(private articlesRepo: ArticlesRepository) {}
@@ -136,6 +137,10 @@ export class ArticlesService {
       void this.dispatchArticlePublished(article.id, userId, selectedWebhookIds);
     }
 
+    if (isPublicMode && is_published === true && is_private !== true) {
+      void notificationService.articlePublished(article.id, userId);
+    }
+
     return article;
   }
 
@@ -218,6 +223,14 @@ export class ArticlesService {
       is_private !== true
     ) {
       void this.dispatchArticleUpdated(articleId);
+
+      const wasPublic =
+        existing.status === "public" &&
+        existing.is_published === true &&
+        existing.is_private !== true;
+      if (!wasPublic) {
+        void notificationService.articlePublished(articleId, userId);
+      }
     }
 
     return updated;
