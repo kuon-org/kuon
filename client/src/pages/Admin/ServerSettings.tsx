@@ -26,6 +26,7 @@ export const ServerSettings = () => {
   const maintenanceMode = settings?.find((setting) => setting.key === "maintenance_mode")?.value === "true";
   const webhooksEnabled = settings?.find((setting) => setting.key === "webhooks_enabled")?.value === "true";
   const allowUserWebhooks = settings?.find((setting) => setting.key === "allow_user_webhooks")?.value === "true";
+  const notificationsEnabled = settings?.find((setting) => setting.key === "notifications_enabled")?.value !== "false";
 
   const updateBooleanSetting = async (key: string, enabled: boolean) => {
     setError(null);
@@ -73,6 +74,14 @@ export const ServerSettings = () => {
             有効にすると、未ログインユーザーによる記事・タグ・ユーザー情報などの閲覧を禁止し、ログイン画面へ誘導します。ログインや外部IdP認証に必要なエンドポイントは引き続き利用できます。
           </Typography>
           <FormControlLabel control={<Switch checked={requireAuthentication} onChange={(event) => updateBooleanSetting("require_authentication", event.target.checked)} disabled={updateServerSetting_isPending} />} label={requireAuthentication ? "要求する" : "要求しない"} />
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="h5" sx={{ mb: 1 }}>アプリ内通知</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            インスタンス全体でアプリ内通知を有効にします。無効の場合、新しい通知は生成されず、TopBarの通知ベルも表示されません。
+          </Typography>
+          <FormControlLabel control={<Switch checked={notificationsEnabled} onChange={(event) => updateBooleanSetting("notifications_enabled", event.target.checked)} disabled={updateServerSetting_isPending} />} label={notificationsEnabled ? "有効" : "無効"} />
 
           <Divider sx={{ my: 3 }} />
 

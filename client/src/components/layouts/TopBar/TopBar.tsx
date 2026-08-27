@@ -12,9 +12,11 @@ import {
 } from "@mui/material";
 import { useAuthQuery } from "../../../hooks/useAuth";
 import { useAdminPermissions } from "../../../hooks/useRoles";
+import { usePublicServerSettings } from "../../../hooks/usePublicServerSettings";
 import { NavButton } from "../../common/NavButton";
 import EditIcon from "@mui/icons-material/Edit";
 import { UserIcon } from "./UserIcon";
+import { NotificationBell } from "./NotificationBell";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
@@ -26,6 +28,7 @@ import { KuonLogo } from "../../Logo/Kuon";
 const TopBar = () => {
   const { user } = useAuthQuery();
   const { permissions } = useAdminPermissions(!!user);
+  const { data: publicSettings } = usePublicServerSettings();
   const [searchValue, setSearchValue] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const navigate = useNavigate();
@@ -45,6 +48,7 @@ const TopBar = () => {
       permission === "eventlog.read",
   );
   const canCreateArticle = permissions.includes("article.create");
+  const notificationsEnabled = publicSettings?.notificationsEnabled ?? true;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -121,6 +125,7 @@ const TopBar = () => {
         )}
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {user && <NotificationBell enabled={notificationsEnabled} />}
           {hasAdminAccess && (
             <Link
               to={adminRoute.to}

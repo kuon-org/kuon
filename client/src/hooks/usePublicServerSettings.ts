@@ -4,6 +4,7 @@ import apiClient from "../api/client";
 export interface PublicServerSettings {
   requireAuthentication: boolean;
   maintenanceMode: boolean;
+  notificationsEnabled: boolean;
 }
 
 export const usePublicServerSettings = () =>
