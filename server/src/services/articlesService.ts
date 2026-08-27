@@ -7,6 +7,7 @@ import { webhookEventContextService } from "./webhookEventContextService.js";
 import { WebhookEventType } from "../webhooks/events.js";
 import { buildWebhookArticleUrl, toWebhookExternalUrl } from "../webhooks/url.js";
 import { notificationService } from "./notificationService.js";
+import prisma from "../prisma/client.js";
 
 export class ArticlesService {
   constructor(private articlesRepo: ArticlesRepository) {}
@@ -188,6 +189,11 @@ export class ArticlesService {
     if (!existing) throw new Error("ArticleNotFound");
     if (!allowAny && existing.user_id !== userId) throw new Error("Forbidden");
 
+    const existingPublicationState = await prisma.articles.findUnique({
+      where: { id: articleId },
+      select: { status: true },
+    });
+
     const {
       tagIds,
       raw_content,
@@ -225,7 +231,7 @@ export class ArticlesService {
       void this.dispatchArticleUpdated(articleId);
 
       const wasPublic =
-        existing.status === "public" &&
+        existingPublicationState?.status === "public" &&
         existing.is_published === true &&
         existing.is_private !== true;
       if (!wasPublic) {
