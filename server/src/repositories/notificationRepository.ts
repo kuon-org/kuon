@@ -20,6 +20,7 @@ export type NotificationPreferences = {
   notifyOnCommentReply: boolean;
   notifyOnFollowedTagArticle: boolean;
   notifyOnFollowedUserArticle: boolean;
+  notifyOnUserFollow: boolean;
 };
 
 export class NotificationRepository {
@@ -107,15 +108,29 @@ export class NotificationRepository {
     });
   }
 
+  async deleteOne(userId: string, notificationId: string) {
+    return prisma.user_notifications.deleteMany({
+      where: { id: notificationId, user_id: userId },
+    });
+  }
+
+  async deleteAll(userId: string) {
+    return prisma.user_notifications.deleteMany({
+      where: { user_id: userId },
+    });
+  }
+
   async getPreferences(userId: string): Promise<NotificationPreferences> {
     const rows = await prisma.$queryRaw<{
       notify_on_article_comment: boolean | null;
       notify_on_comment_reply: boolean | null;
       notify_on_followed_tag_article: boolean | null;
       notify_on_followed_user_article: boolean | null;
+      notify_on_user_follow: boolean | null;
     }[]>`
       SELECT notify_on_article_comment, notify_on_comment_reply,
-             notify_on_followed_tag_article, notify_on_followed_user_article
+             notify_on_followed_tag_article, notify_on_followed_user_article,
+             notify_on_user_follow
       FROM knowledge.user_settings
       WHERE user_id = ${userId}::uuid
       LIMIT 1
@@ -126,6 +141,7 @@ export class NotificationRepository {
       notifyOnCommentReply: row?.notify_on_comment_reply ?? true,
       notifyOnFollowedTagArticle: row?.notify_on_followed_tag_article ?? true,
       notifyOnFollowedUserArticle: row?.notify_on_followed_user_article ?? true,
+      notifyOnUserFollow: row?.notify_on_user_follow ?? true,
     };
   }
 
@@ -133,15 +149,18 @@ export class NotificationRepository {
     await prisma.$executeRaw`
       INSERT INTO knowledge.user_settings
         (user_id, notify_on_article_comment, notify_on_comment_reply,
-         notify_on_followed_tag_article, notify_on_followed_user_article, updated_at)
+         notify_on_followed_tag_article, notify_on_followed_user_article,
+         notify_on_user_follow, updated_at)
       VALUES
         (${userId}::uuid, ${preferences.notifyOnArticleComment}, ${preferences.notifyOnCommentReply},
-         ${preferences.notifyOnFollowedTagArticle}, ${preferences.notifyOnFollowedUserArticle}, NOW())
+         ${preferences.notifyOnFollowedTagArticle}, ${preferences.notifyOnFollowedUserArticle},
+         ${preferences.notifyOnUserFollow}, NOW())
       ON CONFLICT (user_id) DO UPDATE SET
         notify_on_article_comment = EXCLUDED.notify_on_article_comment,
         notify_on_comment_reply = EXCLUDED.notify_on_comment_reply,
         notify_on_followed_tag_article = EXCLUDED.notify_on_followed_tag_article,
         notify_on_followed_user_article = EXCLUDED.notify_on_followed_user_article,
+        notify_on_user_follow = EXCLUDED.notify_on_user_follow,
         updated_at = NOW()
     `;
     return this.getPreferences(userId);
