@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   Alert,
   Box,
+  Button,
   Chip,
   CircularProgress,
   Dialog,
@@ -20,6 +21,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import {
   useServerEvents,
   type ServerEvent,
@@ -74,12 +76,30 @@ export const ServerEvents = () => {
 
   return (
     <Box sx={{ width: "100%", minWidth: 0 }}>
-      <Typography variant="h5" gutterBottom>
-        Server Events
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Kuonサーバ内部で発生した運用イベントを確認できます。
-      </Typography>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "flex-start", sm: "center" }}
+        spacing={1}
+        sx={{ mb: 2 }}
+      >
+        <Box>
+          <Typography variant="h5" gutterBottom>
+            Server Events
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Kuonサーバ内部で発生した運用イベントを確認できます。
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          startIcon={query.isFetching ? <CircularProgress size={16} /> : <RefreshIcon />}
+          onClick={() => void query.refetch()}
+          disabled={query.isFetching}
+        >
+          更新
+        </Button>
+      </Stack>
 
       <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
         <Stack direction={{ xs: "column", lg: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
