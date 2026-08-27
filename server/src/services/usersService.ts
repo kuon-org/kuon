@@ -9,6 +9,7 @@ import {
 } from "../utils/sessionTokens/index.js";
 import crypto from "crypto";
 import { ServerSettingsService } from "./serverSettingsService.js";
+import { notificationService } from "./notificationService.js";
 
 export class UsersService {
   constructor(
@@ -84,6 +85,7 @@ export class UsersService {
       return { isFollow: false };
     } else {
       await this.usersRepo.followUser(followerId, followeeId);
+      void notificationService.userFollowed(followerId, followeeId);
       return { isFollow: true };
     }
   }
