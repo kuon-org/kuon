@@ -15,6 +15,7 @@ import { useAdminPermissions } from "../../../hooks/useRoles";
 import { NavButton } from "../../common/NavButton";
 import EditIcon from "@mui/icons-material/Edit";
 import { UserIcon } from "./UserIcon";
+import { NotificationBell } from "./NotificationBell";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
@@ -121,6 +122,7 @@ const TopBar = () => {
         )}
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {user && <NotificationBell enabled />}
           {hasAdminAccess && (
             <Link
               to={adminRoute.to}
