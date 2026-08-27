@@ -3,11 +3,32 @@ import { webhookDispatcherService } from "./webhookDispatcherService.js";
 import { webhookEventContextService } from "./webhookEventContextService.js";
 import { WebhookEventType } from "../webhooks/events.js";
 
+type CommentRecord = Awaited<
+  ReturnType<CommentsRepository["findByArticleId"]>
+>[number];
+
+type CommentResponse = Omit<CommentRecord, "body" | "user_id" | "users"> & {
+  body: string | null;
+  user_id: string | null;
+  users: CommentRecord["users"] | null;
+};
+
 export class CommentsService {
   constructor(private commentsRepo: CommentsRepository) {}
 
-  async getCommentsByArticle(articleId: string) {
-    return await this.commentsRepo.findByArticleId(articleId);
+  async getCommentsByArticle(articleId: string): Promise<CommentResponse[]> {
+    const comments = await this.commentsRepo.findByArticleId(articleId);
+
+    return comments.map((comment) => {
+      if (!comment.is_deleted) return comment;
+
+      return {
+        ...comment,
+        body: null,
+        user_id: null,
+        users: null,
+      };
+    });
   }
 
   async postComment(userId: string, articleId: string, payload: any) {
