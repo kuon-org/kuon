@@ -3,6 +3,7 @@ import {
   Badge,
   Box,
   Button,
+  Chip,
   CircularProgress,
   Divider,
   IconButton,
@@ -10,14 +11,20 @@ import {
   ListItemButton,
   ListItemText,
   Popover,
+  Stack,
   Typography,
 } from "@mui/material";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import { useNotifications } from "../../../hooks/useNotifications";
+import { useNotifications, type NotificationReason } from "../../../hooks/useNotifications";
 
 interface NotificationBellProps {
   enabled: boolean;
 }
+
+const reasonLabels: Record<NotificationReason, string> = {
+  followed_tag: "フォロー中のタグ",
+  followed_user: "フォロー中のユーザー",
+};
 
 export const NotificationBell = ({ enabled }: NotificationBellProps) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -53,7 +60,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { width: 360, maxWidth: "calc(100vw - 24px)" } } }}
+        slotProps={{ paper: { sx: { width: 380, maxWidth: "calc(100vw - 24px)" } } }}
       >
         <Box
           sx={{
@@ -125,12 +132,32 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
                             {notification.message}
                           </Typography>
                         )}
+                        {notification.reasons.length > 0 && (
+                          <Stack
+                            component="span"
+                            direction="row"
+                            useFlexGap
+                            flexWrap="wrap"
+                            spacing={0.75}
+                            sx={{ mt: 1 }}
+                          >
+                            {notification.reasons.map((reason) => (
+                              <Chip
+                                key={reason}
+                                component="span"
+                                size="small"
+                                variant="outlined"
+                                label={reasonLabels[reason]}
+                              />
+                            ))}
+                          </Stack>
+                        )}
                         {notification.created_at && (
                           <Typography
                             component="span"
                             variant="caption"
                             color="text.secondary"
-                            sx={{ display: "block", mt: 0.5 }}
+                            sx={{ display: "block", mt: 0.75 }}
                           >
                             {new Date(notification.created_at).toLocaleString()}
                           </Typography>
