@@ -30,12 +30,14 @@ export class NotificationController {
       notifyOnCommentReply,
       notifyOnFollowedTagArticle,
       notifyOnFollowedUserArticle,
+      notifyOnUserFollow,
     } = req.body;
     const values = [
       notifyOnArticleComment,
       notifyOnCommentReply,
       notifyOnFollowedTagArticle,
       notifyOnFollowedUserArticle,
+      notifyOnUserFollow,
     ];
     if (values.some((value) => typeof value !== "boolean")) {
       return res.status(400).json({ message: "通知設定はbooleanで指定してください" });
@@ -46,6 +48,7 @@ export class NotificationController {
         notifyOnCommentReply,
         notifyOnFollowedTagArticle,
         notifyOnFollowedUserArticle,
+        notifyOnUserFollow,
       }),
     );
   };
@@ -59,6 +62,18 @@ export class NotificationController {
   markAllRead = async (req: AuthRequest, res: Response) => {
     if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
     await notificationService.markAllRead(req.user.userId);
+    res.status(204).send();
+  };
+
+  deleteOne = async (req: AuthRequest, res: Response) => {
+    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
+    await notificationService.deleteOne(req.user.userId, req.params.notificationId);
+    res.status(204).send();
+  };
+
+  deleteAll = async (req: AuthRequest, res: Response) => {
+    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
+    await notificationService.deleteAll(req.user.userId);
     res.status(204).send();
   };
 
