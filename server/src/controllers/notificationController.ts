@@ -55,7 +55,8 @@ export class NotificationController {
 
   markRead = async (req: AuthRequest, res: Response) => {
     if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
-    await notificationService.markRead(req.user.userId, req.params.notificationId);
+    const notificationId = String(req.params.notificationId);
+    await notificationService.markRead(req.user.userId, notificationId);
     res.status(204).send();
   };
 
@@ -67,7 +68,8 @@ export class NotificationController {
 
   deleteOne = async (req: AuthRequest, res: Response) => {
     if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
-    await notificationService.deleteOne(req.user.userId, req.params.notificationId);
+    const notificationId = String(req.params.notificationId);
+    await notificationService.deleteOne(req.user.userId, notificationId);
     res.status(204).send();
   };
 
