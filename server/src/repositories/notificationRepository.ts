@@ -70,44 +70,27 @@ export class NotificationRepository {
     reference_id: string;
     reasons: NotificationReason[];
   }) {
-    const existing = await prisma.$queryRaw<NotificationRecord[]>`
-      SELECT id, user_id, type, title, message, reference_id, reference_type,
-             reasons, is_read, created_at
-      FROM knowledge.user_notifications
-      WHERE user_id = ${data.user_id}::uuid
-        AND type = 'article.published'
-        AND reference_type = 'article'
-        AND reference_id = ${data.reference_id}::uuid
-      LIMIT 1
-    `;
-
-    if (existing[0]) {
-      const rows = await prisma.$queryRaw<NotificationRecord[]>`
-        UPDATE knowledge.user_notifications
-        SET reasons = (
+    const rows = await prisma.$queryRaw<NotificationRecord[]>`
+      INSERT INTO knowledge.user_notifications
+        (user_id, type, title, message, reference_id, reference_type, reasons)
+      VALUES
+        (${data.user_id}::uuid, 'article.published', ${data.title}, ${data.message ?? null},
+         ${data.reference_id}::uuid, 'article', ${JSON.stringify(data.reasons)}::jsonb)
+      ON CONFLICT (user_id, reference_type, reference_id)
+        WHERE type = 'article.published'
+      DO UPDATE SET
+        reasons = (
           SELECT jsonb_agg(DISTINCT value)
           FROM jsonb_array_elements(
-            COALESCE(reasons, '[]'::jsonb) || ${JSON.stringify(data.reasons)}::jsonb
+            COALESCE(knowledge.user_notifications.reasons, '[]'::jsonb) || EXCLUDED.reasons
           )
         ),
-        title = ${data.title},
-        message = ${data.message ?? null}
-        WHERE id = ${existing[0].id}::uuid
-        RETURNING id, user_id, type, title, message, reference_id, reference_type,
-                  reasons, is_read, created_at
-      `;
-      return rows[0];
-    }
-
-    return this.create({
-      user_id: data.user_id,
-      type: "article.published",
-      title: data.title,
-      message: data.message,
-      reference_id: data.reference_id,
-      reference_type: "article",
-      reasons: data.reasons,
-    });
+        title = EXCLUDED.title,
+        message = EXCLUDED.message
+      RETURNING id, user_id, type, title, message, reference_id, reference_type,
+                reasons, is_read, created_at
+    `;
+    return rows[0];
   }
 
   async markRead(userId: string, notificationId: string) {
