@@ -72,10 +72,11 @@ export const connectDatabaseWithRetry = async () => {
         console.error(
           `❌ Database connection could not be established after ${maxAttempts} attempt(s). Server startup aborted.`,
         );
-        throw new Error(
+        const connectionError = new Error(
           `Database connection failed after ${maxAttempts} attempt(s)`,
-          { cause: error },
         );
+        Object.assign(connectionError, { cause: error });
+        throw connectionError;
       }
 
       console.log(`⏳ Retrying database connection in ${retryDelayMs}ms...`);
