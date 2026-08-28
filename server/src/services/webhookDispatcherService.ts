@@ -4,6 +4,7 @@ import {
   type WebhookDeliveryTarget,
 } from "../repositories/webhookDeliveryRepository.js";
 import { serverSettingsService } from "./serverSettingsService.js";
+import { eventLogger } from "./eventLogger.js";
 import {
   WebhookEventType,
   WebhookScope,
@@ -103,16 +104,33 @@ export class WebhookDispatcherService {
       });
 
       const durationMs = Math.round(performance.now() - startedAt);
+      const errorMessage = response.ok
+        ? undefined
+        : `Webhook returned HTTP ${response.status}`;
+
       await this.deliveryRepo.recordDelivery({
         webhookId: target.id,
         eventType,
         success: response.ok,
         statusCode: response.status,
         durationMs,
-        errorMessage: response.ok
-          ? undefined
-          : `Webhook returned HTTP ${response.status}`,
+        errorMessage,
       });
+
+      if (!response.ok) {
+        void eventLogger.error("webhook.failed", {
+          source: "webhook",
+          message: errorMessage ?? "Webhook delivery failed",
+          subjectType: "webhook",
+          subjectId: target.id,
+          metadata: {
+            eventType,
+            statusCode: response.status,
+            durationMs,
+            scope: target.scope,
+          },
+        });
+      }
     } catch (error) {
       const durationMs = Math.round(performance.now() - startedAt);
       const message =
@@ -129,6 +147,18 @@ export class WebhookDispatcherService {
       } catch (logError) {
         console.error("Failed to record webhook delivery", logError);
       }
+
+      void eventLogger.error("webhook.failed", {
+        source: "webhook",
+        message,
+        subjectType: "webhook",
+        subjectId: target.id,
+        metadata: {
+          eventType,
+          durationMs,
+          scope: target.scope,
+        },
+      });
 
       console.error(`Webhook delivery failed (${target.id})`, error);
     }

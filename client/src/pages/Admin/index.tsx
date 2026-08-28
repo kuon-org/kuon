@@ -5,6 +5,7 @@ import {
   adminRoleManagementRoute,
   adminRoute,
   adminSecurityRoute,
+  adminServerEventsRoute,
   adminServerSettingsRoute,
   adminTopRoute,
   adminUserManagementRoute,
@@ -29,6 +30,7 @@ export const AdminIndex = () => {
     { path: adminServerSettingsRoute.to, label: "サーバ設定", visible: can("system.settings.manage") },
     { path: adminWebhooksRoute.to, label: "Webhooks", visible: can("system.webhook.manage") },
     { path: adminBackupRestoreRoute.to, label: "Backup & Restore", visible: can("system.backup.execute") },
+    { path: adminServerEventsRoute.to, label: "Server Events", visible: can("eventlog.read") },
     { path: adminUserManagementRoute.to, label: "ユーザ管理", visible: can("user.read") },
     { path: adminRoleManagementRoute.to, label: "ロールと権限", visible: can("role.read") },
   ].filter((route) => route.visible);

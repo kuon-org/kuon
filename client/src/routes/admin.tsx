@@ -11,6 +11,7 @@ const UserManagement = lazy(() => import("../pages/Admin/UserManagement").then((
 const RoleManagement = lazy(() => import("../pages/Admin/RoleManagement").then((mod) => ({ default: mod.RoleManagement })));
 const BackupRestore = lazy(() => import("../pages/Admin/BackupRestore").then((mod) => ({ default: mod.BackupRestore })));
 const Webhooks = lazy(() => import("../pages/Admin/Webhooks").then((mod) => ({ default: mod.Webhooks })));
+const ServerEvents = lazy(() => import("../pages/Admin/ServerEvents").then((mod) => ({ default: mod.ServerEvents })));
 const LoadingFallback = () => <Loading />;
 
 export const adminRoute = createRoute({ getParentRoute: () => plainLayoutRoute, path: "admin", component: () => <Suspense fallback={<LoadingFallback />}><AdminIndex /></Suspense> });
@@ -19,5 +20,6 @@ export const adminSecurityRoute = createRoute({ getParentRoute: () => adminRoute
 export const adminServerSettingsRoute = createRoute({ getParentRoute: () => adminRoute, path: "server-settings", component: () => <Suspense fallback={<LoadingFallback />}><ServerSettings /></Suspense> });
 export const adminBackupRestoreRoute = createRoute({ getParentRoute: () => adminRoute, path: "backup-restore", component: () => <Suspense fallback={<LoadingFallback />}><BackupRestore /></Suspense> });
 export const adminWebhooksRoute = createRoute({ getParentRoute: () => adminRoute, path: "webhooks", component: () => <Suspense fallback={<LoadingFallback />}><Webhooks /></Suspense> });
+export const adminServerEventsRoute = createRoute({ getParentRoute: () => adminRoute, path: "server-events", component: () => <Suspense fallback={<LoadingFallback />}><ServerEvents /></Suspense> });
 export const adminUserManagementRoute = createRoute({ getParentRoute: () => adminRoute, path: "users", component: () => <Suspense fallback={<LoadingFallback />}><UserManagement /></Suspense> });
 export const adminRoleManagementRoute = createRoute({ getParentRoute: () => adminRoute, path: "roles", component: () => <Suspense fallback={<LoadingFallback />}><RoleManagement /></Suspense> });
