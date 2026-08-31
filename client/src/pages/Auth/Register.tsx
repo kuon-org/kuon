@@ -130,6 +130,7 @@ const Register: React.FC = () => {
                 onChange={(e) => field.handleChange(e.target.value)}
                 error={field.state.meta.errors.length > 0}
                 helperText={field.state.meta.errors.join(", ")}
+                disabled={usernameRulesQuery.isLoading}
               />
             )}
           </form.Field>
