@@ -14,6 +14,7 @@ import { permissionService } from "../services/permissionService.js";
 import { userWebhookService } from "../services/userWebhookService.js";
 import { webhookPreviewService } from "../services/webhookPreviewService.js";
 import { UserWebhookController } from "../controllers/userWebhookController.js";
+import { RESERVED_USERNAMES, isReservedUsername } from "../constants/reservedUsernames.js";
 import {
   ACCESS_TOKEN_MAX_AGE_MS,
   REFRESH_TOKEN_MAX_AGE_MS,
@@ -57,6 +58,23 @@ const attachRefreshExpiryHeaders = (
   next();
 };
 
+const validateReservedUsername = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const username = req.body?.username;
+  if (typeof username === "string" && isReservedUsername(username)) {
+    return res.status(400).json({
+      message: "このユーザ名は予約されているため使用できません",
+    });
+  }
+  next();
+};
+
+usersRouter.get("/username-rules", (_req, res) => {
+  res.json({ reservedUsernames: RESERVED_USERNAMES });
+});
 usersRouter.get("/users", requireSiteAuthentication, usersCtrl.getUsers);
 usersRouter.get("/users/id/:userId", requireSiteAuthentication, usersCtrl.getUserById);
 usersRouter.get("/users/:username", requireSiteAuthentication, usersCtrl.getUserByUsername);
@@ -79,7 +97,7 @@ usersRouter.get(
     }
   },
 );
-usersRouter.post("/register", usersCtrl.registerUser);
+usersRouter.post("/register", validateReservedUsername, usersCtrl.registerUser);
 usersRouter.post("/refresh", attachRefreshExpiryHeaders, usersCtrl.refreshToken);
 usersRouter.post("/logout", usersCtrl.logoutUser);
 usersRouter.get("/devices", authenticateToken, usersCtrl.getDevices);
@@ -87,7 +105,12 @@ usersRouter.post("/logout/all", authenticateToken, usersCtrl.logoutAllDevices);
 usersRouter.post("/logout/device/:sessionId", authenticateToken, usersCtrl.logoutDevice);
 usersRouter.put("/users/:userId/password", usersCtrl.changePassword);
 usersRouter.put("/users/update/info", authenticateToken, usersCtrl.updateUserInfo);
-usersRouter.put("/users/update/username", authenticateToken, usersCtrl.updateUsername);
+usersRouter.put(
+  "/users/update/username",
+  authenticateToken,
+  validateReservedUsername,
+  usersCtrl.updateUsername,
+);
 usersRouter.post("/users/follow", authenticateToken, usersCtrl.toggleFollow);
 usersRouter.get("/users/:followeeId/isfollowing", authenticateToken, usersCtrl.isFollowing);
 usersRouter.get("/users/:userId/follower", requireSiteAuthentication, usersCtrl.getFollowers);
