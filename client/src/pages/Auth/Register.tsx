@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   TextField,
   Button,
@@ -13,12 +13,27 @@ import {
 import { NavButton } from "../../components/common/NavButton";
 import { useNavigate } from "@tanstack/react-router";
 
+type UsernameRules = {
+  reservedUsernames: string[];
+};
+
 const Register: React.FC = () => {
   const [serverError, setServerError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const usernameRulesQuery = useQuery({
+    queryKey: ["username-rules"],
+    queryFn: async (): Promise<UsernameRules> => {
+      const response = await fetch("/api/username-rules");
+      if (!response.ok) {
+        throw new Error("ユーザー名ルールの取得に失敗しました");
+      }
+      return response.json();
+    },
+    staleTime: Infinity,
+  });
+
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      // fetch を使用
       const response = await fetch("/api/register", {
         method: "POST",
         headers: {
@@ -27,7 +42,6 @@ const Register: React.FC = () => {
         body: JSON.stringify(data),
       });
 
-      // fetchは404や500でもokがfalseになるだけで例外を投げないため、手動でチェック
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "サーバーエラーが発生しました");
@@ -40,12 +54,10 @@ const Register: React.FC = () => {
       navigate({ to: "/login" });
     },
     onError: (error: Error) => {
-      // axiosの error.response.data ではなく、投げた Error の message を取得
       setServerError(error.message);
     },
   });
 
-  // --- 以下のフォーム構造（useForm, JSX）は変更なし ---
   const form = useForm({
     defaultValues: {
       username: "",
@@ -86,11 +98,26 @@ const Register: React.FC = () => {
             </Alert>
           )}
 
+          {usernameRulesQuery.isError && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              ユーザー名ルールを取得できませんでした。登録時にサーバー側で検証されます。
+            </Alert>
+          )}
+
           <form.Field
             name="username"
             validators={{
-              onChange: ({ value }) =>
-                !value ? "ユーザー名は必須です" : undefined,
+              onChange: ({ value }) => {
+                if (!value) return "ユーザー名は必須です";
+                if (
+                  usernameRulesQuery.data?.reservedUsernames.includes(
+                    value.trim().toLowerCase(),
+                  )
+                ) {
+                  return "このユーザー名は予約されているため使用できません";
+                }
+                return undefined;
+              },
             }}
           >
             {(field) => (
