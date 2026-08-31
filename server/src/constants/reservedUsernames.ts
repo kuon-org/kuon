@@ -19,7 +19,15 @@ export const RESERVED_USERNAMES = [
   "uploads",
 ] as const;
 
+export const USERNAME_PATTERN = /^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/;
+
 const reservedUsernameSet = new Set<string>(RESERVED_USERNAMES);
 
+export const normalizeUsername = (username: string) =>
+  username.trim().toLowerCase();
+
 export const isReservedUsername = (username: string) =>
-  reservedUsernameSet.has(username.trim().toLowerCase());
+  reservedUsernameSet.has(normalizeUsername(username));
+
+export const isValidUsernameFormat = (username: string) =>
+  USERNAME_PATTERN.test(normalizeUsername(username));
