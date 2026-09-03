@@ -1,7 +1,11 @@
+import argon2 from "argon2";
 import { Router, type Request } from "express";
+import { authenticateToken, type AuthRequest } from "../middlewares/auth.js";
+import { UsersRepository } from "../repositories/usersRepository.js";
 import { passwordResetService } from "../services/passwordResetService.js";
 
 const router = Router();
+const usersRepo = new UsersRepository();
 const GENERIC_MESSAGE =
   "入力されたメールアドレスが登録されている場合、再設定用メールを送信しました";
 const WINDOW_MS = 15 * 60 * 1000;
@@ -71,6 +75,30 @@ router.post("/password-reset/reset", async (req, res) => {
     }
     return res.status(400).json({ message: "再設定URLが無効または使用済みです" });
   }
+});
+
+router.put("/password/change", authenticateToken, async (req: AuthRequest, res) => {
+  if (!req.user) return res.status(401).json({ message: "未ログインです" });
+
+  const currentPassword =
+    typeof req.body?.currentPassword === "string" ? req.body.currentPassword : "";
+  const newPassword =
+    typeof req.body?.newPassword === "string" ? req.body.newPassword : "";
+
+  if (!currentPassword || newPassword.length < 6) {
+    return res.status(400).json({ message: "入力内容を確認してください" });
+  }
+
+  const account = await usersRepo.findLocalAccountByUserId(req.user.userId);
+  if (!account?.password_hash) {
+    return res.status(400).json({ message: "ローカルパスワードが設定されていません" });
+  }
+
+  const valid = await argon2.verify(account.password_hash, currentPassword);
+  if (!valid) return res.status(400).json({ message: "現在のパスワードが正しくありません" });
+
+  await usersRepo.updatePassword(req.user.userId, newPassword);
+  return res.status(200).json({ message: "パスワードを変更しました" });
 });
 
 export default router;
