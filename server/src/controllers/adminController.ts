@@ -2,6 +2,8 @@ import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
 import { Response } from "express";
 import { AdminService } from "../services/adminService.js";
 import { ServerSettingsService } from "../services/serverSettingsService.js";
+import { ServerSettingKey } from "../constants/serverSettings.js";
+import { emailVerificationService } from "../services/emailVerificationService.js";
 
 export class AdminController {
   constructor(
@@ -67,6 +69,22 @@ export class AdminController {
         return res.status(400).json({
           message: "keyとvalueには文字列を指定してください",
         });
+      }
+
+      if (
+        key === ServerSettingKey.EmailVerificationPolicy &&
+        value === "required"
+      ) {
+        try {
+          await emailVerificationService.prepareRequiredPolicy();
+        } catch (error) {
+          if (error instanceof Error && error.message === "SmtpNotConfigured") {
+            return res.status(400).json({
+              message: "Email VerificationをRequiredにするにはSMTP設定が必要です",
+            });
+          }
+          throw error;
+        }
       }
 
       const setting = await this.serverSettingsService.set(key, value);

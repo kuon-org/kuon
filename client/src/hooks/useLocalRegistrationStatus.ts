@@ -4,6 +4,7 @@ import apiClient from "../api/client";
 export interface LocalRegistrationStatus {
   localAccountRegistrationAllowed: boolean;
   initialSetup: boolean;
+  emailVerificationRequired: boolean;
 }
 
 export const useLocalRegistrationStatus = () =>
