@@ -138,6 +138,7 @@ export const useServerSettingsQuery = () => {
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ["serverSettings"] }),
                 queryClient.invalidateQueries({ queryKey: ["publicServerSettings"] }),
+                queryClient.invalidateQueries({ queryKey: ["localRegistrationStatus"] }),
             ]);
         },
     });
