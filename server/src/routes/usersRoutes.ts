@@ -11,6 +11,7 @@ import { TagsService } from "../services/tagsService.js";
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
 import { serverSettingsService } from "../services/serverSettingsService.js";
 import { localRegistrationService } from "../services/localRegistrationService.js";
+import { emailVerificationService } from "../services/emailVerificationService.js";
 import { permissionService } from "../services/permissionService.js";
 import { userWebhookService } from "../services/userWebhookService.js";
 import { webhookPreviewService } from "../services/webhookPreviewService.js";
@@ -77,10 +78,45 @@ usersRouter.get("/registration-status", async (_req, res) => {
     res.status(200).json({
       localAccountRegistrationAllowed: status.allowed,
       initialSetup: status.isInitialSetup,
+      emailVerificationRequired:
+        !status.isInitialSetup && emailVerificationService.isRequired(),
     });
   } catch (error) {
     console.error("Failed to get registration status", error);
     res.status(500).json({ message: "登録設定の取得に失敗しました" });
+  }
+});
+usersRouter.get("/email-verification/verify", async (req, res) => {
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+  if (!token) return res.status(400).json({ message: "確認Tokenが必要です" });
+
+  try {
+    await emailVerificationService.verify(token);
+    return res.status(200).json({ message: "メールアドレスの確認が完了しました" });
+  } catch (error) {
+    if (error instanceof Error && error.message === "VerificationTokenExpired") {
+      return res.status(410).json({ message: "確認URLの有効期限が切れています" });
+    }
+    return res.status(400).json({ message: "確認URLが無効または使用済みです" });
+  }
+});
+usersRouter.post("/email-verification/resend", async (req, res) => {
+  const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
+  if (!email) return res.status(400).json({ message: "メールアドレスが必要です" });
+
+  try {
+    await emailVerificationService.resend(email);
+    return res.status(200).json({
+      message: "未確認のアカウントが存在する場合、確認メールを再送しました",
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "VerificationResendCooldown") {
+      return res.status(429).json({ message: "再送は1分後にもう一度お試しください" });
+    }
+    if (error instanceof Error && error.message === "SmtpNotConfigured") {
+      return res.status(503).json({ message: "メール送信機能が設定されていません" });
+    }
+    return res.status(500).json({ message: "確認メールの再送に失敗しました" });
   }
 });
 usersRouter.get("/users", requireSiteAuthentication, usersCtrl.getUsers);
