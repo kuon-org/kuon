@@ -10,6 +10,7 @@ import { Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   accountSettingRoute,
   apiKeySettingsRoute,
+  passwordSettingRoute,
   publicProfileRoute,
   securityRoute,
   uploadedImagesRoute,
@@ -58,6 +59,9 @@ export const UserSettings = () => {
           </ListItemButton>
           <ListItemButton onClick={() => navigate({ to: securityRoute.to })} selected={isSelected(securityRoute.to)}>
             <ListItemText>セキュリティ</ListItemText>
+          </ListItemButton>
+          <ListItemButton onClick={() => navigate({ to: passwordSettingRoute.to })} selected={isSelected(passwordSettingRoute.to)}>
+            <ListItemText>パスワード変更</ListItemText>
           </ListItemButton>
           <ListItemButton onClick={() => navigate({ to: user2faSettingRoute.to })} selected={isSelected(user2faSettingRoute.to)}>
             <ListItemText>二段階認証</ListItemText>
