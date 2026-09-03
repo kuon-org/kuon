@@ -30,6 +30,11 @@ export default defineConfig({
     port: 5050,
     allowedHosts: ["demo.kuon.f5.si"],
     proxy: {
+      "/.well-known": {
+        target: "http://localhost:3030",
+        changeOrigin: true,
+        secure: false,
+      },
       "/auth": {
         target: "http://localhost:3030",
         changeOrigin: true,

@@ -7,6 +7,8 @@ import Loading from "../components/common/Loading/Loading";
 const Login = lazy(() => import("../pages/Auth/Login"));
 const Register = lazy(() => import("../pages/Auth/Register"));
 const VerifyEmail = lazy(() => import("../pages/Auth/VerifyEmail"));
+const ForgotPassword = lazy(() => import("../pages/Auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("../pages/Auth/ResetPassword"));
 const Login2FA = lazy(async () => {
   const mod = await import("../pages/Auth/Login2FA");
   return { default: mod.Login2FA };
@@ -50,6 +52,26 @@ export const verifyEmailRoute = createRoute({
   component: () => (
     <Suspense fallback={<LoadingFallback />}>
       <VerifyEmail />
+    </Suspense>
+  ),
+});
+
+export const forgotPasswordRoute = createRoute({
+  getParentRoute: () => plainLayoutRoute,
+  path: "forgot-password",
+  component: () => (
+    <Suspense fallback={<LoadingFallback />}>
+      <ForgotPassword />
+    </Suspense>
+  ),
+});
+
+export const resetPasswordRoute = createRoute({
+  getParentRoute: () => plainLayoutRoute,
+  path: "reset-password",
+  component: () => (
+    <Suspense fallback={<LoadingFallback />}>
+      <ResetPassword />
     </Suspense>
   ),
 });
