@@ -12,7 +12,11 @@ const hashToken = (token: string) =>
   crypto.createHash("sha256").update(token).digest("hex");
 
 const verificationUrl = (token: string) => {
-  const baseUrl = (process.env.APP_SITE_URL ?? process.env.FRONTEND_URL ?? "http://localhost:5050").replace(/\/$/, "");
+  const baseUrl = (
+    process.env.APP_SITE_URL ??
+    process.env.FRONTEND_URL ??
+    "http://localhost:5050"
+  ).replace(/\/$/, "");
   return `${baseUrl}/verify-email?token=${encodeURIComponent(token)}`;
 };
 
@@ -26,7 +30,16 @@ export class EmailVerificationService {
     return serverSettingsService.getEmailVerificationPolicy() === "required";
   }
 
-  async sendForUser(userId: string, email: string, options?: { ignoreCooldown?: boolean }): Promise<void> {
+  async prepareRequiredPolicy(): Promise<void> {
+    if (!(await mailService.isConfigured())) throw new Error("SmtpNotConfigured");
+    await this.repo.markAllExistingAccountsVerified();
+  }
+
+  async sendForUser(
+    userId: string,
+    email: string,
+    options?: { ignoreCooldown?: boolean },
+  ): Promise<void> {
     if (!(await mailService.isConfigured())) throw new Error("SmtpNotConfigured");
 
     const latestCreatedAt = await this.repo.getLatestCreatedAt(userId);
@@ -69,7 +82,7 @@ export class EmailVerificationService {
   async verify(token: string): Promise<void> {
     const record = await this.repo.findByHash(hashToken(token));
     if (!record || record.used_at) {
-      await eventLogger.warn("email_verification.failed", {
+      await eventLogger.warning("email_verification.failed", {
         category: "system",
         source: "mail",
         message: "Email verification failed",
@@ -79,7 +92,7 @@ export class EmailVerificationService {
     }
 
     if (record.expires_at.getTime() < Date.now()) {
-      await eventLogger.warn("email_verification.expired", {
+      await eventLogger.warning("email_verification.expired", {
         category: "system",
         source: "mail",
         message: "Email verification token expired",
@@ -88,7 +101,7 @@ export class EmailVerificationService {
       throw new Error("VerificationTokenExpired");
     }
 
-    await this.usersRepo.markLocalAccountVerified(record.user_id);
+    await this.repo.markAccountVerified(record.user_id);
     await this.repo.markUsed(record.id);
 
     await eventLogger.info("email_verification.completed", {
@@ -101,8 +114,7 @@ export class EmailVerificationService {
 
   async resend(email: string): Promise<void> {
     const account = await this.usersRepo.findLocalAccountByEmail(email);
-    if (!account?.user_id) return;
-    if (account.is_verified) return;
+    if (!account?.user_id || account.is_verified) return;
     await this.sendForUser(account.user_id, email);
   }
 }
