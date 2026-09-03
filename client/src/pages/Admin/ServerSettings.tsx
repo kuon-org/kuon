@@ -22,6 +22,7 @@ export const ServerSettings = () => {
   const [error, setError] = useState<string | null>(null);
 
   const allowApiKey = settings?.find((setting) => setting.key === "allow_api_key")?.value === "true";
+  const allowLocalAccountRegistration = settings?.find((setting) => setting.key === "allow_local_account_registration")?.value !== "false";
   const requireTotpForExternalIdp = settings?.find((setting) => setting.key === "require_totp_for_external_idp")?.value === "true";
   const requireAuthentication = settings?.find((setting) => setting.key === "require_authentication")?.value === "true";
   const maintenanceMode = settings?.find((setting) => setting.key === "maintenance_mode")?.value === "true";
@@ -75,6 +76,19 @@ export const ServerSettings = () => {
             有効にすると、未ログインユーザーによる記事・タグ・ユーザー情報などの閲覧を禁止し、ログイン画面へ誘導します。ログインや外部IdP認証に必要なエンドポイントは引き続き利用できます。
           </Typography>
           <FormControlLabel control={<Switch checked={requireAuthentication} onChange={(event) => updateBooleanSetting("require_authentication", event.target.checked)} disabled={updateServerSetting_isPending} />} label={requireAuthentication ? "要求する" : "要求しない"} />
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="h5" sx={{ mb: 1 }}>ローカルアカウントの新規登録</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            無効にすると、新しいローカルアカウントを作成できなくなります。既存のローカルアカウントによるログインや、OIDC / OAuth2 / SAML等の外部IdP認証には影響しません。
+          </Typography>
+          {!allowLocalAccountRegistration && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              新しいユーザーは外部IdP経由でのみ作成できます。外部IdPが正常に利用できることを確認してください。なお、ユーザーが1人も存在しない初期セットアップ時は、この設定に関係なく登録できます。
+            </Alert>
+          )}
+          <FormControlLabel control={<Switch checked={allowLocalAccountRegistration} onChange={(event) => updateBooleanSetting("allow_local_account_registration", event.target.checked)} disabled={updateServerSetting_isPending} />} label={allowLocalAccountRegistration ? "許可する" : "許可しない"} />
 
           <Divider sx={{ my: 3 }} />
 
