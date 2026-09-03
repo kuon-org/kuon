@@ -14,6 +14,7 @@ const AvatarUpload = lazy(() => import("../pages/UserSettings/AvatarUpload").the
 const PublicProfile = lazy(() => import("../pages/UserSettings/PublicProfile").then((mod) => ({ default: mod.PublicProfile })));
 const Security = lazy(() => import("../pages/UserSettings/Security").then((mod) => ({ default: mod.Security })));
 const TwoFASetting = lazy(() => import("../pages/UserSettings/twoFASetting").then((mod) => ({ default: mod.TwoFASetting })));
+const ChangePassword = lazy(() => import("../pages/Auth/ChangePassword"));
 const APIKeySettings = lazy(() => import("../pages/UserSettings/APIKeySettings").then((mod) => ({ default: mod.APIKeySettings })));
 const UserWebhooks = lazy(() => import("../pages/UserSettings/Webhooks").then((mod) => ({ default: mod.Webhooks })));
 const Notifications = lazy(() => import("../pages/UserSettings/Notifications").then((mod) => ({ default: mod.Notifications })));
@@ -99,6 +100,12 @@ export const securityRoute = createRoute({
   getParentRoute: () => userSettingsRoute,
   path: "security",
   component: () => <Suspense fallback={<LoadingFallback />}><Security /></Suspense>,
+});
+
+export const passwordSettingRoute = createRoute({
+  getParentRoute: () => userSettingsRoute,
+  path: "password",
+  component: () => <Suspense fallback={<LoadingFallback />}><ChangePassword /></Suspense>,
 });
 
 export const user2faSettingRoute = createRoute({
