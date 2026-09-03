@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   TextField,
   Button,
@@ -23,6 +23,15 @@ import { useNotify } from "../../hooks/useNotify";
 const Login: React.FC = () => {
   const { activeIdp, activeIdp_isLoading } = useAuthQuery();
   const registrationStatus = useLocalRegistrationStatus();
+  const passwordResetStatus = useQuery({
+    queryKey: ["passwordResetStatus"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ available: boolean }>("/password-reset/status");
+      return data;
+    },
+    retry: false,
+    staleTime: 60_000,
+  });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { notify } = useNotify();
@@ -190,6 +199,16 @@ const Login: React.FC = () => {
               )}
             </form.Subscribe>
           </form>
+          {passwordResetStatus.data?.available && (
+            <Box sx={{ mb: 2 }}>
+              <NavButton
+                fullWidth
+                path="/forgot-password"
+                message="パスワードを忘れた場合"
+                variant="text"
+              />
+            </Box>
+          )}
           {localRegistrationAllowed && (
             <Box sx={{ display: "flex", mx: "auto", justifyContent: "center" }}>
               <NavButton
