@@ -23,6 +23,7 @@ export const ServerSettings = () => {
 
   const allowApiKey = settings?.find((setting) => setting.key === "allow_api_key")?.value === "true";
   const allowLocalAccountRegistration = settings?.find((setting) => setting.key === "allow_local_account_registration")?.value !== "false";
+  const emailVerificationRequired = settings?.find((setting) => setting.key === "email_verification_policy")?.value === "required";
   const requireTotpForExternalIdp = settings?.find((setting) => setting.key === "require_totp_for_external_idp")?.value === "true";
   const requireAuthentication = settings?.find((setting) => setting.key === "require_authentication")?.value === "true";
   const maintenanceMode = settings?.find((setting) => setting.key === "maintenance_mode")?.value === "true";
@@ -30,14 +31,17 @@ export const ServerSettings = () => {
   const allowUserWebhooks = settings?.find((setting) => setting.key === "allow_user_webhooks")?.value === "true";
   const notificationsEnabled = settings?.find((setting) => setting.key === "notifications_enabled")?.value !== "false";
 
-  const updateBooleanSetting = async (key: string, enabled: boolean) => {
+  const updateSetting = async (key: string, value: string) => {
     setError(null);
     try {
-      await updateServerSetting({ key, value: String(enabled) });
+      await updateServerSetting({ key, value });
     } catch (e) {
       setError(e instanceof Error ? e.message : "設定の更新に失敗しました");
     }
   };
+
+  const updateBooleanSetting = async (key: string, enabled: boolean) =>
+    updateSetting(key, String(enabled));
 
   return (
     <Paper
@@ -89,6 +93,33 @@ export const ServerSettings = () => {
             </Alert>
           )}
           <FormControlLabel control={<Switch checked={allowLocalAccountRegistration} onChange={(event) => updateBooleanSetting("allow_local_account_registration", event.target.checked)} disabled={updateServerSetting_isPending} />} label={allowLocalAccountRegistration ? "許可する" : "許可しない"} />
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="h5" sx={{ mb: 1 }}>Email Verification</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Requiredにすると、新しく作成したローカルアカウントは確認メールのURLを開くまでログインできません。初期管理者と、Requiredへ変更する前から存在するローカルアカウントは確認済みとして扱います。
+          </Typography>
+          {emailVerificationRequired && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              現在Requiredです。確認メールの送信にはSMTP設定を利用します。
+            </Alert>
+          )}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={emailVerificationRequired}
+                onChange={(event) =>
+                  updateSetting(
+                    "email_verification_policy",
+                    event.target.checked ? "required" : "disabled",
+                  )
+                }
+                disabled={updateServerSetting_isPending}
+              />
+            }
+            label={emailVerificationRequired ? "Required" : "Disabled"}
+          />
 
           <Divider sx={{ my: 3 }} />
 

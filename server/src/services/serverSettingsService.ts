@@ -7,9 +7,12 @@ export type ServerSetting = {
   updatedAt: Date;
 };
 
+export type EmailVerificationPolicy = "disabled" | "required";
+
 export type ServerSettings = {
   allowApiKey: boolean;
   allowLocalAccountRegistration: boolean;
+  emailVerificationPolicy: EmailVerificationPolicy;
   requireTotpForExternalIdp: boolean;
   requireAuthentication: boolean;
   maintenanceMode: boolean;
@@ -21,6 +24,7 @@ export type ServerSettings = {
 const defaultSettings: ServerSettings = {
   allowApiKey: false,
   allowLocalAccountRegistration: true,
+  emailVerificationPolicy: "disabled",
   requireTotpForExternalIdp: false,
   requireAuthentication: false,
   maintenanceMode: false,
@@ -49,6 +53,10 @@ export class ServerSettingsService {
     return { ...this.settings };
   }
 
+  getEmailVerificationPolicy(): EmailVerificationPolicy {
+    return this.settings.emailVerificationPolicy;
+  }
+
   isEnabled(key: ServerSettingKey): boolean {
     switch (key) {
       case ServerSettingKey.AllowApiKey:
@@ -67,6 +75,8 @@ export class ServerSettingsService {
         return this.settings.allowUserWebhooks;
       case ServerSettingKey.NotificationsEnabled:
         return this.settings.notificationsEnabled;
+      case ServerSettingKey.EmailVerificationPolicy:
+        return this.settings.emailVerificationPolicy === "required";
     }
   }
 
@@ -94,6 +104,14 @@ export class ServerSettingsService {
     if (!key.trim()) throw new Error("設定キーを指定してください");
 
     const normalizedKey = key.trim();
+    if (
+      normalizedKey === ServerSettingKey.EmailVerificationPolicy &&
+      value !== "disabled" &&
+      value !== "required"
+    ) {
+      throw new Error("Email Verification Policyにはdisabledまたはrequiredを指定してください");
+    }
+
     const setting = await this.repo.upsert(normalizedKey, value);
     this.applySetting(normalizedKey, value);
 
@@ -120,6 +138,10 @@ export class ServerSettingsService {
         break;
       case ServerSettingKey.AllowLocalAccountRegistration:
         this.settings.allowLocalAccountRegistration = enabled;
+        break;
+      case ServerSettingKey.EmailVerificationPolicy:
+        this.settings.emailVerificationPolicy =
+          value === "required" ? "required" : "disabled";
         break;
       case ServerSettingKey.RequireTotpForExternalIdp:
         this.settings.requireTotpForExternalIdp = enabled;
@@ -150,6 +172,9 @@ export class ServerSettingsService {
       case ServerSettingKey.AllowLocalAccountRegistration:
         this.settings.allowLocalAccountRegistration =
           defaultSettings.allowLocalAccountRegistration;
+        break;
+      case ServerSettingKey.EmailVerificationPolicy:
+        this.settings.emailVerificationPolicy = defaultSettings.emailVerificationPolicy;
         break;
       case ServerSettingKey.RequireTotpForExternalIdp:
         this.settings.requireTotpForExternalIdp =

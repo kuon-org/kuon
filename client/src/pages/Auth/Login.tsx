@@ -27,6 +27,7 @@ const Login: React.FC = () => {
   const queryClient = useQueryClient();
   const { notify } = useNotify();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
 
   const loginMutation = useMutation({
     mutationFn: async (value: { identifier: string; password: string }) => {
@@ -35,6 +36,7 @@ const Login: React.FC = () => {
     },
     onSuccess: async (data) => {
       setServerError(null);
+      setNeedsEmailVerification(false);
       if (data.requires2FA) {
         navigate({ to: "/login/2fa" });
         return;
@@ -46,6 +48,9 @@ const Login: React.FC = () => {
     },
     onError: (error: HttpError) => {
       setServerError(error.response?.data?.message || "認証に失敗しました");
+      setNeedsEmailVerification(
+        error.response?.data?.code === "EMAIL_VERIFICATION_REQUIRED",
+      );
     },
   });
 
@@ -124,6 +129,16 @@ const Login: React.FC = () => {
               <Alert severity="error" sx={{ mb: 2 }}>
                 {serverError}
               </Alert>
+            )}
+            {needsEmailVerification && (
+              <Box sx={{ mb: 2 }}>
+                <NavButton
+                  fullWidth
+                  path="/verify-email"
+                  message="確認メールを再送する"
+                  variant="outlined"
+                />
+              </Box>
             )}
 
             <form.Field name="identifier">

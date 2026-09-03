@@ -80,6 +80,12 @@ export class LocalAuthController {
         user: { id: user.id, username: user.username },
       });
     } catch (error: any) {
+      if (error.message === "EmailVerificationRequired") {
+        return res.status(403).json({
+          code: "EMAIL_VERIFICATION_REQUIRED",
+          message: "メールアドレスの確認が完了していません",
+        });
+      }
       if (
         ["InvalidCredentials", "AccountNotFound", "UserNotFound"].includes(
           error.message,
