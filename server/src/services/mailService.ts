@@ -136,6 +136,7 @@ export class MailService {
     }
 
     let socket: MailSocket | null = null;
+    let transportEncrypted = settings.secure;
     try {
       socket = settings.secure
         ? await connectTls(settings)
@@ -148,11 +149,15 @@ export class MailService {
       if (!settings.secure && /STARTTLS/i.test(ehlo.text)) {
         expect(await command(socket, "STARTTLS"), [220], "STARTTLS");
         socket = await upgradeToTls(socket as Socket, settings);
+        transportEncrypted = true;
         ehlo = await command(socket, "EHLO kuon");
         expect(ehlo, [250], "EHLO after STARTTLS");
       }
 
       if (settings.username) {
+        if (!transportEncrypted) {
+          throw new Error("認証情報を送信するSMTP接続にはTLSが必要です");
+        }
         expect(await command(socket, "AUTH LOGIN"), [334], "AUTH LOGIN");
         expect(
           await command(socket, Buffer.from(settings.username).toString("base64")),
@@ -185,7 +190,9 @@ export class MailService {
       await command(socket, "QUIT").catch(() => undefined);
     } catch (error) {
       await eventLogger.error("mail.send.failed", {
-        category: "mail",
+        category: "system",
+        source: "mail",
+        message: "Mail delivery failed",
         metadata: {
           host: settings.host,
           port: settings.port,
@@ -206,7 +213,9 @@ export class MailService {
       text: "KuonからのSMTPテストメールです。\n\nこのメールを受信できていればSMTP設定は正常です。",
     });
     await eventLogger.info("mail.test.sent", {
-      category: "mail",
+      category: "system",
+      source: "mail",
+      message: "SMTP test mail sent",
       metadata: {},
     });
   }
