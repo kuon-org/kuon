@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Alert, Box, Button, CircularProgress, Container, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Paper, TextField, Typography } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
-import { NavButton } from "../../components/common/NavButton";
 import apiClient from "../../api/client";
 import type { HttpError } from "../../api/FetchHttpClient";
 
@@ -39,10 +38,20 @@ const ChangePassword = () => {
     newPassword !== confirmPassword;
 
   return (
-    <Container maxWidth="xs">
-      <Box sx={{ mt: 8, display: "flex", flexDirection: "column", gap: 2 }}>
-        <Typography variant="h5">パスワード変更</Typography>
-        {message && <Alert severity={success ? "success" : "error"}>{message}</Alert>}
+    <Paper
+      sx={{
+        mx: "auto",
+        flex: 1,
+        p: 3,
+        minWidth: { xs: "100%", sm: "100%", md: "600px", lg: "850px" },
+      }}
+    >
+      <Typography variant="h5" sx={{ mb: 1 }}>パスワード変更</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        ローカルアカウントの現在のパスワードを確認して、新しいパスワードへ変更します。
+      </Typography>
+      {message && <Alert severity={success ? "success" : "error"} sx={{ mb: 2 }}>{message}</Alert>}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <TextField
           label="現在のパスワード"
           type="password"
@@ -70,9 +79,8 @@ const ChangePassword = () => {
         <Button variant="contained" disabled={invalid || mutation.isPending} onClick={() => mutation.mutate()}>
           {mutation.isPending ? <CircularProgress size={24} /> : "パスワードを変更"}
         </Button>
-        <NavButton path="/settings/account" message="アカウント設定へ戻る" variant="outlined" fullWidth />
       </Box>
-    </Container>
+    </Paper>
   );
 };
 
