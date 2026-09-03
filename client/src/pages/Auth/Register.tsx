@@ -4,12 +4,14 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { TextField, Button, Box, Typography, Container, Alert, CircularProgress } from "@mui/material";
 import { NavButton } from "../../components/common/NavButton";
 import { useNavigate } from "@tanstack/react-router";
+import { useLocalRegistrationStatus } from "../../hooks/useLocalRegistrationStatus";
 
 type UsernameRules = { reservedUsernames: string[]; pattern: string; minLength: number; maxLength: number };
 
 const Register: React.FC = () => {
   const [serverError, setServerError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const registrationStatus = useLocalRegistrationStatus();
   const usernameRulesQuery = useQuery({
     queryKey: ["username-rules"],
     queryFn: async (): Promise<UsernameRules> => {
@@ -38,10 +40,39 @@ const Register: React.FC = () => {
     onSubmit: async ({ value }) => mutation.mutate({ ...value, username: value.username.trim().toLowerCase() }),
   });
 
+  if (registrationStatus.isLoading) {
+    return (
+      <Container maxWidth="xs">
+        <Box sx={{ mt: 8, display: "flex", justifyContent: "center" }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
+
+  if (registrationStatus.data?.localAccountRegistrationAllowed === false) {
+    return (
+      <Container maxWidth="xs">
+        <Box sx={{ mt: 8, display: "flex", flexDirection: "column", gap: 2 }}>
+          <Typography component="h1" variant="h5">新規アカウント登録</Typography>
+          <Alert severity="info">
+            このKuonではローカルアカウントの新規登録が無効化されています。外部IdPを利用するか、管理者にお問い合わせください。
+          </Alert>
+          <NavButton path="/login" message="ログイン画面へ戻る" variant="outlined" fullWidth />
+        </Box>
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="xs">
       <Box sx={{ mt: 8, display: "flex", flexDirection: "column", alignItems: "center" }}>
         <Typography component="h1" variant="h5">新規アカウント登録</Typography>
+        {registrationStatus.data?.initialSetup && (
+          <Alert severity="info" sx={{ mt: 2, width: "100%" }}>
+            初期セットアップ中です。最初に作成したアカウントには管理者権限が付与されます。
+          </Alert>
+        )}
         <form onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); form.handleSubmit(); }} style={{ width: "100%", marginTop: "24px" }}>
           {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
           {usernameRulesQuery.isError && <Alert severity="warning" sx={{ mb: 2 }}>ユーザー名ルールを取得できませんでした。登録時にサーバー側で検証されます。</Alert>}
