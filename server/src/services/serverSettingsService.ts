@@ -27,7 +27,7 @@ const defaultSettings: ServerSettings = {
   notificationsEnabled: true,
 };
 
-const SENSITIVE_SETTING_KEY_PATTERN = /(password|secret|token|api[_-]?key)/i;
+const SENSITIVE_SETTING_KEY_PATTERN = /(?:password|secret|token|credential)$/i;
 
 export class ServerSettingsService {
   private settings: ServerSettings = { ...defaultSettings };
