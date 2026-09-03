@@ -66,6 +66,8 @@ export class UsersService {
       } catch {
         emailSent = false;
       }
+    } else {
+      await emailVerificationService.markVerified(result.user.id);
     }
 
     return { ...result, verificationRequired, emailSent };
