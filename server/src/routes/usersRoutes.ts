@@ -55,6 +55,14 @@ const ensureLocalRegistrationAllowed = async (_req: Request, res: Response, next
   }
 };
 
+const ensureOwnUser = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (!req.user) return res.status(401).json({ message: "未ログインです" });
+  if (req.user.userId !== String(req.params.userId)) {
+    return res.status(403).json({ message: "他のユーザーのパスワードは変更できません" });
+  }
+  next();
+};
+
 const validateAndNormalizeUsername = (req: Request, res: Response, next: NextFunction) => {
   const username = req.body?.username;
   if (typeof username !== "string" || !username.trim()) return res.status(400).json({ message: "ユーザ名は必須です" });
@@ -139,7 +147,7 @@ usersRouter.post("/logout", usersCtrl.logoutUser);
 usersRouter.get("/devices", authenticateToken, usersCtrl.getDevices);
 usersRouter.post("/logout/all", authenticateToken, usersCtrl.logoutAllDevices);
 usersRouter.post("/logout/device/:sessionId", authenticateToken, usersCtrl.logoutDevice);
-usersRouter.put("/users/:userId/password", usersCtrl.changePassword);
+usersRouter.put("/users/:userId/password", authenticateToken, ensureOwnUser, usersCtrl.changePassword);
 usersRouter.put("/users/update/info", authenticateToken, usersCtrl.updateUserInfo);
 usersRouter.put("/users/update/username", authenticateToken, validateAndNormalizeUsername, usersCtrl.updateUsername);
 usersRouter.post("/users/follow", authenticateToken, usersCtrl.toggleFollow);
