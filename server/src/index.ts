@@ -78,7 +78,7 @@ app.use("/", authRouter);
 
 // Standard password-manager discovery endpoint for logged-in password changes.
 app.get("/.well-known/change-password", (_req, res) => {
-  res.redirect(302, "/settings/account");
+  res.redirect(302, "/change-password");
 });
 
 // Shared content and uploads depend on the restored DB/files, so block them during restore.
