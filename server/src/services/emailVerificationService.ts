@@ -35,6 +35,10 @@ export class EmailVerificationService {
     await this.repo.markAllExistingAccountsVerified();
   }
 
+  async markVerified(userId: string): Promise<void> {
+    await this.repo.markAccountVerified(userId);
+  }
+
   async sendForUser(
     userId: string,
     email: string,
