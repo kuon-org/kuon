@@ -10,6 +10,7 @@ import { TagsRepository } from "../repositories/tagsRepository.js";
 import { TagsService } from "../services/tagsService.js";
 import { ArticlesRepository } from "../repositories/articlesRepository.js";
 import { serverSettingsService } from "../services/serverSettingsService.js";
+import { localRegistrationService } from "../services/localRegistrationService.js";
 import { permissionService } from "../services/permissionService.js";
 import { userWebhookService } from "../services/userWebhookService.js";
 import { webhookPreviewService } from "../services/webhookPreviewService.js";
@@ -38,6 +39,21 @@ const attachRefreshExpiryHeaders = (_req: Request, res: Response, next: NextFunc
   next();
 };
 
+const ensureLocalRegistrationAllowed = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const status = await localRegistrationService.getStatus();
+    if (!status.allowed) {
+      return res.status(403).json({
+        message: "ローカルアカウントの新規登録は無効化されています",
+      });
+    }
+    next();
+  } catch (error) {
+    console.error("Failed to check local registration availability", error);
+    return res.status(500).json({ message: "登録設定の確認に失敗しました" });
+  }
+};
+
 const validateAndNormalizeUsername = (req: Request, res: Response, next: NextFunction) => {
   const username = req.body?.username;
   if (typeof username !== "string" || !username.trim()) return res.status(400).json({ message: "ユーザ名は必須です" });
@@ -55,6 +71,18 @@ const validateAndNormalizeUsername = (req: Request, res: Response, next: NextFun
 usersRouter.get("/username-rules", (_req, res) => {
   res.json({ reservedUsernames: RESERVED_USERNAMES, pattern: "^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$", minLength: USERNAME_MIN_LENGTH, maxLength: USERNAME_MAX_LENGTH });
 });
+usersRouter.get("/registration-status", async (_req, res) => {
+  try {
+    const status = await localRegistrationService.getStatus();
+    res.status(200).json({
+      localAccountRegistrationAllowed: status.allowed,
+      initialSetup: status.isInitialSetup,
+    });
+  } catch (error) {
+    console.error("Failed to get registration status", error);
+    res.status(500).json({ message: "登録設定の取得に失敗しました" });
+  }
+});
 usersRouter.get("/users", requireSiteAuthentication, usersCtrl.getUsers);
 usersRouter.get("/users/id/:userId", requireSiteAuthentication, usersCtrl.getUserById);
 usersRouter.get("/users/:username", requireSiteAuthentication, usersCtrl.getUserByUsername);
@@ -69,7 +97,7 @@ usersRouter.get("/permissions/me", authenticateToken, async (req: AuthRequest, r
     return res.status(500).json({ message: "Permissionの取得に失敗しました" });
   }
 });
-usersRouter.post("/register", validateAndNormalizeUsername, usersCtrl.registerUser);
+usersRouter.post("/register", ensureLocalRegistrationAllowed, validateAndNormalizeUsername, usersCtrl.registerUser);
 usersRouter.post("/refresh", attachRefreshExpiryHeaders, usersCtrl.refreshToken);
 usersRouter.post("/logout", usersCtrl.logoutUser);
 usersRouter.get("/devices", authenticateToken, usersCtrl.getDevices);
