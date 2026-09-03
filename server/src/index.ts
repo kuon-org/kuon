@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import usersRoutes from "./routes/usersRoutes.js";
 import localAuthRoutes from "./routes/localAuthRoutes.js";
+import passwordResetRoutes from "./routes/passwordResetRoutes.js";
 import totpRoutes from "./routes/totpRoutes.js";
 import articlesRouter from "./routes/articlesRoutes.js";
 import tagsRouter from "./routes/tagsRoutes.js";
@@ -52,6 +53,7 @@ app.use("/api", runtimeMaintenanceGate);
 
 // Authentication bootstrap endpoints must remain reachable while login is required.
 app.use("/api", localAuthRoutes);
+app.use("/api", passwordResetRoutes);
 app.use("/api", totpRoutes);
 app.use("/api", usersRoutes);
 app.use("/api", idpRouter);
@@ -73,6 +75,11 @@ app.use("/api", requireSiteAuthentication, pumlRouter);
 // External authentication routes are DB-backed and must not run during restore.
 app.use("/auth", runtimeMaintenanceGate);
 app.use("/", authRouter);
+
+// Standard password-manager discovery endpoint for logged-in password changes.
+app.get("/.well-known/change-password", (_req, res) => {
+  res.redirect(302, "/settings/account");
+});
 
 // Shared content and uploads depend on the restored DB/files, so block them during restore.
 app.use(
