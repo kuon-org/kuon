@@ -23,16 +23,13 @@ export interface MyRouterContext {
   maintenanceMode: boolean;
 }
 
-const anonymousRoutes = new Set(["/login", "/login/2fa", "/register"]);
+const anonymousRoutes = new Set(["/login", "/login/2fa", "/register", "/verify-email"]);
 const maintenancePublicRoutes = new Set([
   "/maintenance",
   "/login",
   "/login/2fa",
 ]);
 
-/**
- * 完全に素のルート（最上位）
- */
 export const baseRootRoute = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: ({ context, location }) => {
     const canBypassMaintenance = context.permissions.includes(
@@ -78,9 +75,6 @@ export const baseRootRoute = createRootRouteWithContext<MyRouterContext>()({
   ),
 });
 
-/**
- * TopBar + TabsBar 付きレイアウト
- */
 export const layoutWithTopRoute = createRoute({
   getParentRoute: () => baseRootRoute,
   id: "layout-with-top",
@@ -102,9 +96,6 @@ export const layoutWithTopRoute = createRoute({
   ),
 });
 
-/**
- * サイドバー付きレイアウト
- */
 export const sidebarLayoutRoute = createRoute({
   getParentRoute: () => layoutWithTopRoute,
   id: "layout-with-sidebar",
@@ -123,9 +114,6 @@ export const sidebarLayoutRoute = createRoute({
   ),
 });
 
-/**
- * 完全に素のレイアウト（TopBarもSidebarもなし）
- */
 export const plainLayoutRoute = createRoute({
   getParentRoute: () => baseRootRoute,
   id: "layout-plain",

@@ -10,6 +10,7 @@ import {
 import crypto from "crypto";
 import { ServerSettingsService } from "./serverSettingsService.js";
 import { notificationService } from "./notificationService.js";
+import { emailVerificationService } from "./emailVerificationService.js";
 
 export class UsersService {
   constructor(
@@ -42,13 +43,34 @@ export class UsersService {
   ) {
     const existing = await this.usersRepo.isUsernameExisting(username);
     if (existing) throw new Error("UsernameAlreadyExists");
+    const existingEmail = await this.usersRepo.findLocalAccountByEmail(email);
+    if (existingEmail) throw new Error("EmailAlreadyRegistered");
 
-    return await this.usersRepo.createLocalAccount(
+    const isInitialSetup = (await this.usersRepo.findAllUsers()).length === 0;
+    const verificationRequired = !isInitialSetup && emailVerificationService.isRequired();
+
+    const result = await this.usersRepo.createLocalAccount(
       username,
       email,
       password,
       displayName,
     );
+
+    let emailSent = false;
+    if (verificationRequired) {
+      try {
+        await emailVerificationService.sendForUser(result.user.id, email, {
+          ignoreCooldown: true,
+        });
+        emailSent = true;
+      } catch {
+        emailSent = false;
+      }
+    } else {
+      await emailVerificationService.markVerified(result.user.id);
+    }
+
+    return { ...result, verificationRequired, emailSent };
   }
 
   async loginUser(emailOrUsername: string, password: string) {
@@ -62,6 +84,10 @@ export class UsersService {
     if (!account.user_id) throw new Error("UserNotFound");
     const isValid = await argon2.verify(account.password_hash, password);
     if (!isValid) throw new Error("InvalidCredentials");
+
+    if (emailVerificationService.isRequired() && !account.is_verified) {
+      throw new Error("EmailVerificationRequired");
+    }
 
     const user = await this.usersRepo.findUserById(account.user_id);
     if (!user) throw new Error("UserNotFound");
