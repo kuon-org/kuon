@@ -31,7 +31,16 @@ const Register: React.FC = () => {
       }
       return response.json();
     },
-    onSuccess: () => { alert("登録が完了しました！"); navigate({ to: "/login" }); },
+    onSuccess: (_data, variables) => {
+      if (registrationStatus.data?.emailVerificationRequired) {
+        window.location.assign(
+          `/verify-email?email=${encodeURIComponent(variables.email)}`,
+        );
+        return;
+      }
+      alert("登録が完了しました！");
+      navigate({ to: "/login" });
+    },
     onError: (error: Error) => setServerError(error.message),
   });
 
@@ -71,6 +80,11 @@ const Register: React.FC = () => {
         {registrationStatus.data?.initialSetup && (
           <Alert severity="info" sx={{ mt: 2, width: "100%" }}>
             初期セットアップ中です。最初に作成したアカウントには管理者権限が付与されます。
+          </Alert>
+        )}
+        {registrationStatus.data?.emailVerificationRequired && (
+          <Alert severity="info" sx={{ mt: 2, width: "100%" }}>
+            登録後、入力したメールアドレス宛に確認メールを送信します。確認完了後にログインできます。
           </Alert>
         )}
         <form onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); form.handleSubmit(); }} style={{ width: "100%", marginTop: "24px" }}>
