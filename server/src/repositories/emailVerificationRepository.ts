@@ -43,6 +43,22 @@ export class EmailVerificationRepository {
     `;
   }
 
+  async markAccountVerified(userId: string): Promise<void> {
+    await prisma.$executeRaw`
+      UPDATE knowledge.local_accounts
+      SET is_verified = TRUE, updated_at = NOW()
+      WHERE user_id = ${userId}::uuid
+    `;
+  }
+
+  async markAllExistingAccountsVerified(): Promise<void> {
+    await prisma.$executeRaw`
+      UPDATE knowledge.local_accounts
+      SET is_verified = TRUE, updated_at = NOW()
+      WHERE is_verified IS DISTINCT FROM TRUE
+    `;
+  }
+
   async getLatestCreatedAt(userId: string): Promise<Date | null> {
     const rows = await prisma.$queryRaw<Array<{ created_at: Date }>>`
       SELECT created_at
