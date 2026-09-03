@@ -7,6 +7,7 @@ import { BackupController } from "../controllers/backupController.js";
 import { RestoreController } from "../controllers/restoreController.js";
 import { WebhookController } from "../controllers/webhookController.js";
 import { webhookSelectionController } from "../controllers/webhookSelectionController.js";
+import { mailController } from "../controllers/mailController.js";
 import { roleController } from "../controllers/roleController.js";
 import { authenticateToken } from "../middlewares/auth.js";
 import { requirePermission } from "../middlewares/permission.js";
@@ -64,6 +65,24 @@ adminRouter.put(
   authenticateToken,
   requirePermission(Permissions.System.SettingsManage),
   adminController.updateServerSetting,
+);
+adminRouter.get(
+  "/admin/settings/smtp",
+  authenticateToken,
+  requirePermission(Permissions.System.SettingsManage),
+  mailController.getSettings,
+);
+adminRouter.put(
+  "/admin/settings/smtp",
+  authenticateToken,
+  requirePermission(Permissions.System.SettingsManage),
+  mailController.updateSettings,
+);
+adminRouter.post(
+  "/admin/settings/smtp/test",
+  authenticateToken,
+  requirePermission(Permissions.System.SettingsManage),
+  mailController.sendTest,
 );
 
 adminRouter.get(

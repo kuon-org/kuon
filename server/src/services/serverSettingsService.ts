@@ -27,6 +27,8 @@ const defaultSettings: ServerSettings = {
   notificationsEnabled: true,
 };
 
+const SENSITIVE_SETTING_KEY_PATTERN = /(?:password|secret|token|credential)$/i;
+
 export class ServerSettingsService {
   private settings: ServerSettings = { ...defaultSettings };
 
@@ -68,7 +70,7 @@ export class ServerSettingsService {
     const settings = await this.repo.findAll();
     return settings.map(({ key, value, updated_at }) => ({
       key,
-      value,
+      value: SENSITIVE_SETTING_KEY_PATTERN.test(key) ? "[REDACTED]" : value,
       updatedAt: updated_at,
     }));
   }
@@ -93,7 +95,9 @@ export class ServerSettingsService {
 
     return {
       key: setting.key,
-      value: setting.value,
+      value: SENSITIVE_SETTING_KEY_PATTERN.test(setting.key)
+        ? "[REDACTED]"
+        : setting.value,
       updatedAt: setting.updated_at,
     };
   }
