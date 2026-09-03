@@ -1,4 +1,10 @@
-import { expect, test, type APIRequestContext, type Browser, type BrowserContext } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Browser,
+  type BrowserContext,
+} from "@playwright/test";
 
 const admin = {
   identifier: process.env.KUON_E2E_ADMIN_IDENTIFIER ?? "",
@@ -6,26 +12,27 @@ const admin = {
 };
 
 const runId = Date.now().toString(36);
+const userSuffix = runId.slice(-4);
 const password = "KuonE2E!123456";
 
 const users = {
   a: {
-    username: `e2e-user-a-${runId}`,
+    username: `e2e-a-${userSuffix}`,
     email: `e2e-user-a-${runId}@example.test`,
     password,
   },
   b: {
-    username: `e2e-user-b-${runId}`,
+    username: `e2e-b-${userSuffix}`,
     email: `e2e-user-b-${runId}@example.test`,
     password,
   },
   c: {
-    username: `e2e-user-c-${runId}`,
+    username: `e2e-c-${userSuffix}`,
     email: `e2e-user-c-${runId}@example.test`,
     password,
   },
   roleManager: {
-    username: `e2e-role-manager-${runId}`,
+    username: `e2e-rm-${userSuffix}`,
     email: `e2e-role-manager-${runId}@example.test`,
     password,
   },
@@ -44,10 +51,9 @@ const requireAdminCredentials = () => {
     admin.identifier,
     "KUON_E2E_ADMIN_IDENTIFIER を設定してください",
   ).not.toBe("");
-  expect(
-    admin.password,
-    "KUON_E2E_ADMIN_PASSWORD を設定してください",
-  ).not.toBe("");
+  expect(admin.password, "KUON_E2E_ADMIN_PASSWORD を設定してください").not.toBe(
+    "",
+  );
 };
 
 const login = async (
@@ -93,9 +99,12 @@ const assignRoles = async (
   userId: string,
   roleIds: string[],
 ) => {
-  const response = await request.put(`/api/admin/settings/users/${userId}/roles`, {
-    data: { roleIds },
-  });
+  const response = await request.put(
+    `/api/admin/settings/users/${userId}/roles`,
+    {
+      data: { roleIds },
+    },
+  );
   expect(response.status()).toBe(200);
 };
 
@@ -112,10 +121,7 @@ const createRole = async (
   return response.json();
 };
 
-const createArticle = async (
-  request: APIRequestContext,
-  title: string,
-) => {
+const createArticle = async (request: APIRequestContext, title: string) => {
   const response = await request.post("/api/articles/create", {
     data: {
       title,
@@ -182,7 +188,9 @@ test.describe.serial("Role / Permission authorization", () => {
     await adminContext?.close();
   });
 
-  test("Scenario 1: General can manage own content but not other users content", async ({ browser }) => {
+  test("Scenario 1: General can manage own content but not other users content", async ({
+    browser,
+  }) => {
     await assignRoles(adminContext.request, userA.id, [generalRole.id]);
     const context = await login(browser, userA.username, userA.password);
     const page = await context.newPage();
@@ -192,41 +200,65 @@ test.describe.serial("Role / Permission authorization", () => {
 
     articleA = await createArticle(context.request, `E2E Article A ${runId}`);
 
-    const editOwn = await context.request.patch(`/api/articles/${articleA.id}/edit`, {
-      data: {
-        title: `E2E Article A edited ${runId}`,
-        raw_content: "edited by owner",
-        status: "public",
-        is_published: true,
-        is_private: false,
-        tagIds: [],
+    const editOwn = await context.request.patch(
+      `/api/articles/${articleA.id}/edit`,
+      {
+        data: {
+          title: `E2E Article A edited ${runId}`,
+          raw_content: "edited by owner",
+          status: "public",
+          is_published: true,
+          is_private: false,
+          tagIds: [],
+        },
       },
-    });
+    );
     expect(editOwn.status()).toBe(200);
 
-    const comment = await createComment(context.request, articleA.id, "comment by user-a");
+    const comment = await createComment(
+      context.request,
+      articleA.id,
+      "comment by user-a",
+    );
     expect(comment.id).toBeTruthy();
 
-    const disposable = await createArticle(context.request, `E2E Disposable ${runId}`);
-    const deleteOwn = await context.request.delete(`/api/articles/${disposable.id}`);
+    const disposable = await createArticle(
+      context.request,
+      `E2E Disposable ${runId}`,
+    );
+    const deleteOwn = await context.request.delete(
+      `/api/articles/${disposable.id}`,
+    );
     expect(deleteOwn.status()).toBe(200);
 
-    const adminArticle = await createArticle(adminContext.request, `E2E Admin Article ${runId}`);
-    const readOther = await context.request.get(`/api/articles/${adminArticle.id}`);
+    const adminArticle = await createArticle(
+      adminContext.request,
+      `E2E Admin Article ${runId}`,
+    );
+    const readOther = await context.request.get(
+      `/api/articles/${adminArticle.id}`,
+    );
     expect(readOther.status()).toBe(200);
 
-    const editOther = await context.request.patch(`/api/articles/${adminArticle.id}/edit`, {
-      data: { title: "forbidden edit" },
-    });
+    const editOther = await context.request.patch(
+      `/api/articles/${adminArticle.id}/edit`,
+      {
+        data: { title: "forbidden edit" },
+      },
+    );
     expect(editOther.status()).toBe(403);
 
-    const deleteOther = await context.request.delete(`/api/articles/${adminArticle.id}`);
+    const deleteOther = await context.request.delete(
+      `/api/articles/${adminArticle.id}`,
+    );
     expect(deleteOther.status()).toBe(403);
 
     await context.close();
   });
 
-  test("Scenario 2: Readonly can read but cannot create or comment", async ({ browser }) => {
+  test("Scenario 2: Readonly can read but cannot create or comment", async ({
+    browser,
+  }) => {
     await assignRoles(adminContext.request, userB.id, [readonlyRole.id]);
     const context = await login(browser, userB.username, userB.password);
     const page = await context.newPage();
@@ -250,93 +282,147 @@ test.describe.serial("Role / Permission authorization", () => {
     });
     expect(create.status()).toBe(403);
 
-    const comment = await context.request.post(`/api/articles/${articleA.id}/comments`, {
-      data: { body: "Readonly must not comment" },
-    });
+    const comment = await context.request.post(
+      `/api/articles/${articleA.id}/comments`,
+      {
+        data: { body: "Readonly must not comment" },
+      },
+    );
     expect(comment.status()).toBe(403);
 
     await context.close();
   });
 
-  test("Scenario 3: Moderator can manage others content but not system administration", async ({ browser }) => {
+  test("Scenario 3: Moderator can manage others content but not system administration", async ({
+    browser,
+  }) => {
     await assignRoles(adminContext.request, userC.id, [moderatorRole.id]);
     const userAContext = await login(browser, userA.username, userA.password);
-    const moderatorContext = await login(browser, userC.username, userC.password);
+    const moderatorContext = await login(
+      browser,
+      userC.username,
+      userC.password,
+    );
 
-    const editOther = await moderatorContext.request.patch(`/api/articles/${articleA.id}/edit`, {
-      data: {
-        title: `Edited by moderator ${runId}`,
-        raw_content: "moderator edit",
-        status: "public",
-        is_published: true,
-        is_private: false,
-        tagIds: [],
+    const editOther = await moderatorContext.request.patch(
+      `/api/articles/${articleA.id}/edit`,
+      {
+        data: {
+          title: `Edited by moderator ${runId}`,
+          raw_content: "moderator edit",
+          status: "public",
+          is_published: true,
+          is_private: false,
+          tagIds: [],
+        },
       },
-    });
+    );
     expect(editOther.status()).toBe(200);
 
-    const articleToDelete = await createArticle(userAContext.request, `Delete by moderator ${runId}`);
-    const deleteOther = await moderatorContext.request.delete(`/api/articles/${articleToDelete.id}`);
+    const articleToDelete = await createArticle(
+      userAContext.request,
+      `Delete by moderator ${runId}`,
+    );
+    const deleteOther = await moderatorContext.request.delete(
+      `/api/articles/${articleToDelete.id}`,
+    );
     expect(deleteOther.status()).toBe(200);
 
-    const comment = await createComment(userAContext.request, articleA.id, "delete me by moderator");
+    const comment = await createComment(
+      userAContext.request,
+      articleA.id,
+      "delete me by moderator",
+    );
     const deleteComment = await moderatorContext.request.delete(
       `/api/articles/${articleA.id}/comments/${comment.id}`,
     );
     expect(deleteComment.status()).toBe(200);
 
-    expect((await moderatorContext.request.get("/api/admin/roles")).status()).toBe(403);
-    expect((await moderatorContext.request.get("/api/admin/idp_list")).status()).toBe(403);
-    expect((await moderatorContext.request.post("/api/admin/backup/export")).status()).toBe(403);
+    expect(
+      (await moderatorContext.request.get("/api/admin/roles")).status(),
+    ).toBe(403);
+    expect(
+      (await moderatorContext.request.get("/api/admin/idp_list")).status(),
+    ).toBe(403);
+    expect(
+      (
+        await moderatorContext.request.post("/api/admin/backup/export")
+      ).status(),
+    ).toBe(403);
 
     await userAContext.close();
     await moderatorContext.close();
   });
 
-  test("Scenario 4: custom Writer role follows exactly the configured permissions", async ({ browser }) => {
+  test("Scenario 4: custom Writer role follows exactly the configured permissions", async ({
+    browser,
+  }) => {
     writerRole = await createRole(
       adminContext.request,
       `writer-${runId}`,
       `Writer ${runId}`,
-      ["article.read", "article.create", "article.update.own", "comment.create"],
+      [
+        "article.read",
+        "article.create",
+        "article.update.own",
+        "comment.create",
+      ],
     );
     await assignRoles(adminContext.request, userB.id, [writerRole.id]);
 
     const context = await login(browser, userB.username, userB.password);
     const own = await createArticle(context.request, `Writer Article ${runId}`);
 
-    const editOwn = await context.request.patch(`/api/articles/${own.id}/edit`, {
-      data: {
-        title: `Writer edited ${runId}`,
-        raw_content: "writer edit",
-        status: "public",
-        is_published: true,
-        is_private: false,
-        tagIds: [],
+    const editOwn = await context.request.patch(
+      `/api/articles/${own.id}/edit`,
+      {
+        data: {
+          title: `Writer edited ${runId}`,
+          raw_content: "writer edit",
+          status: "public",
+          is_published: true,
+          is_private: false,
+          tagIds: [],
+        },
       },
-    });
+    );
     expect(editOwn.status()).toBe(200);
 
-    expect((await context.request.delete(`/api/articles/${own.id}`)).status()).toBe(403);
     expect(
-      (await context.request.patch(`/api/articles/${articleA.id}/edit`, { data: { title: "no" } })).status(),
+      (await context.request.delete(`/api/articles/${own.id}`)).status(),
+    ).toBe(403);
+    expect(
+      (
+        await context.request.patch(`/api/articles/${articleA.id}/edit`, {
+          data: { title: "no" },
+        })
+      ).status(),
     ).toBe(403);
 
     await context.close();
   });
 
-  test("Scenario 5: multiple roles are combined and removed permissions disappear", async ({ browser }) => {
+  test("Scenario 5: multiple roles are combined and removed permissions disappear", async ({
+    browser,
+  }) => {
     commentModeratorRole = await createRole(
       adminContext.request,
       `comment-moderator-${runId}`,
       `Comment Moderator ${runId}`,
       ["comment.delete.any"],
     );
-    await assignRoles(adminContext.request, userB.id, [writerRole.id, commentModeratorRole.id]);
+    await assignRoles(adminContext.request, userB.id, [
+      writerRole.id,
+      commentModeratorRole.id,
+    ]);
 
     const userAContext = await login(browser, userA.username, userA.password);
     let context = await login(browser, userB.username, userB.password);
-    const comment = await createComment(userAContext.request, articleA.id, "multi-role delete target");
+    const comment = await createComment(
+      userAContext.request,
+      articleA.id,
+      "multi-role delete target",
+    );
 
     expect(
       (
@@ -345,13 +431,19 @@ test.describe.serial("Role / Permission authorization", () => {
         )
       ).status(),
     ).toBe(200);
-    expect((await context.request.get("/api/permissions/me")).status()).toBe(200);
+    expect((await context.request.get("/api/permissions/me")).status()).toBe(
+      200,
+    );
 
     await assignRoles(adminContext.request, userB.id, [writerRole.id]);
     await context.close();
     context = await login(browser, userB.username, userB.password);
 
-    const comment2 = await createComment(userAContext.request, articleA.id, "permission removed target");
+    const comment2 = await createComment(
+      userAContext.request,
+      articleA.id,
+      "permission removed target",
+    );
     expect(
       (
         await context.request.delete(
@@ -364,14 +456,18 @@ test.describe.serial("Role / Permission authorization", () => {
     await context.close();
   });
 
-  test("Scenario 6: Role Manager cannot grant a permission it does not have", async ({ browser }) => {
+  test("Scenario 6: Role Manager cannot grant a permission it does not have", async ({
+    browser,
+  }) => {
     roleManagerRole = await createRole(
       adminContext.request,
       `role-manager-${runId}`,
       `Role Manager ${runId}`,
       ["role.read", "role.create", "role.update"],
     );
-    await assignRoles(adminContext.request, roleManagerUser.id, [roleManagerRole.id]);
+    await assignRoles(adminContext.request, roleManagerUser.id, [
+      roleManagerRole.id,
+    ]);
 
     const context = await login(
       browser,
@@ -391,7 +487,9 @@ test.describe.serial("Role / Permission authorization", () => {
   });
 
   test("Scenario 7: the last Admin cannot be demoted, but one of two Admins can", async () => {
-    const usersResponse = await adminContext.request.get("/api/admin/settings/users");
+    const usersResponse = await adminContext.request.get(
+      "/api/admin/settings/users",
+    );
     expect(usersResponse.status()).toBe(200);
     const allUsers = (await usersResponse.json()) as Array<{
       id: string;
