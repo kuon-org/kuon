@@ -9,6 +9,7 @@ export type ServerSetting = {
 
 export type ServerSettings = {
   allowApiKey: boolean;
+  allowLocalAccountRegistration: boolean;
   requireTotpForExternalIdp: boolean;
   requireAuthentication: boolean;
   maintenanceMode: boolean;
@@ -19,6 +20,7 @@ export type ServerSettings = {
 
 const defaultSettings: ServerSettings = {
   allowApiKey: false,
+  allowLocalAccountRegistration: true,
   requireTotpForExternalIdp: false,
   requireAuthentication: false,
   maintenanceMode: false,
@@ -51,6 +53,8 @@ export class ServerSettingsService {
     switch (key) {
       case ServerSettingKey.AllowApiKey:
         return this.settings.allowApiKey;
+      case ServerSettingKey.AllowLocalAccountRegistration:
+        return this.settings.allowLocalAccountRegistration;
       case ServerSettingKey.RequireTotpForExternalIdp:
         return this.settings.requireTotpForExternalIdp;
       case ServerSettingKey.RequireAuthentication:
@@ -114,6 +118,9 @@ export class ServerSettingsService {
       case ServerSettingKey.AllowApiKey:
         this.settings.allowApiKey = enabled;
         break;
+      case ServerSettingKey.AllowLocalAccountRegistration:
+        this.settings.allowLocalAccountRegistration = enabled;
+        break;
       case ServerSettingKey.RequireTotpForExternalIdp:
         this.settings.requireTotpForExternalIdp = enabled;
         break;
@@ -139,6 +146,10 @@ export class ServerSettingsService {
     switch (key) {
       case ServerSettingKey.AllowApiKey:
         this.settings.allowApiKey = defaultSettings.allowApiKey;
+        break;
+      case ServerSettingKey.AllowLocalAccountRegistration:
+        this.settings.allowLocalAccountRegistration =
+          defaultSettings.allowLocalAccountRegistration;
         break;
       case ServerSettingKey.RequireTotpForExternalIdp:
         this.settings.requireTotpForExternalIdp =
