@@ -3,7 +3,7 @@
  * 全ルートをここで組み立てます
  */
 import { baseRootRoute, layoutWithTopRoute, sidebarLayoutRoute, plainLayoutRoute } from "./__root";
-import { loginRoute, login2faRoute, registerRoute, verifyEmailRoute } from "./auth";
+import { loginRoute, login2faRoute, registerRoute, verifyEmailRoute, forgotPasswordRoute, resetPasswordRoute } from "./auth";
 import { maintenanceRoute } from "./maintenance";
 import { adminRoute, adminTopRoute, adminSecurityRoute, adminServerSettingsRoute, adminBackupRestoreRoute, adminWebhooksRoute, adminServerEventsRoute, adminUserManagementRoute, adminRoleManagementRoute } from "./admin";
 import { articleCreateRoute, articleEditRoute, draftsRoute, trashRoute, articleRoute, articleIndexRoute, articleLikerRoute } from "./articles";
@@ -14,7 +14,7 @@ import { indexRoute, searchRoute, trendRoute, timelineRoute } from "./home";
 
 export const routeTree = baseRootRoute.addChildren([
   plainLayoutRoute.addChildren([
-    loginRoute, login2faRoute, registerRoute, verifyEmailRoute, maintenanceRoute, articleCreateRoute, articleEditRoute,
+    loginRoute, login2faRoute, registerRoute, verifyEmailRoute, forgotPasswordRoute, resetPasswordRoute, maintenanceRoute, articleCreateRoute, articleEditRoute,
     adminRoute.addChildren([adminTopRoute, adminSecurityRoute, adminServerSettingsRoute, adminBackupRestoreRoute, adminWebhooksRoute, adminServerEventsRoute, adminUserManagementRoute, adminRoleManagementRoute]),
   ]),
   layoutWithTopRoute.addChildren([
