@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { NavButton } from "../../components/common/NavButton";
 import { useAuthQuery } from "../../hooks/useAuth";
+import { useLocalRegistrationStatus } from "../../hooks/useLocalRegistrationStatus";
 import Loading from "../../components/common/Loading/Loading";
 import { useNavigate } from "@tanstack/react-router";
 import apiClient from "../../api/client";
@@ -21,6 +22,7 @@ import { useNotify } from "../../hooks/useNotify";
 
 const Login: React.FC = () => {
   const { activeIdp, activeIdp_isLoading } = useAuthQuery();
+  const registrationStatus = useLocalRegistrationStatus();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { notify } = useNotify();
@@ -58,6 +60,9 @@ const Login: React.FC = () => {
   });
 
   if (activeIdp_isLoading) return <Loading />;
+
+  const localRegistrationAllowed =
+    registrationStatus.data?.localAccountRegistrationAllowed ?? true;
 
   return (
     <Container maxWidth="md">
@@ -170,14 +175,16 @@ const Login: React.FC = () => {
               )}
             </form.Subscribe>
           </form>
-          <Box sx={{ display: "flex", mx: "auto", justifyContent: "center" }}>
-            <NavButton
-              fullWidth
-              path="/register"
-              message="アカウント作成はこちら"
-              variant="outlined"
-            />
-          </Box>
+          {localRegistrationAllowed && (
+            <Box sx={{ display: "flex", mx: "auto", justifyContent: "center" }}>
+              <NavButton
+                fullWidth
+                path="/register"
+                message="アカウント作成はこちら"
+                variant="outlined"
+              />
+            </Box>
+          )}
         </Box>
       </Box>
     </Container>
