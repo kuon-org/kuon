@@ -23,7 +23,14 @@ export interface MyRouterContext {
   maintenanceMode: boolean;
 }
 
-const anonymousRoutes = new Set(["/login", "/login/2fa", "/register", "/verify-email"]);
+const anonymousRoutes = new Set([
+  "/login",
+  "/login/2fa",
+  "/register",
+  "/verify-email",
+  "/forgot-password",
+  "/reset-password",
+]);
 const maintenancePublicRoutes = new Set([
   "/maintenance",
   "/login",
