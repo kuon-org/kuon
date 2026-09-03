@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { createRoute } from "@tanstack/react-router";
+import { createRoute, redirect } from "@tanstack/react-router";
 
 import { plainLayoutRoute } from "./__root";
 import Loading from "../components/common/Loading/Loading";
@@ -9,6 +9,7 @@ const Register = lazy(() => import("../pages/Auth/Register"));
 const VerifyEmail = lazy(() => import("../pages/Auth/VerifyEmail"));
 const ForgotPassword = lazy(() => import("../pages/Auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("../pages/Auth/ResetPassword"));
+const ChangePassword = lazy(() => import("../pages/Auth/ChangePassword"));
 const Login2FA = lazy(async () => {
   const mod = await import("../pages/Auth/Login2FA");
   return { default: mod.Login2FA };
@@ -72,6 +73,19 @@ export const resetPasswordRoute = createRoute({
   component: () => (
     <Suspense fallback={<LoadingFallback />}>
       <ResetPassword />
+    </Suspense>
+  ),
+});
+
+export const changePasswordRoute = createRoute({
+  getParentRoute: () => plainLayoutRoute,
+  path: "change-password",
+  beforeLoad: ({ context }) => {
+    if (!context.user) throw redirect({ to: "/login" });
+  },
+  component: () => (
+    <Suspense fallback={<LoadingFallback />}>
+      <ChangePassword />
     </Suspense>
   ),
 });
