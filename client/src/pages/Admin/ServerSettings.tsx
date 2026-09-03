@@ -10,6 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useServerSettingsQuery } from "../../hooks/useAdmin";
+import { SmtpSettingsSection } from "./SmtpSettingsSection";
 
 export const ServerSettings = () => {
   const {
@@ -114,6 +115,9 @@ export const ServerSettings = () => {
             OIDC / OAuth2 / SAMLで認証した場合でも、Kuon側でTOTPを有効にしているユーザーには追加の二段階認証を要求します。TOTP未設定ユーザーへの設定強制は行いません。
           </Typography>
           <FormControlLabel control={<Switch checked={requireTotpForExternalIdp} onChange={(event) => updateBooleanSetting("require_totp_for_external_idp", event.target.checked)} disabled={updateServerSetting_isPending} />} label={requireTotpForExternalIdp ? "要求する" : "要求しない"} />
+
+          <Divider sx={{ my: 3 }} />
+          <SmtpSettingsSection />
         </>
       )}
     </Paper>
