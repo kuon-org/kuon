@@ -87,7 +87,6 @@ tagsRouter.get("/tags/:slug", tagsController.getTag);
 tagsRouter.post(
   "/tags",
   authenticateToken,
-  requirePermission(Permissions.Tag.Manage),
   tagsController.upsertTag,
 );
 
