@@ -4,10 +4,13 @@ import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
 import path from "path";
 import fs from "fs";
 import multer from "multer";
+import { permissionService } from "../services/permissionService.js";
+import { Permissions } from "../constants/permissions.js";
+
 export class TagsController {
   constructor(private tagsService: TagsService) {}
 
-  getTags = async (req: Request, res: Response) => {
+  getTags = async (_req: Request, res: Response) => {
     try {
       const tags = await this.tagsService.getTagList();
       res.json(tags);
@@ -32,15 +35,45 @@ export class TagsController {
     }
   };
 
-  // 保存用メソッドを追加
   upsertTag = async (req: AuthRequest, res: Response) => {
     try {
-      if (!isAuthenticated(req))
+      if (!isAuthenticated(req)) {
         return res.status(401).json({ message: "未ログインです" });
+      }
+
       const { name, slug, description, avatar_url } = req.body;
+      const normalizedSlug = typeof slug === "string" ? slug.trim() : "";
+      if (!name || !normalizedSlug) {
+        return res.status(400).json({ message: "名前とスラグは必須入力です" });
+      }
+
+      const existingTag = await this.tagsService.getTag(normalizedSlug);
+      const requiredPermission = existingTag
+        ? Permissions.Tag.Manage
+        : Permissions.Tag.Create;
+
+      const hasRequiredPermission = await permissionService.hasPermission(
+        req.user.userId,
+        requiredPermission,
+      );
+      const canManage =
+        requiredPermission === Permissions.Tag.Create &&
+        (await permissionService.hasPermission(
+          req.user.userId,
+          Permissions.Tag.Manage,
+        ));
+
+      if (!hasRequiredPermission && !canManage) {
+        return res.status(403).json({
+          code: "PERMISSION_DENIED",
+          message: "この操作を実行する権限がありません",
+          permission: requiredPermission,
+        });
+      }
+
       const result = await this.tagsService.saveTag({
         name,
-        slug,
+        slug: normalizedSlug,
         description,
         avatar_url,
       });
