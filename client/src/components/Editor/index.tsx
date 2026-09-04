@@ -31,6 +31,8 @@ import {
   getPublishWebhookPreference,
   PublishWebhookSettings,
 } from "./PublishWebhookSettings";
+import { useAuthQuery } from "../../hooks/useAuth";
+import { useAdminPermissions } from "../../hooks/useRoles";
 
 interface ArticleEditorProps {
   mutate: UseMutateAsyncFunction<any, any, any, unknown>;
@@ -42,6 +44,11 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
   const router = useRouter();
   const navigate = useNavigate();
   const { error, success } = useNotify();
+  const { user } = useAuthQuery();
+  const { permissions } = useAdminPermissions(!!user);
+  const canCreateTag =
+    permissions.includes("tag.create") || permissions.includes("tag.manage");
+
   const [title, setTitle] = useState(article?.title ?? "");
   const [summary, setSummary] = useState(article?.summary ?? "");
   const [text, setText] = useState(article?.raw_content ?? "");
@@ -78,13 +85,20 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
   const handleSave = useCallback(
     async (mode: "draft" | "public") => {
       try {
-        const upsertedTags = await Promise.all(
-          selectedTagNames.map((name) => {
+        const tagIds = await Promise.all(
+          selectedTagNames.map(async (name) => {
+            const existingTag = tags.find((tag) => tag.name === name);
+            if (existingTag) return existingTag.id;
+
+            if (!canCreateTag) {
+              throw new Error("TagCreatePermissionDenied");
+            }
+
             const slug = name.toLowerCase().trim().replace(/\s+/g, "-");
-            return upsertTag({ name, slug });
+            const createdTag = await upsertTag({ name, slug });
+            return createdTag.id;
           }),
         );
-        const tagIds = upsertedTags.map((t) => t.id);
         const webhookPreference = getPublishWebhookPreference();
         const shouldNotifyWebhooks =
           mode === "public" &&
@@ -122,6 +136,10 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
         setIsDialogOpen(false);
       } catch (err) {
         console.error("保存失敗:", err);
+        if (err instanceof Error && err.message === "TagCreatePermissionDenied") {
+          error("新しいタグを作成する権限がありません");
+          return;
+        }
         error("エラーが発生しました");
       }
     },
@@ -133,6 +151,8 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
       isPrivate,
       selectedTagNames,
       mutate,
+      tags,
+      canCreateTag,
       upsertTag,
       success,
       error,
@@ -199,7 +219,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
 
         <Autocomplete
           multiple
-          freeSolo
+          freeSolo={canCreateTag}
           options={tags?.map((t) => t.name) || []}
           value={selectedTagNames}
           onChange={(_e, newValue) => setSelectedTagNames(newValue)}
@@ -209,7 +229,14 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
             ))
           }
           renderInput={(params) => (
-            <TextField {...params} label="タグ" placeholder="Enterで追加" variant="standard" sx={{ mb: 2 }} />
+            <TextField
+              {...params}
+              label="タグ"
+              placeholder={canCreateTag ? "Enterで追加" : "既存タグから選択"}
+              variant="standard"
+              sx={{ mb: 2 }}
+              helperText={canCreateTag ? undefined : "新しいタグを作成する権限がありません"}
+            />
           )}
         />
 
