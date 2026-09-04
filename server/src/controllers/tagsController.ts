@@ -57,7 +57,7 @@ export class TagsController {
         requiredPermission,
       );
       const canManage =
-        requiredPermission === Permissions.Tag.Create &&
+        !existingTag &&
         (await permissionService.hasPermission(
           req.user.userId,
           Permissions.Tag.Manage,
@@ -71,12 +71,16 @@ export class TagsController {
         });
       }
 
-      const result = await this.tagsService.saveTag({
+      const tagData = {
         name,
         slug: normalizedSlug,
         description,
         avatar_url,
-      });
+      };
+      const result = existingTag
+        ? await this.tagsService.updateTag(tagData)
+        : await this.tagsService.createTag(tagData);
+
       res.status(200).json(result);
     } catch (error) {
       res.status(400).json({
