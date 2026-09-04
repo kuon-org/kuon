@@ -137,7 +137,7 @@ export class SmtpSettingsService {
       fromAddress:
         process.env[SMTP_ENV_NAMES.fromAddress] ?? dbValues.fromAddress,
       fromName:
-        process.env[SMTP_ENV_NAMES.fromName] ?? dbValues.fromName || "Kuon",
+        (process.env[SMTP_ENV_NAMES.fromName] ?? dbValues.fromName) || "Kuon",
     };
   }
 
