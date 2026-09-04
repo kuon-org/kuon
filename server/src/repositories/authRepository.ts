@@ -5,13 +5,11 @@ import {
   isReservedUsername,
   sanitizeExternalUsername,
 } from "../constants/reservedUsernames.js";
+import { getRuntimeIdp } from "../services/runtimeIdpService.js";
 
 export class AuthRepository {
   async findProviderByName(name: string) {
-    return prisma.identity_providers.findFirst({
-      where: { provider_name: name },
-      include: { idp_configurations: true },
-    });
+    return getRuntimeIdp(name);
   }
 
   async findIdentity(providerId: string, providerUid: string) {

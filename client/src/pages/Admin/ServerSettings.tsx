@@ -21,10 +21,16 @@ export const ServerSettings = () => {
   } = useServerSettingsQuery();
   const [error, setError] = useState<string | null>(null);
 
-  const maintenanceMode = settings?.find((setting) => setting.key === "maintenance_mode")?.value === "true";
-  const webhooksEnabled = settings?.find((setting) => setting.key === "webhooks_enabled")?.value === "true";
-  const allowUserWebhooks = settings?.find((setting) => setting.key === "allow_user_webhooks")?.value === "true";
-  const notificationsEnabled = settings?.find((setting) => setting.key === "notifications_enabled")?.value !== "false";
+  const getSetting = (key: string) => settings?.find((setting) => setting.key === key);
+  const maintenanceSetting = getSetting("maintenance_mode");
+  const webhooksSetting = getSetting("webhooks_enabled");
+  const allowUserWebhooksSetting = getSetting("allow_user_webhooks");
+  const notificationsSetting = getSetting("notifications_enabled");
+
+  const maintenanceMode = maintenanceSetting?.value === "true";
+  const webhooksEnabled = webhooksSetting?.value === "true";
+  const allowUserWebhooks = allowUserWebhooksSetting?.value === "true";
+  const notificationsEnabled = notificationsSetting?.value !== "false";
 
   const updateSetting = async (key: string, value: string) => {
     setError(null);
@@ -37,6 +43,13 @@ export const ServerSettings = () => {
 
   const updateBooleanSetting = async (key: string, enabled: boolean) =>
     updateSetting(key, String(enabled));
+
+  const sourceAlert = (readOnly?: boolean) =>
+    readOnly ? (
+      <Alert severity="info" sx={{ mb: 2 }}>
+        Source: Environment — 環境変数から設定されているため読み取り専用です。
+      </Alert>
+    ) : null;
 
   return (
     <Paper
@@ -68,13 +81,14 @@ export const ServerSettings = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             有効にすると、一般ユーザーからのコンテンツアクセスを停止します。管理者は引き続き管理画面へアクセスして解除できます。
           </Typography>
+          {sourceAlert(maintenanceSetting?.readOnly)}
           {maintenanceMode && (
             <Alert severity="warning" sx={{ mb: 2 }}>
               現在メンテナンスモードです。一般ユーザーにはメンテナンス画面が表示されます。
             </Alert>
           )}
           <FormControlLabel
-            control={<Switch checked={maintenanceMode} onChange={(event) => updateBooleanSetting("maintenance_mode", event.target.checked)} disabled={updateServerSetting_isPending} />}
+            control={<Switch checked={maintenanceMode} onChange={(event) => updateBooleanSetting("maintenance_mode", event.target.checked)} disabled={maintenanceSetting?.readOnly || updateServerSetting_isPending} />}
             label={maintenanceMode ? "有効" : "無効"}
           />
 
@@ -84,8 +98,9 @@ export const ServerSettings = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             インスタンス全体でアプリ内通知を有効にします。無効の場合、新しい通知は生成されず、TopBarの通知ベルも表示されません。
           </Typography>
+          {sourceAlert(notificationsSetting?.readOnly)}
           <FormControlLabel
-            control={<Switch checked={notificationsEnabled} onChange={(event) => updateBooleanSetting("notifications_enabled", event.target.checked)} disabled={updateServerSetting_isPending} />}
+            control={<Switch checked={notificationsEnabled} onChange={(event) => updateBooleanSetting("notifications_enabled", event.target.checked)} disabled={notificationsSetting?.readOnly || updateServerSetting_isPending} />}
             label={notificationsEnabled ? "有効" : "無効"}
           />
 
@@ -95,8 +110,9 @@ export const ServerSettings = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             インスタンス全体でWebhook配信を許可します。無効の場合、登録済みWebhookが有効でも外部への通知は送信されません。
           </Typography>
+          {sourceAlert(webhooksSetting?.readOnly)}
           <FormControlLabel
-            control={<Switch checked={webhooksEnabled} onChange={(event) => updateBooleanSetting("webhooks_enabled", event.target.checked)} disabled={updateServerSetting_isPending} />}
+            control={<Switch checked={webhooksEnabled} onChange={(event) => updateBooleanSetting("webhooks_enabled", event.target.checked)} disabled={webhooksSetting?.readOnly || updateServerSetting_isPending} />}
             label={webhooksEnabled ? "許可する" : "許可しない"}
           />
 
@@ -105,8 +121,9 @@ export const ServerSettings = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               ユーザー単位のWebhook登録・配信を許可します。外部URLへの情報送信経路になるため、必要な場合のみ有効にしてください。
             </Typography>
+            {sourceAlert(allowUserWebhooksSetting?.readOnly)}
             <FormControlLabel
-              control={<Switch checked={allowUserWebhooks} onChange={(event) => updateBooleanSetting("allow_user_webhooks", event.target.checked)} disabled={!webhooksEnabled || updateServerSetting_isPending} />}
+              control={<Switch checked={allowUserWebhooks} onChange={(event) => updateBooleanSetting("allow_user_webhooks", event.target.checked)} disabled={!webhooksEnabled || allowUserWebhooksSetting?.readOnly || updateServerSetting_isPending} />}
               label={allowUserWebhooks ? "許可する" : "許可しない"}
             />
           </Box>

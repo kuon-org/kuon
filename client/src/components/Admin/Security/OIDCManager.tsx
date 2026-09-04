@@ -37,26 +37,28 @@ export const OIDCManager = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const { error } = useNotify();
-  // OIDC系のプロバイダを抽出（既存リストに重複がないかチェックするためにも使用）
-  const oidcProviders = allIdps
-    ?.filter(
-      (p) => p.provider_name === "oidc" || p.provider_name.startsWith("oidc-"),
-    )
-    .map((p) => p.provider_name) || ["oidc"];
+  const oidcItems =
+    allIdps?.filter(
+      (p) =>
+        p.configured &&
+        (p.provider_name === "oidc" || p.provider_name.startsWith("oidc-")),
+    ) ?? [];
+  const oidcProviders = oidcItems.map((p) => p.provider_name);
+  const selectedItem = oidcItems.find(
+    (provider) => provider.provider_name === selectedProvider,
+  );
 
   const handleAdd = async () => {
     if (!newSuffix) return;
     const newName = `oidc-${newSuffix.toLowerCase().trim()}`;
 
-    if (oidcProviders.includes(newName)) {
+    if (allIdps?.some((provider) => provider.provider_name === newName)) {
       error("そのプロバイダ名は既に存在します");
       return;
     }
 
     setIsAdding(true);
     try {
-      // 1. 追加した瞬間に一度DBに保存（実体化）
-      // 最小限の初期構成を投げる
       await updateIdpConf({
         provider_name: newName,
         config: {
@@ -66,11 +68,7 @@ export const OIDCManager = () => {
           scope: "openid profile email",
         },
       });
-
-      // 2. 一覧を最新の状態にする
       await refetchIdpList();
-
-      // 3. 選択を新しいプロバイダに切り替える
       setSelectedProvider(newName);
       setNewSuffix("");
     } catch (e) {
@@ -88,7 +86,7 @@ export const OIDCManager = () => {
       await deleteIdpConf(selectedProvider);
       setOpenDeleteModal(false);
       setDeleteConfirmText("");
-      setSelectedProvider(""); // 選択を解除
+      setSelectedProvider("");
       await refetchIdpList();
     } catch (e) {
       error("削除に失敗しました。ユーザーが既に連携している可能性があります。");
@@ -151,7 +149,11 @@ export const OIDCManager = () => {
           color="error"
           startIcon={<DeleteIcon />}
           onClick={() => setOpenDeleteModal(true)}
-          disabled={!selectedProvider || selectedProvider === "oidc"} // デフォルトのoidcは削除不可を推奨
+          disabled={
+            !selectedProvider ||
+            selectedProvider === "oidc" ||
+            selectedItem?.readOnly
+          }
         >
           削除
         </Button>
@@ -159,7 +161,6 @@ export const OIDCManager = () => {
 
       <Divider sx={{ mb: 3 }} />
 
-      {/* key={selectedProvider} により、切り替え時に必ずデータが再フェッチされる */}
       {selectedProvider && (
         <AuthSettingForm
           key={selectedProvider}
@@ -171,7 +172,7 @@ export const OIDCManager = () => {
         open={openDeleteModal}
         onClose={() => !isDeleting && setOpenDeleteModal(false)}
       >
-        <DialogTitle>OICD設定の削除</DialogTitle>
+        <DialogTitle>OIDC設定の削除</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
             プロバイダ <strong>{selectedProvider}</strong>{" "}
