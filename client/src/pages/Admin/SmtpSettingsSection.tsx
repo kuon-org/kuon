@@ -44,6 +44,8 @@ export const SmtpSettingsSection = () => {
     setPassword("");
   }, [smtpSettings]);
 
+  const readOnly = smtpSettings?.readOnly ?? false;
+
   const handleSave = async () => {
     setMessage(null);
     setError(null);
@@ -90,6 +92,11 @@ export const SmtpSettingsSection = () => {
         Email VerificationやPassword Resetなどで利用する共通メール送信設定です。未設定でもKuonの既存機能は利用できます。
       </Typography>
 
+      {readOnly && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Source: Environment — 環境変数から設定されているため、この画面では読み取り専用です。
+        </Alert>
+      )}
       {smtpSettings?.configured && (
         <Alert severity="success" sx={{ mb: 2 }}>SMTPは設定済みです。</Alert>
       )}
@@ -97,35 +104,38 @@ export const SmtpSettingsSection = () => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Stack spacing={2}>
-        <TextField label="SMTP Host" value={host} onChange={(e) => setHost(e.target.value)} fullWidth />
-        <TextField label="SMTP Port" type="number" value={port} onChange={(e) => setPort(e.target.value)} fullWidth />
+        <TextField label="SMTP Host" value={host} onChange={(e) => setHost(e.target.value)} fullWidth disabled={readOnly} />
+        <TextField label="SMTP Port" type="number" value={port} onChange={(e) => setPort(e.target.value)} fullWidth disabled={readOnly} />
         <FormControlLabel
-          control={<Switch checked={secure} onChange={(e) => setSecure(e.target.checked)} />}
+          control={<Switch checked={secure} onChange={(e) => setSecure(e.target.checked)} disabled={readOnly} />}
           label="Implicit TLS / SMTPSを使用する"
         />
-        <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth />
+        <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth disabled={readOnly} />
         <TextField
           label="Password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder={smtpSettings?.passwordConfigured ? "設定済み（変更する場合のみ入力）" : ""}
-          helperText={smtpSettings?.passwordConfigured ? "空欄のまま保存すると現在のPasswordを維持します。" : undefined}
+          placeholder={smtpSettings?.passwordConfigured ? "設定済み" : ""}
+          helperText={readOnly ? "秘密値は表示されません。" : smtpSettings?.passwordConfigured ? "空欄のまま保存すると現在のPasswordを維持します。" : undefined}
           fullWidth
+          disabled={readOnly}
         />
-        <TextField label="From Address" value={fromAddress} onChange={(e) => setFromAddress(e.target.value)} fullWidth />
-        <TextField label="From Name" value={fromName} onChange={(e) => setFromName(e.target.value)} fullWidth />
-        <Box>
-          <Button variant="contained" onClick={handleSave} disabled={updateSmtpSettingsIsPending}>
-            SMTP設定を保存
-          </Button>
-        </Box>
+        <TextField label="From Address" value={fromAddress} onChange={(e) => setFromAddress(e.target.value)} fullWidth disabled={readOnly} />
+        <TextField label="From Name" value={fromName} onChange={(e) => setFromName(e.target.value)} fullWidth disabled={readOnly} />
+        {!readOnly && (
+          <Box>
+            <Button variant="contained" onClick={handleSave} disabled={updateSmtpSettingsIsPending}>
+              SMTP設定を保存
+            </Button>
+          </Box>
+        )}
       </Stack>
 
       <Box sx={{ mt: 3 }}>
         <Typography variant="subtitle1" sx={{ mb: 1 }}>テストメール</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          保存済みのSMTP設定を使って実際にメールを1通送信します。
+          現在有効なSMTP設定を使って実際にメールを1通送信します。
         </Typography>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
           <TextField label="送信先メールアドレス" value={testTo} onChange={(e) => setTestTo(e.target.value)} fullWidth />
