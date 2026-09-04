@@ -6,6 +6,21 @@ import {
   getRuntimeIdps,
 } from "./runtimeIdpService.js";
 
+const stripRedactedValues = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(stripRedactedValues);
+  }
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter(([, item]) => item !== "[REDACTED]")
+      .map(([key, item]) => [key, stripRedactedValues(item)]),
+  );
+};
+
 export class IdpConfigurationsService {
   constructor(
     private repo: IdpConfigurationRepository,
@@ -57,9 +72,13 @@ export class IdpConfigurationsService {
       process.env.BACKEND_URL ??
       "http://localhost:3000";
     const generatedRedirectUri = `${baseUrl.replace(/\/$/, "")}/auth/${provider_name}/callback`;
+    const incomingConfig = stripRedactedValues(data.config ?? {}) as Record<
+      string,
+      unknown
+    >;
     const mergedConfig = {
       ...existingConfig,
-      ...data.config,
+      ...incomingConfig,
     };
     if (!mergedConfig.redirect_uri) {
       mergedConfig.redirect_uri = generatedRedirectUri;
