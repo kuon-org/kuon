@@ -23,6 +23,9 @@ export class IdpConfigurationRepository {
     return this.db.identity_providers.findMany({
       include: {
         idp_configurations: true,
+        _count: {
+          select: { user_identities: true },
+        },
       },
       orderBy: { created_at: "asc" },
     });
@@ -137,6 +140,35 @@ export class IdpConfigurationRepository {
         where: { id: identityProvider.id },
       });
 
+      return { success: true, deletedProvider: provider_name };
+    });
+  }
+
+  async cleanupOrphanProvider(provider_name: string) {
+    return this.db.$transaction(async (tx) => {
+      const provider = await tx.identity_providers.findUnique({
+        where: { provider_name },
+        include: {
+          idp_configurations: true,
+          _count: {
+            select: { user_identities: true },
+          },
+        },
+      });
+
+      if (!provider) {
+        throw new Error(`Identity provider "${provider_name}" が見つかりません`);
+      }
+      if (provider.idp_configurations) {
+        throw new Error("DB設定が存在するIdPはクリーンアップできません");
+      }
+      if (provider._count.user_identities > 0) {
+        throw new Error(
+          `このIdPには${provider._count.user_identities}件のユーザーIdentityが紐付いているため削除できません`,
+        );
+      }
+
+      await tx.identity_providers.delete({ where: { id: provider.id } });
       return { success: true, deletedProvider: provider_name };
     });
   }
