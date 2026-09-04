@@ -26,6 +26,21 @@ interface ServerSetting {
     updated_at: string;
 }
 
+export interface AdminRuntimeStatus {
+    uptimeSeconds: number;
+    nodeVersion: string;
+    environmentName: string | null;
+    database: {
+        status: "connected" | "error";
+        postgresVersion: string | null;
+    };
+    environment: {
+        key: string;
+        configured: boolean;
+        source: "environment";
+    }[];
+}
+
 
 export const useAdminQuery = (provider_name?: string) => {
     const queryClient = useQueryClient();
@@ -148,5 +163,21 @@ export const useServerSettingsQuery = () => {
         settings_isLoading: query.isLoading,
         updateServerSetting: mutation.mutateAsync,
         updateServerSetting_isPending: mutation.isPending,
+    };
+}
+
+export const useAdminStatusQuery = () => {
+    const query = useQuery<AdminRuntimeStatus>({
+        queryKey: ["adminStatus"],
+        queryFn: async () => {
+            const { data } = await apiClient.get("/admin/status");
+            return data;
+        },
+    });
+
+    return {
+        status: query.data,
+        status_isLoading: query.isLoading,
+        status_isError: query.isError,
     };
 }
