@@ -96,6 +96,36 @@ export class IdpController {
     }
   };
 
+  testConnectivity = async (req: AuthRequest, res: Response) => {
+    const provider_name = String(req.params.provider_name);
+    try {
+      if (!isAuthenticated(req))
+        return res.status(401).json({ message: "未ログインです" });
+      const result = await this.idpService.testConnectivity(
+        req.user.userId,
+        provider_name,
+      );
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  cleanupOrphanProvider = async (req: AuthRequest, res: Response) => {
+    const provider_name = String(req.params.provider_name);
+    try {
+      if (!isAuthenticated(req))
+        return res.status(401).json({ message: "未ログインです" });
+      const result = await this.idpService.cleanupOrphanProvider(
+        req.user.userId,
+        provider_name,
+      );
+      res.json(result);
+    } catch (error: any) {
+      res.status(409).json({ message: error.message });
+    }
+  };
+
   deleteIdp = async (req: AuthRequest, res: Response) => {
     const provider_name = String(req.params.provider_name);
     try {

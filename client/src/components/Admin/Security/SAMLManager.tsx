@@ -32,31 +32,33 @@ export const SAMLManager = () => {
   const [selectedProvider, setSelectedProvider] = useState<string>("");
   const [newSuffix, setNewSuffix] = useState("");
   const [isAdding, setIsAdding] = useState(false);
-
-  // 削除用ステート
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // SAML系のプロバイダを抽出
-  const samlProviders =
-    allIdps
-      ?.filter(
-        (p) =>
-          p.provider_name === "saml" || p.provider_name.startsWith("saml-"),
-      )
-      .map((p) => p.provider_name) || [];
+  const samlItems =
+    allIdps?.filter(
+      (p) =>
+        p.configured &&
+        (p.provider_name === "saml" || p.provider_name.startsWith("saml-")),
+    ) ?? [];
+  const samlProviders = samlItems.map((p) => p.provider_name);
+  const selectedItem = samlItems.find(
+    (provider) => provider.provider_name === selectedProvider,
+  );
 
-  // 新規作成（最低限の設定でupsert）
   const handleAdd = async () => {
     if (!newSuffix) return;
     setIsAdding(true);
     const newName = `saml-${newSuffix.toLowerCase().trim()}`;
 
     try {
+      if (allIdps?.some((provider) => provider.provider_name === newName)) {
+        return;
+      }
       await updateIdpConf({
         provider_name: newName,
-        provider_type: "SAML", // ここが重要
+        provider_type: "SAML",
         config: {
           entry_point: "",
           issuer: "",
@@ -81,6 +83,7 @@ export const SAMLManager = () => {
       setSelectedProvider("");
       setOpenDeleteModal(false);
       setDeleteConfirmText("");
+      await refetchIdpList();
     } finally {
       setIsDeleting(false);
     }
@@ -90,7 +93,6 @@ export const SAMLManager = () => {
 
   return (
     <Box>
-      {/* 新規追加エリア */}
       <Box sx={{ display: "flex", gap: 2, mb: 3, alignItems: "flex-end" }}>
         <FormControl sx={{ minWidth: 200 }} size="small">
           <InputLabel>編集するプロバイダ</InputLabel>
@@ -132,7 +134,7 @@ export const SAMLManager = () => {
           color="error"
           startIcon={<DeleteIcon />}
           onClick={() => setOpenDeleteModal(true)}
-          disabled={!selectedProvider || selectedProvider === "oidc"} // デフォルトのoidcは削除不可を推奨
+          disabled={!selectedProvider || selectedItem?.readOnly}
         >
           削除
         </Button>
@@ -140,7 +142,6 @@ export const SAMLManager = () => {
 
       <Divider sx={{ my: 2 }} />
 
-      {/* 詳細設定フォーム */}
       {selectedProvider && (
         <AuthSettingForm
           key={selectedProvider}
@@ -148,7 +149,6 @@ export const SAMLManager = () => {
         />
       )}
 
-      {/* 削除確認ダイアログ */}
       <Dialog
         open={openDeleteModal}
         onClose={() => !isDeleting && setOpenDeleteModal(false)}
