@@ -9,6 +9,7 @@ import { WebhookController } from "../controllers/webhookController.js";
 import { webhookSelectionController } from "../controllers/webhookSelectionController.js";
 import { mailController } from "../controllers/mailController.js";
 import { roleController } from "../controllers/roleController.js";
+import { adminStatusController } from "../controllers/adminStatusController.js";
 import { authenticateToken } from "../middlewares/auth.js";
 import { requirePermission } from "../middlewares/permission.js";
 import { Permissions } from "../constants/permissions.js";
@@ -40,6 +41,13 @@ adminRouter.get(
   "/admin/permissions/me",
   authenticateToken,
   roleController.getMyPermissions,
+);
+
+adminRouter.get(
+  "/admin/status",
+  authenticateToken,
+  requirePermission(Permissions.System.SettingsManage),
+  adminStatusController.getStatus,
 );
 
 adminRouter.get(
