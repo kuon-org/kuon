@@ -9,7 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  IdpConnectivityResult,
+  type IdpConnectivityResult,
   useAdminQuery,
 } from "../../../hooks/useAdmin";
 import Loading from "../../common/Loading/Loading";
@@ -30,7 +30,9 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
     testIdpConnectivity,
     testIdpConnectivity_isPending,
   } = useAdminQuery(provider_name);
-  const [testResult, setTestResult] = useState<IdpConnectivityResult | null>(null);
+  const [testResult, setTestResult] = useState<IdpConnectivityResult | null>(
+    null,
+  );
   const [testError, setTestError] = useState<string | null>(null);
 
   if (idpConf_isLoading) return <Loading />;
@@ -81,7 +83,9 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
       {testResult && (
         <Alert severity={testResult.success ? "success" : "warning"}>
           <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
-            {testResult.success ? "疎通確認に成功しました" : "確認が必要な項目があります"}
+            {testResult.success
+              ? "疎通確認に成功しました"
+              : "確認が必要な項目があります"}
           </Typography>
           {testResult.checks.map((check) => (
             <Typography key={check.name} variant="body2">
@@ -99,7 +103,8 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
     return (
       <Box>
         <Alert severity="info" sx={{ mb: 2 }}>
-          Source: Environment — このIdentity Providerは環境変数から設定されているため読み取り専用です。
+          Source: Environment — このIdentity
+          Providerは環境変数から設定されているため読み取り専用です。
         </Alert>
         {connectivitySection}
         <Typography variant="subtitle2" sx={{ mb: 1 }}>
