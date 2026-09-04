@@ -1,5 +1,5 @@
-import { Box, Chip, Paper, Typography } from "@mui/material";
-import { useServerSettingsQuery } from "../../hooks/useAdmin";
+import { Box, Chip, Divider, Paper, Typography } from "@mui/material";
+import { useAdminStatusQuery, useServerSettingsQuery } from "../../hooks/useAdmin";
 
 const getBooleanSetting = (
   settings: { key: string; value: string }[] | undefined,
@@ -53,8 +53,19 @@ const StatusCard = ({
   </Paper>
 );
 
+const formatUptime = (seconds: number) => {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+};
+
 export const Dashboard = () => {
   const { settings, settings_isLoading } = useServerSettingsQuery();
+  const { status, status_isLoading, status_isError } = useAdminStatusQuery();
 
   const maintenanceMode = getBooleanSetting(settings, "maintenance_mode");
   const requireAuthentication = getBooleanSetting(settings, "require_authentication");
@@ -128,13 +139,68 @@ export const Dashboard = () => {
         elevation={0}
         sx={{ mt: 3, p: 2.5, border: "1px solid", borderColor: "divider", borderRadius: 2 }}
       >
-        <Typography variant="h6" sx={{ mb: 1 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
           Runtime information
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Kuon version、uptime、PostgreSQL version、migration、環境変数の設定状況などのサーバ情報は、
-          Secret値を返さない管理用ステータスAPIから取得する構成で追加します。
-        </Typography>
+
+        {status_isLoading && <Typography color="text.secondary">サーバ情報を取得しています...</Typography>}
+        {status_isError && <Typography color="error">サーバ情報の取得に失敗しました。</Typography>}
+
+        {status && (
+          <>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography variant="caption" color="text.secondary">Uptime</Typography>
+                <Typography>{formatUptime(status.uptimeSeconds)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Node.js</Typography>
+                <Typography>{status.nodeVersion}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Database</Typography>
+                <Typography>{status.database.status === "connected" ? "Connected" : "Error"}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">PostgreSQL</Typography>
+                <Typography sx={{ wordBreak: "break-word" }}>{status.database.postgresVersion ?? "Unknown"}</Typography>
+              </Box>
+            </Box>
+
+            <Divider sx={{ my: 2.5 }} />
+
+            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+              Environment variables
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              {status.environment.map((item) => (
+                <Box
+                  key={item.key}
+                  sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}
+                >
+                  <Box>
+                    <Typography component="span" sx={{ fontFamily: "monospace" }}>{item.key}</Typography>
+                    <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                      Environment Variable
+                    </Typography>
+                  </Box>
+                  <Chip
+                    size="small"
+                    label={item.configured ? "設定済み" : "未設定"}
+                    color={item.configured ? "success" : "default"}
+                    variant={item.configured ? "filled" : "outlined"}
+                  />
+                </Box>
+              ))}
+            </Box>
+          </>
+        )}
       </Paper>
     </Box>
   );
