@@ -1,3 +1,7 @@
+html {
+  scrollbar-gutter: stable;
+}
+
 .drawio-token {
   display: block;
   margin: 6px 0;
