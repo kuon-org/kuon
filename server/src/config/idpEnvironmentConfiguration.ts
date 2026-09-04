@@ -12,6 +12,17 @@ const IDP_METADATA_FIELDS = new Set([
   "CONFIG_JSON",
 ]);
 
+const BOOLEAN_CONFIG_FIELDS = new Map<string, string>([
+  ["WANT_ASSERTIONS_SIGNED", "wantAssertionsSigned"],
+  ["WANT_AUTHN_RESPONSE_SIGNED", "wantAuthnResponseSigned"],
+  ["DISABLE_REQUESTED_AUTHN_CONTEXT", "disableRequestedAuthnContext"],
+]);
+
+const INTEGER_CONFIG_FIELDS = new Map<string, string>([
+  ["CLOCK_SKEW_SECONDS", "clockSkewSeconds"],
+  ["REQUEST_ID_EXPIRATION_MS", "requestIdExpirationMs"],
+]);
+
 const SECRET_FIELD_PATTERN = /(?:SECRET|PASSWORD|TOKEN|CERT)$/i;
 
 export type EnvironmentIdp = {
@@ -42,6 +53,20 @@ const parseJsonObject = (
   }
 };
 
+const parseBoolean = (name: string, value: string): boolean => {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  throw new Error(`${name} must be true or false`);
+};
+
+const parseInteger = (name: string, value: string): number => {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed)) {
+    throw new Error(`${name} must be an integer`);
+  }
+  return parsed;
+};
+
 const buildConfig = (
   key: string,
   providerName: string,
@@ -53,6 +78,20 @@ const buildConfig = (
 
   for (const [field, value] of Object.entries(fields)) {
     if (IDP_METADATA_FIELDS.has(field)) continue;
+
+    const environmentName = `KUON_IDP__${key}__${field}`;
+    const booleanConfigKey = BOOLEAN_CONFIG_FIELDS.get(field);
+    if (booleanConfigKey) {
+      config[booleanConfigKey] = parseBoolean(environmentName, value);
+      continue;
+    }
+
+    const integerConfigKey = INTEGER_CONFIG_FIELDS.get(field);
+    if (integerConfigKey) {
+      config[integerConfigKey] = parseInteger(environmentName, value);
+      continue;
+    }
+
     const configKey = field.toLowerCase();
     config[configKey] =
       field === "MAPPING"
@@ -75,10 +114,6 @@ export const getEnvironmentIdps = (): EnvironmentIdp[] => {
   const grouped = readGroupedEnvironmentConfiguration("KUON_IDP");
 
   return Object.entries(grouped).map(([key, fields]) => {
-    if (fields.IS_ACTIVE !== undefined && !["true", "false"].includes(fields.IS_ACTIVE)) {
-      throw new Error(`KUON_IDP__${key}__IS_ACTIVE must be true or false`);
-    }
-
     const providerName = fields.PROVIDER_NAME || key;
 
     return {
@@ -90,7 +125,10 @@ export const getEnvironmentIdps = (): EnvironmentIdp[] => {
       logo_url: fields.LOGO_URL,
       button_color: fields.BUTTON_COLOR,
       text_color: fields.TEXT_COLOR,
-      is_active: fields.IS_ACTIVE !== "false",
+      is_active:
+        fields.IS_ACTIVE === undefined
+          ? true
+          : parseBoolean(`KUON_IDP__${key}__IS_ACTIVE`, fields.IS_ACTIVE),
       config: buildConfig(key, providerName, fields),
     };
   });
