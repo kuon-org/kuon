@@ -26,6 +26,21 @@ interface ServerSetting {
     updated_at: string;
 }
 
+export interface AdminRuntimeStatus {
+    uptimeSeconds: number;
+    nodeVersion: string;
+    environmentName: string | null;
+    database: {
+        status: "connected" | "error";
+        postgresVersion: string | null;
+    };
+    environment: {
+        key: string;
+        configured: boolean;
+        source: "environment";
+    }[];
+}
+
 
 export const useAdminQuery = (provider_name?: string) => {
     const queryClient = useQueryClient();
@@ -120,7 +135,7 @@ export const useAdminQuery = (provider_name?: string) => {
     }
 }
 
-export const useServerSettingsQuery = () => {
+export const useServerSettingsQuery = (enabled = true) => {
     const queryClient = useQueryClient();
     const query = useQuery<ServerSetting[]>({
         queryKey: ["serverSettings"],
@@ -128,6 +143,7 @@ export const useServerSettingsQuery = () => {
             const { data } = await apiClient.get("/admin/settings/server");
             return data;
         },
+        enabled,
     });
     const mutation = useMutation({
         mutationFn: async (setting: { key: string; value: string }) => {
@@ -148,5 +164,22 @@ export const useServerSettingsQuery = () => {
         settings_isLoading: query.isLoading,
         updateServerSetting: mutation.mutateAsync,
         updateServerSetting_isPending: mutation.isPending,
+    };
+}
+
+export const useAdminStatusQuery = (enabled = true) => {
+    const query = useQuery<AdminRuntimeStatus>({
+        queryKey: ["adminStatus"],
+        queryFn: async () => {
+            const { data } = await apiClient.get("/admin/status");
+            return data;
+        },
+        enabled,
+    });
+
+    return {
+        status: query.data,
+        status_isLoading: query.isLoading,
+        status_isError: query.isError,
     };
 }

@@ -5,6 +5,7 @@ import { plainLayoutRoute } from "./__root";
 import Loading from "../components/common/Loading/Loading";
 
 const AdminIndex = lazy(() => import("../pages/Admin").then((mod) => ({ default: mod.AdminIndex })));
+const Dashboard = lazy(() => import("../pages/Admin/Dashboard").then((mod) => ({ default: mod.Dashboard })));
 const Security = lazy(() => import("../pages/Admin/Security").then((mod) => ({ default: mod.Security })));
 const ServerSettings = lazy(() => import("../pages/Admin/ServerSettings").then((mod) => ({ default: mod.ServerSettings })));
 const UserManagement = lazy(() => import("../pages/Admin/UserManagement").then((mod) => ({ default: mod.UserManagement })));
@@ -15,7 +16,7 @@ const ServerEvents = lazy(() => import("../pages/Admin/ServerEvents").then((mod)
 const LoadingFallback = () => <Loading />;
 
 export const adminRoute = createRoute({ getParentRoute: () => plainLayoutRoute, path: "admin", component: () => <Suspense fallback={<LoadingFallback />}><AdminIndex /></Suspense> });
-export const adminTopRoute = createRoute({ getParentRoute: () => adminRoute, path: "/", component: () => <></> });
+export const adminTopRoute = createRoute({ getParentRoute: () => adminRoute, path: "/", component: () => <Suspense fallback={<LoadingFallback />}><Dashboard /></Suspense> });
 export const adminSecurityRoute = createRoute({ getParentRoute: () => adminRoute, path: "security", component: () => <Suspense fallback={<LoadingFallback />}><Security /></Suspense> });
 export const adminServerSettingsRoute = createRoute({ getParentRoute: () => adminRoute, path: "server-settings", component: () => <Suspense fallback={<LoadingFallback />}><ServerSettings /></Suspense> });
 export const adminBackupRestoreRoute = createRoute({ getParentRoute: () => adminRoute, path: "backup-restore", component: () => <Suspense fallback={<LoadingFallback />}><BackupRestore /></Suspense> });
