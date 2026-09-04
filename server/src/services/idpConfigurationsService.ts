@@ -234,8 +234,10 @@ export class IdpConfigurationsService {
 
     const existing = await this.repo.getConfiguration(provider_name);
     const rawConfig = existing?.idp_configurations?.config;
-    const existingConfig =
-      rawConfig && typeof rawConfig === "object" ? rawConfig : {};
+    const existingConfig: Record<string, unknown> =
+      rawConfig && typeof rawConfig === "object" && !Array.isArray(rawConfig)
+        ? (rawConfig as Record<string, unknown>)
+        : {};
     const baseUrl =
       process.env.APP_SITE_URL ??
       process.env.BACKEND_URL ??
@@ -245,7 +247,7 @@ export class IdpConfigurationsService {
       string,
       unknown
     >;
-    const mergedConfig = {
+    const mergedConfig: Record<string, unknown> = {
       ...existingConfig,
       ...incomingConfig,
     };
