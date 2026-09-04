@@ -1,4 +1,5 @@
 // src/components/admin/Auth/AuthSettingForm.tsx
+import { Alert, Box, Typography } from "@mui/material";
 import { useAdminQuery } from "../../../hooks/useAdmin";
 import Loading from "../../common/Loading/Loading";
 import { OIDCForm } from "./OIDCForm";
@@ -15,7 +16,6 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
 
   if (idpConf_isLoading) return <Loading />;
 
-  // DBからのデータを取得、なければデフォルト値
   const config = idpConf?.idp_configurations?.config ?? {
     issuer_host: "",
     client_id: "",
@@ -23,6 +23,33 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
     scope: "openid profile email",
   };
   const isActive = idpConf?.idp_configurations?.is_active ?? false;
+
+  if (idpConf?.readOnly) {
+    return (
+      <Box>
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Source: Environment — このIdentity Providerは環境変数から設定されているため読み取り専用です。
+        </Alert>
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+          有効状態: {isActive ? "有効" : "無効"}
+        </Typography>
+        <Box
+          component="pre"
+          sx={{
+            m: 0,
+            p: 2,
+            overflow: "auto",
+            borderRadius: 1,
+            bgcolor: "action.hover",
+            fontSize: 13,
+          }}
+        >
+          {JSON.stringify(config, null, 2)}
+        </Box>
+      </Box>
+    );
+  }
+
   if (provider_name === "saml" || provider_name.startsWith("saml-")) {
     return (
       <SAMLForm
@@ -35,7 +62,6 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
       />
     );
   }
-  // OIDC（oidc単体 または oidc-接頭辞）の場合
   if (provider_name === "oidc" || provider_name.startsWith("oidc-")) {
     return (
       <OIDCForm
@@ -49,7 +75,6 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
     );
   }
 
-  // OAuth2（discord, github等）の場合
   return (
     <OAuth2TemplateForm
       key={provider_name}
