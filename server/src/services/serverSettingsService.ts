@@ -143,9 +143,7 @@ export class ServerSettingsService {
     if (environmentValue !== undefined) {
       return {
         key,
-        value: SENSITIVE_SETTING_KEY_PATTERN.test(key)
-          ? "[REDACTED]"
-          : environmentValue,
+        value: environmentValue,
         updatedAt: null,
         source: "environment",
         readOnly: true,
@@ -157,9 +155,7 @@ export class ServerSettingsService {
 
     return {
       key: setting.key,
-      value: SENSITIVE_SETTING_KEY_PATTERN.test(setting.key)
-        ? "[REDACTED]"
-        : setting.value,
+      value: setting.value,
       updatedAt: setting.updated_at,
       source: "database",
       readOnly: false,
