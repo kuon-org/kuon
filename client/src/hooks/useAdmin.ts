@@ -135,7 +135,7 @@ export const useAdminQuery = (provider_name?: string) => {
     }
 }
 
-export const useServerSettingsQuery = () => {
+export const useServerSettingsQuery = (enabled = true) => {
     const queryClient = useQueryClient();
     const query = useQuery<ServerSetting[]>({
         queryKey: ["serverSettings"],
@@ -143,6 +143,7 @@ export const useServerSettingsQuery = () => {
             const { data } = await apiClient.get("/admin/settings/server");
             return data;
         },
+        enabled,
     });
     const mutation = useMutation({
         mutationFn: async (setting: { key: string; value: string }) => {
@@ -166,13 +167,14 @@ export const useServerSettingsQuery = () => {
     };
 }
 
-export const useAdminStatusQuery = () => {
+export const useAdminStatusQuery = (enabled = true) => {
     const query = useQuery<AdminRuntimeStatus>({
         queryKey: ["adminStatus"],
         queryFn: async () => {
             const { data } = await apiClient.get("/admin/status");
             return data;
         },
+        enabled,
     });
 
     return {
