@@ -27,12 +27,30 @@ interface ServerSetting {
     readOnly: boolean;
 }
 
-interface IdpListItem {
+export interface IdpListItem {
     provider_name: string;
     display_name: string;
+    provider_type: string;
     is_active: boolean;
-    source: "environment" | "database";
+    source: "environment" | "database" | "registry";
     readOnly: boolean;
+    configured: boolean;
+    orphaned: boolean;
+    userIdentityCount: number;
+    canCleanup: boolean;
+}
+
+export interface IdpConnectivityResult {
+    provider_name: string;
+    provider_type: string;
+    source: "environment" | "database";
+    success: boolean;
+    checks: {
+        name: string;
+        success: boolean;
+        status?: number;
+        message?: string;
+    }[];
 }
 
 export interface AdminRuntimeStatus {
@@ -65,7 +83,8 @@ export const useAdminQuery = (provider_name?: string) => {
         queryFn: async () => {
             const { data } = await apiClient.get(`/admin/idp_settings/${provider_name}`);
             return data;
-        }
+        },
+        enabled: Boolean(provider_name),
     });
     const getAllIdpsQuery = useQuery({
         queryKey: ["allIdpList"],
@@ -107,6 +126,23 @@ export const useAdminQuery = (provider_name?: string) => {
         }
     })
 
+    const idpConnectivityMutation = useMutation({
+        mutationFn: async (target_name: string) => {
+            const { data } = await apiClient.post(`/admin/idp_settings/${target_name}/test`);
+            return data as IdpConnectivityResult;
+        },
+    });
+
+    const cleanupIdpRegistryMutation = useMutation({
+        mutationFn: async (target_name: string) => {
+            const { data } = await apiClient.delete(`/admin/idp_registry/${target_name}`);
+            return data;
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["allIdpList"] });
+        },
+    });
+
     const toggleUserActive = useMutation({
         mutationFn: async (userId: string) => {
             return await apiClient.post(`/admin/settings/users/toggle_active/${userId}`);
@@ -133,6 +169,10 @@ export const useAdminQuery = (provider_name?: string) => {
         fetchDiscovery,
         updateIdpConf: idpConfMutation.mutateAsync,
         toggleActive: idpToggleActiveMutation.mutate,
+        testIdpConnectivity: idpConnectivityMutation.mutateAsync,
+        testIdpConnectivity_isPending: idpConnectivityMutation.isPending,
+        cleanupIdpRegistry: cleanupIdpRegistryMutation.mutateAsync,
+        cleanupIdpRegistry_isPending: cleanupIdpRegistryMutation.isPending,
         users: getUsers.data,
         users_isLoading: getUsers.isLoading,
         users_isError: getUsers.isError,
@@ -172,7 +212,7 @@ export const useServerSettingsQuery = (enabled = true) => {
         settings_isLoading: query.isLoading,
         updateServerSetting: mutation.mutateAsync,
         updateServerSetting_isPending: mutation.isPending,
-    };
+    }
 }
 
 export const useAdminStatusQuery = (enabled = true) => {
