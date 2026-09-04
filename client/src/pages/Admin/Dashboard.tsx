@@ -1,5 +1,6 @@
 import { Box, Chip, Divider, Paper, Typography } from "@mui/material";
 import { useAdminStatusQuery, useServerSettingsQuery } from "../../hooks/useAdmin";
+import { useAdminPermissions } from "../../hooks/useRoles";
 
 const getBooleanSetting = (
   settings: { key: string; value: string }[] | undefined,
@@ -64,8 +65,10 @@ const formatUptime = (seconds: number) => {
 };
 
 export const Dashboard = () => {
-  const { settings, settings_isLoading } = useServerSettingsQuery();
-  const { status, status_isLoading, status_isError } = useAdminStatusQuery();
+  const { permissions } = useAdminPermissions();
+  const canReadSystemStatus = permissions.includes("system.settings.manage");
+  const { settings, settings_isLoading } = useServerSettingsQuery(canReadSystemStatus);
+  const { status, status_isLoading, status_isError } = useAdminStatusQuery(canReadSystemStatus);
 
   const maintenanceMode = getBooleanSetting(settings, "maintenance_mode");
   const requireAuthentication = getBooleanSetting(settings, "require_authentication");
@@ -86,122 +89,138 @@ export const Dashboard = () => {
         Kuonインスタンスの主要な状態を確認できます。
       </Typography>
 
-      {settings_isLoading ? (
-        <Typography color="text.secondary">状態を取得しています...</Typography>
-      ) : (
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
-            gap: 2,
-          }}
+      {!canReadSystemStatus && (
+        <Paper
+          elevation={0}
+          sx={{ p: 2.5, border: "1px solid", borderColor: "divider", borderRadius: 2 }}
         >
-          <StatusCard
-            title="Maintenance"
-            description="一般ユーザー向けコンテンツアクセスの停止状態です。"
-            enabled={maintenanceMode}
-            enabledLabel="メンテナンス中"
-            disabledLabel="通常稼働"
-            warningWhenEnabled
-          />
-          <StatusCard
-            title="Authentication"
-            description="未ログインユーザーにログインを要求する設定です。"
-            enabled={requireAuthentication}
-            enabledLabel="ログイン必須"
-            disabledLabel="公開アクセス可"
-          />
-          <StatusCard
-            title="Local registration"
-            description="新しいローカルアカウントをユーザー自身が登録できるかを示します。"
-            enabled={allowLocalAccountRegistration}
-            enabledLabel="許可"
-            disabledLabel="停止"
-          />
-          <StatusCard
-            title="Notifications"
-            description="インスタンス内通知の生成状態です。"
-            enabled={notificationsEnabled}
-            enabledLabel="有効"
-            disabledLabel="無効"
-          />
-          <StatusCard
-            title="Webhooks"
-            description="インスタンス全体のWebhook配信状態です。"
-            enabled={webhooksEnabled}
-            enabledLabel="有効"
-            disabledLabel="無効"
-          />
-        </Box>
+          <Typography variant="h6" sx={{ mb: 1 }}>管理コンソール</Typography>
+          <Typography variant="body2" color="text.secondary">
+            現在の権限で利用できる管理機能が左メニューに表示されています。サーバ状態や環境設定の確認にはシステム設定権限が必要です。
+          </Typography>
+        </Paper>
       )}
 
-      <Paper
-        elevation={0}
-        sx={{ mt: 3, p: 2.5, border: "1px solid", borderColor: "divider", borderRadius: 2 }}
-      >
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Runtime information
-        </Typography>
-
-        {status_isLoading && <Typography color="text.secondary">サーバ情報を取得しています...</Typography>}
-        {status_isError && <Typography color="error">サーバ情報の取得に失敗しました。</Typography>}
-
-        {status && (
-          <>
+      {canReadSystemStatus && (
+        <>
+          {settings_isLoading ? (
+            <Typography color="text.secondary">状態を取得しています...</Typography>
+          ) : (
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+                gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
                 gap: 2,
               }}
             >
-              <Box>
-                <Typography variant="caption" color="text.secondary">Uptime</Typography>
-                <Typography>{formatUptime(status.uptimeSeconds)}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Node.js</Typography>
-                <Typography>{status.nodeVersion}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Database</Typography>
-                <Typography>{status.database.status === "connected" ? "Connected" : "Error"}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">PostgreSQL</Typography>
-                <Typography sx={{ wordBreak: "break-word" }}>{status.database.postgresVersion ?? "Unknown"}</Typography>
-              </Box>
+              <StatusCard
+                title="Maintenance"
+                description="一般ユーザー向けコンテンツアクセスの停止状態です。"
+                enabled={maintenanceMode}
+                enabledLabel="メンテナンス中"
+                disabledLabel="通常稼働"
+                warningWhenEnabled
+              />
+              <StatusCard
+                title="Authentication"
+                description="未ログインユーザーにログインを要求する設定です。"
+                enabled={requireAuthentication}
+                enabledLabel="ログイン必須"
+                disabledLabel="公開アクセス可"
+              />
+              <StatusCard
+                title="Local registration"
+                description="新しいローカルアカウントをユーザー自身が登録できるかを示します。"
+                enabled={allowLocalAccountRegistration}
+                enabledLabel="許可"
+                disabledLabel="停止"
+              />
+              <StatusCard
+                title="Notifications"
+                description="インスタンス内通知の生成状態です。"
+                enabled={notificationsEnabled}
+                enabledLabel="有効"
+                disabledLabel="無効"
+              />
+              <StatusCard
+                title="Webhooks"
+                description="インスタンス全体のWebhook配信状態です。"
+                enabled={webhooksEnabled}
+                enabledLabel="有効"
+                disabledLabel="無効"
+              />
             </Box>
+          )}
 
-            <Divider sx={{ my: 2.5 }} />
-
-            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-              Environment variables
+          <Paper
+            elevation={0}
+            sx={{ mt: 3, p: 2.5, border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+          >
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Runtime information
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {status.environment.map((item) => (
+
+            {status_isLoading && <Typography color="text.secondary">サーバ情報を取得しています...</Typography>}
+            {status_isError && <Typography color="error">サーバ情報の取得に失敗しました。</Typography>}
+
+            {status && (
+              <>
                 <Box
-                  key={item.key}
-                  sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+                    gap: 2,
+                  }}
                 >
                   <Box>
-                    <Typography component="span" sx={{ fontFamily: "monospace" }}>{item.key}</Typography>
-                    <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                      Environment Variable
-                    </Typography>
+                    <Typography variant="caption" color="text.secondary">Uptime</Typography>
+                    <Typography>{formatUptime(status.uptimeSeconds)}</Typography>
                   </Box>
-                  <Chip
-                    size="small"
-                    label={item.configured ? "設定済み" : "未設定"}
-                    color={item.configured ? "success" : "default"}
-                    variant={item.configured ? "filled" : "outlined"}
-                  />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Node.js</Typography>
+                    <Typography>{status.nodeVersion}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Database</Typography>
+                    <Typography>{status.database.status === "connected" ? "Connected" : "Error"}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">PostgreSQL</Typography>
+                    <Typography sx={{ wordBreak: "break-word" }}>{status.database.postgresVersion ?? "Unknown"}</Typography>
+                  </Box>
                 </Box>
-              ))}
-            </Box>
-          </>
-        )}
-      </Paper>
+
+                <Divider sx={{ my: 2.5 }} />
+
+                <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+                  Environment variables
+                </Typography>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {status.environment.map((item) => (
+                    <Box
+                      key={item.key}
+                      sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}
+                    >
+                      <Box>
+                        <Typography component="span" sx={{ fontFamily: "monospace" }}>{item.key}</Typography>
+                        <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                          Environment Variable
+                        </Typography>
+                      </Box>
+                      <Chip
+                        size="small"
+                        label={item.configured ? "設定済み" : "未設定"}
+                        color={item.configured ? "success" : "default"}
+                        variant={item.configured ? "filled" : "outlined"}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              </>
+            )}
+          </Paper>
+        </>
+      )}
     </Box>
   );
 };
