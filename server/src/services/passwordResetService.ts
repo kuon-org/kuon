@@ -36,7 +36,7 @@ export class PasswordResetService {
     const account = await this.usersRepo.findLocalAccountByEmail(email);
     if (!account?.user_id || !account.password_hash) {
       await eventLogger.info("password_reset.requested", {
-        category: "security",
+        category: "audit",
         source: "auth",
         message: "Password reset requested",
         metadata: {},
@@ -49,7 +49,7 @@ export class PasswordResetService {
       !account.is_verified
     ) {
       await eventLogger.info("password_reset.requested", {
-        category: "security",
+        category: "audit",
         source: "auth",
         message: "Password reset requested",
         metadata: {},
@@ -86,7 +86,7 @@ export class PasswordResetService {
     });
 
     await eventLogger.info("password_reset.requested", {
-      category: "security",
+      category: "audit",
       source: "auth",
       message: "Password reset mail sent",
       metadata: { userId: account.user_id },
@@ -97,7 +97,7 @@ export class PasswordResetService {
     const record = await this.repo.findByHash(hashToken(token));
     if (!record || record.used_at) {
       await eventLogger.warning("password_reset.failed", {
-        category: "security",
+        category: "audit",
         source: "auth",
         message: "Password reset failed",
         metadata: {},
@@ -107,7 +107,7 @@ export class PasswordResetService {
 
     if (record.expires_at.getTime() < Date.now()) {
       await eventLogger.warning("password_reset.expired", {
-        category: "security",
+        category: "audit",
         source: "auth",
         message: "Password reset token expired",
         metadata: { userId: record.user_id },
@@ -121,7 +121,7 @@ export class PasswordResetService {
     await this.repo.invalidateUnusedByUser(record.user_id);
 
     await eventLogger.info("password_reset.completed", {
-      category: "security",
+      category: "audit",
       source: "auth",
       message: "Password reset completed",
       metadata: { userId: record.user_id },
