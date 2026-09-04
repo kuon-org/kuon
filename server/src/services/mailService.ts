@@ -38,7 +38,7 @@ const waitForResponse = (socket: MailSocket): Promise<SmtpResponse> =>
     const onData = (chunk: Buffer) => {
       buffer += chunk.toString("utf8");
       const lines = buffer.split(/\r?\n/).filter(Boolean);
-      const last = lines.at(-1);
+      const last = lines[lines.length - 1];
       const match = last?.match(/^(\d{3})\s/);
       if (!match) return;
 
