@@ -72,7 +72,31 @@ KUON_IDP__company_sso__SCOPE="openid profile email"
 KUON_IDP__company_sso__MAPPING='{"id":"sub","username":"preferred_username","display_name":"name"}'
 ```
 
-`PROVIDER_NAME`, `DISPLAY_NAME`, `PROVIDER_TYPE`, `DESCRIPTION`, `LOGO_URL`, `BUTTON_COLOR`, `TEXT_COLOR`, `IS_ACTIVE` はIdP本体のメタデータとして扱います。それ以外のフィールドは小文字化してIdPの `config` として扱います。
+SAMLの例:
+
+```env
+KUON_IDP__keycloak__PROVIDER_NAME=saml-keycloak
+KUON_IDP__keycloak__DISPLAY_NAME=Keycloak
+KUON_IDP__keycloak__PROVIDER_TYPE=SAML
+KUON_IDP__keycloak__ISSUER=kuon
+KUON_IDP__keycloak__ENTRY_POINT=http://localhost:8080/realms/kuon/protocol/saml
+KUON_IDP__keycloak__CERT="..."
+KUON_IDP__keycloak__WANT_ASSERTIONS_SIGNED=true
+KUON_IDP__keycloak__WANT_AUTHN_RESPONSE_SIGNED=false
+KUON_IDP__keycloak__DISABLE_REQUESTED_AUTHN_CONTEXT=false
+KUON_IDP__keycloak__CLOCK_SKEW_SECONDS=0
+KUON_IDP__keycloak__REQUEST_ID_EXPIRATION_MS=28800000
+KUON_IDP__keycloak__MAPPING='{"id":"nameID","username":"email","display_name":"displayName"}'
+```
+
+`PROVIDER_NAME`, `DISPLAY_NAME`, `PROVIDER_TYPE`, `DESCRIPTION`, `LOGO_URL`, `BUTTON_COLOR`, `TEXT_COLOR`, `IS_ACTIVE` はIdP本体のメタデータとして扱います。それ以外の通常フィールドは小文字化してIdPの `config` として扱います。
+
+一部の型付き設定は文字列のままではなく、実行時に必要な型へ変換します。
+
+- Boolean: `WANT_ASSERTIONS_SIGNED`, `WANT_AUTHN_RESPONSE_SIGNED`, `DISABLE_REQUESTED_AUTHN_CONTEXT`
+- Integer: `CLOCK_SKEW_SECONDS`, `REQUEST_ID_EXPIRATION_MS`
+
+Boolean値は `true` / `false` のみ、Integer値は整数のみ指定できます。不正な値の場合は環境変数名を含む設定エラーにします。`CLIENT_ID` など、数字だけで構成される可能性がある通常フィールドは文字列のまま保持します。
 
 複雑な設定は `CONFIG_JSON` でまとめて指定できます。
 
