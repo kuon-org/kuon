@@ -44,6 +44,7 @@ const parseJsonObject = (
 
 const buildConfig = (
   key: string,
+  providerName: string,
   fields: Record<string, string>,
 ): Record<string, unknown> => {
   const config = fields.CONFIG_JSON
@@ -59,6 +60,14 @@ const buildConfig = (
         : value;
   }
 
+  if (!config.redirect_uri) {
+    const baseUrl =
+      process.env.APP_SITE_URL ??
+      process.env.BACKEND_URL ??
+      "http://localhost:3000";
+    config.redirect_uri = `${baseUrl.replace(/\/$/, "")}/auth/${providerName}/callback`;
+  }
+
   return config;
 };
 
@@ -70,17 +79,19 @@ export const getEnvironmentIdps = (): EnvironmentIdp[] => {
       throw new Error(`KUON_IDP__${key}__IS_ACTIVE must be true or false`);
     }
 
+    const providerName = fields.PROVIDER_NAME || key;
+
     return {
       key,
-      provider_name: fields.PROVIDER_NAME || key,
-      display_name: fields.DISPLAY_NAME || fields.PROVIDER_NAME || key,
+      provider_name: providerName,
+      display_name: fields.DISPLAY_NAME || providerName,
       provider_type: (fields.PROVIDER_TYPE || "OIDC").toUpperCase(),
       description: fields.DESCRIPTION,
       logo_url: fields.LOGO_URL,
       button_color: fields.BUTTON_COLOR,
       text_color: fields.TEXT_COLOR,
       is_active: fields.IS_ACTIVE !== "false",
-      config: buildConfig(key, fields),
+      config: buildConfig(key, providerName, fields),
     };
   });
 };
