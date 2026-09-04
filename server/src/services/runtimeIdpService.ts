@@ -92,7 +92,7 @@ export const getRuntimeIdp = async (
           : {},
       button_color: database.idp_configurations.button_color,
       text_color: database.idp_configurations.text_color,
-      is_active: database.idp_configurations.is_active,
+      is_active: database.idp_configurations.is_active ?? false,
     },
   };
 };
@@ -130,7 +130,7 @@ export const getRuntimeIdps = async (): Promise<RuntimeIdp[]> => {
             : {},
         button_color: provider.idp_configurations!.button_color,
         text_color: provider.idp_configurations!.text_color,
-        is_active: provider.idp_configurations!.is_active,
+        is_active: provider.idp_configurations!.is_active ?? false,
       },
     }));
 
