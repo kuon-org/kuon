@@ -1,6 +1,11 @@
 import crypto from "node:crypto";
 import JWT_SECRET from "../utils/sessionTokens/jwtSecret.js";
 import { serverSettingsService } from "./serverSettingsService.js";
+import {
+  readBooleanEnvironmentValue,
+  readIntegerEnvironmentValue,
+  type ConfigurationSource,
+} from "../config/environmentConfiguration.js";
 
 const SMTP_SETTING_KEYS = {
   host: "smtp_host",
@@ -10,6 +15,16 @@ const SMTP_SETTING_KEYS = {
   password: "smtp_password",
   fromAddress: "smtp_from_address",
   fromName: "smtp_from_name",
+} as const;
+
+const SMTP_ENV_NAMES = {
+  host: "KUON_SMTP_HOST",
+  port: "KUON_SMTP_PORT",
+  secure: "KUON_SMTP_SECURE",
+  username: "KUON_SMTP_USERNAME",
+  password: "KUON_SMTP_PASSWORD",
+  fromAddress: "KUON_SMTP_FROM_ADDRESS",
+  fromName: "KUON_SMTP_FROM_NAME",
 } as const;
 
 const ENCRYPTION_PREFIX = "enc:v1";
@@ -27,6 +42,8 @@ export type SmtpSettings = {
 export type PublicSmtpSettings = Omit<SmtpSettings, "password"> & {
   passwordConfigured: boolean;
   configured: boolean;
+  source: ConfigurationSource;
+  readOnly: boolean;
 };
 
 export type UpdateSmtpSettingsInput = Omit<SmtpSettings, "password"> & {
@@ -88,30 +105,60 @@ export class SmtpSettingsService {
         (await serverSettingsService.get(key))?.value ?? "",
       ] as const),
     );
-    const values = Object.fromEntries(entries) as Record<keyof typeof SMTP_SETTING_KEYS, string>;
+    const dbValues = Object.fromEntries(entries) as Record<
+      keyof typeof SMTP_SETTING_KEYS,
+      string
+    >;
+
+    const environmentPort = readIntegerEnvironmentValue(
+      SMTP_ENV_NAMES.port,
+      process.env[SMTP_ENV_NAMES.port],
+    );
+    if (
+      environmentPort !== undefined &&
+      (environmentPort <= 0 || environmentPort > 65535)
+    ) {
+      throw new Error(`${SMTP_ENV_NAMES.port} must be between 1 and 65535`);
+    }
+
+    const environmentSecure = readBooleanEnvironmentValue(
+      SMTP_ENV_NAMES.secure,
+      process.env[SMTP_ENV_NAMES.secure],
+    );
 
     return {
-      host: values.host,
-      port: normalizePort(values.port),
-      secure: values.secure === "true",
-      username: values.username,
-      password: values.password ? decryptSecret(values.password) : "",
-      fromAddress: values.fromAddress,
-      fromName: values.fromName || "Kuon",
+      host: process.env[SMTP_ENV_NAMES.host] ?? dbValues.host,
+      port: environmentPort ?? normalizePort(dbValues.port),
+      secure: environmentSecure ?? dbValues.secure === "true",
+      username: process.env[SMTP_ENV_NAMES.username] ?? dbValues.username,
+      password:
+        process.env[SMTP_ENV_NAMES.password] ??
+        (dbValues.password ? decryptSecret(dbValues.password) : ""),
+      fromAddress:
+        process.env[SMTP_ENV_NAMES.fromAddress] ?? dbValues.fromAddress,
+      fromName:
+        process.env[SMTP_ENV_NAMES.fromName] ?? dbValues.fromName || "Kuon",
     };
   }
 
   async getPublic(): Promise<PublicSmtpSettings> {
     const settings = await this.get();
     const { password, ...publicSettings } = settings;
+    const environmentManaged = this.isEnvironmentManaged();
     return {
       ...publicSettings,
       passwordConfigured: Boolean(password),
       configured: this.isComplete(settings),
+      source: environmentManaged ? "environment" : "database",
+      readOnly: environmentManaged,
     };
   }
 
   async update(input: UpdateSmtpSettingsInput): Promise<PublicSmtpSettings> {
+    if (this.isEnvironmentManaged()) {
+      throw new Error("SMTPは環境変数から設定されているため管理画面から変更できません");
+    }
+
     const host = input.host.trim();
     const username = input.username.trim();
     const fromAddress = input.fromAddress.trim();
@@ -144,6 +191,12 @@ export class SmtpSettingsService {
 
   async isConfigured(): Promise<boolean> {
     return this.isComplete(await this.get());
+  }
+
+  isEnvironmentManaged(): boolean {
+    return Object.values(SMTP_ENV_NAMES).some(
+      (name) => process.env[name] !== undefined,
+    );
   }
 
   private isComplete(settings: SmtpSettings): boolean {
