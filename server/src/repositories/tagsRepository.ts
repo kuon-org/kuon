@@ -43,25 +43,25 @@ export class TagsRepository {
     });
   }
 
-  // slugをキーにして保存または更新を行う
-  async upsertTag(data: {
+  async createTag(data: {
     name: string;
     slug: string;
     description?: string;
     avatar_url?: string;
   }) {
-    return this.db.tags.upsert({
-      where: {
-        slug: data.slug, // スキーマで@uniqueを設定したため可能
-      },
-      update: {
+    return this.db.tags.create({ data });
+  }
+
+  async updateTagBySlug(data: {
+    name: string;
+    slug: string;
+    description?: string;
+    avatar_url?: string;
+  }) {
+    return this.db.tags.update({
+      where: { slug: data.slug },
+      data: {
         name: data.name,
-        description: data.description,
-        avatar_url: data.avatar_url,
-      },
-      create: {
-        name: data.name,
-        slug: data.slug,
         description: data.description,
         avatar_url: data.avatar_url,
       },
@@ -101,6 +101,7 @@ export class TagsRepository {
     });
     return tag?.id;
   }
+
   async isFollowing(userId: string, slug: string) {
     const tagId = await this.getTagIdBySlug(slug);
     if (!tagId) return false;
