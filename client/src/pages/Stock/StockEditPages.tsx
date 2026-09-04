@@ -18,9 +18,11 @@ import { useStocks } from "../../hooks/useStocks";
 import { useTagsQuery } from "../../hooks/useTags";
 import { useNavigate } from "@tanstack/react-router";
 import { stocksDetailsRoute, stocksRoute } from "../../routes";
+import { useAuthQuery } from "../../hooks/useAuth";
+import { useAdminPermissions } from "../../hooks/useRoles";
 
 interface StockEditPageProps {
-  initialData?: any; // 既存リストのデータ
+  initialData?: any;
 }
 
 export const StockEditPages = ({ initialData }: StockEditPageProps) => {
@@ -36,8 +38,11 @@ export const StockEditPages = ({ initialData }: StockEditPageProps) => {
     isDeleting,
   } = useStocks();
   const { tags, tags_isLoading, upsertTag } = useTagsQuery();
+  const { user } = useAuthQuery();
+  const { permissions } = useAdminPermissions(!!user);
+  const canCreateTag =
+    permissions.includes("tag.create") || permissions.includes("tag.manage");
 
-  // initialData があればそれを初期値に、なければ空
   const [name, setName] = useState(initialData?.name || "");
   const [visibility, setVisibility] = useState(
     initialData?.visibility || "private",
@@ -49,6 +54,7 @@ export const StockEditPages = ({ initialData }: StockEditPageProps) => {
     initialData?.stock_list_tags?.map((t: any) => t.tags.name) || [],
   );
   const [is_default, setIsDefault] = useState(initialData?.is_default || false);
+
   const handleDelete = async () => {
     if (!initialData?.id) return;
     if (!window.confirm("本当にこのストックリストを削除しますか？")) return;
@@ -62,16 +68,21 @@ export const StockEditPages = ({ initialData }: StockEditPageProps) => {
       console.error("削除失敗:", error);
     }
   };
+
   const handleSave = async () => {
     if (!name.trim()) return;
     try {
-      const upsertedTags = await Promise.all(
-        selectedTags.map((name) => {
-          const slug = name.toLowerCase().trim().replace(/\s+/g, "-");
-          return upsertTag({ name, slug });
+      const tagIds = await Promise.all(
+        selectedTags.map(async (tagName) => {
+          const existingTag = tags.find((tag) => tag.name === tagName);
+          if (existingTag) return existingTag.id;
+          if (!canCreateTag) throw new Error("TagCreatePermissionDenied");
+
+          const slug = tagName.toLowerCase().trim().replace(/\s+/g, "-");
+          const createdTag = await upsertTag({ name: tagName, slug });
+          return createdTag.id;
         }),
       );
-      const tagIds = upsertedTags.map((t) => t.id);
 
       const payload = {
         name,
@@ -83,13 +94,10 @@ export const StockEditPages = ({ initialData }: StockEditPageProps) => {
 
       if (isEdit) {
         await updateList({ listId: initialData.id, payload });
-        // 編集後はそのリストの詳細へ
         navigate({
           to: stocksDetailsRoute.to,
           search: { page: 1, q: undefined },
-          params: {
-            listId: initialData.id,
-          },
+          params: { listId: initialData.id },
         });
       } else {
         const newList = await createList(payload);
@@ -99,17 +107,12 @@ export const StockEditPages = ({ initialData }: StockEditPageProps) => {
       console.error("保存失敗:", error);
     }
   };
-  const isSystem = initialData?.is_system ?? false; // システムリストかどうか
+
+  const isSystem = initialData?.is_system ?? false;
 
   return (
     <Paper sx={{ p: 4, borderRadius: 2 }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Typography variant="h6" fontWeight="bold" mb={3}>
           {isEdit ? "ストックリストを編集" : "新しいストックリストを作成"}
         </Typography>
@@ -121,84 +124,57 @@ export const StockEditPages = ({ initialData }: StockEditPageProps) => {
           )}
         </Typography>
       </Box>
+
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        {/* リスト名 */}
         <Box>
           <FormLabel sx={{ fontWeight: "bold", mb: 1, display: "block" }}>
             リスト名
           </FormLabel>
-          <TextField
-            fullWidth
-            placeholder="例: 後で読む"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <TextField fullWidth placeholder="例: 後で読む" value={name} onChange={(e) => setName(e.target.value)} />
         </Box>
 
-        {/* 公開範囲 */}
         <FormControl>
           <FormLabel sx={{ fontWeight: "bold", mb: 1 }}>公開範囲</FormLabel>
-          <RadioGroup
-            value={visibility}
-            onChange={(e) => setVisibility(e.target.value)}
-          >
-            <FormControlLabel
-              value="private"
-              control={<Radio />}
-              label="🔒 非公開"
-            />
-            <FormControlLabel
-              value="limited"
-              control={<Radio />}
-              label="🔗 限定公開"
-            />
-            <FormControlLabel
-              value="public"
-              control={<Radio />}
-              label="🌐 公開"
-            />
+          <RadioGroup value={visibility} onChange={(e) => setVisibility(e.target.value)}>
+            <FormControlLabel value="private" control={<Radio />} label="🔒 非公開" />
+            <FormControlLabel value="limited" control={<Radio />} label="🔗 限定公開" />
+            <FormControlLabel value="public" control={<Radio />} label="🌐 公開" />
           </RadioGroup>
         </FormControl>
 
-        {/* タグ設定 (Autocomplete) */}
         <Box>
           <FormLabel sx={{ fontWeight: "bold", mb: 1, display: "block" }}>
             タグ（任意）
           </FormLabel>
           <Autocomplete
             multiple
-            freeSolo
-            options={tags?.map((t) => t.name) || []}
+            freeSolo={canCreateTag}
+            options={tags.map((t) => t.name)}
             loading={tags_isLoading}
             value={selectedTags}
             onChange={(_, newValue) => setSelectedTags(newValue)}
             renderTags={(value, getTagProps) =>
               value.map((option, index) => (
-                <Chip
-                  label={option}
-                  {...getTagProps({ index })}
-                  size="small"
-                  key={index}
-                />
+                <Chip label={option} {...getTagProps({ index })} size="small" key={index} />
               ))
             }
-            renderInput={(params) => <TextField {...params} />}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder={canCreateTag ? "タグを検索して追加..." : "既存タグから選択"}
+                helperText={canCreateTag ? undefined : "新しいタグを作成する権限がありません"}
+              />
+            )}
           />
         </Box>
 
-        {/* 概要 */}
         <Box>
           <FormLabel sx={{ fontWeight: "bold", mb: 1, display: "block" }}>
             概要
           </FormLabel>
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <TextField fullWidth multiline rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
         </Box>
+
         <Box>
           <FormLabel sx={{ fontWeight: "bold", mb: 1, display: "block" }}>
             自動保存
@@ -213,9 +189,8 @@ export const StockEditPages = ({ initialData }: StockEditPageProps) => {
             label="ストックリスト追加時に自動でこのリストに追加する"
           />
         </Box>
-        <Box
-          sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
-        >
+
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}>
           <Button
             onClick={() =>
               navigate({

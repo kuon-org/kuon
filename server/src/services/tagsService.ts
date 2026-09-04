@@ -1,5 +1,12 @@
 import { TagsRepository } from "../repositories/tagsRepository.js";
 
+type TagInput = {
+  name: string;
+  slug: string;
+  description?: string;
+  avatar_url?: string;
+};
+
 export class TagsService {
   constructor(private repo: TagsRepository) {}
 
@@ -19,7 +26,7 @@ export class TagsService {
     const tag = await this.repo.findTagBySlug(slug);
     if (!tag) return null;
     return {
-      id: tag?.id,
+      id: tag.id,
       name: tag.name,
       slug: tag.slug,
       avatar_url: tag.avatar_url,
@@ -29,16 +36,14 @@ export class TagsService {
     };
   }
 
-  async saveTag(tagData: {
-    name: string;
-    slug: string;
-    description?: string;
-    avatar_url?: string;
-  }) {
-    if (!tagData.name || !tagData.slug) {
-      throw new Error("名前とスラグは必須入力です");
-    }
-    return await this.repo.upsertTag(tagData);
+  async createTag(tagData: TagInput) {
+    this.validateTag(tagData);
+    return this.repo.createTag(tagData);
+  }
+
+  async updateTag(tagData: TagInput) {
+    this.validateTag(tagData);
+    return this.repo.updateTagBySlug(tagData);
   }
 
   async getFollowingTags(userId: string, page: number, limit: number) {
@@ -64,9 +69,15 @@ export class TagsService {
     if (existing) {
       await this.repo.removeFollowing(userId, slug);
       return { isFollowing: false, message: "フォロー解除しました" };
-    } else {
-      await this.repo.addFollowing(userId, slug);
-      return { isFollowing: true, message: "フォローしました" };
+    }
+
+    await this.repo.addFollowing(userId, slug);
+    return { isFollowing: true, message: "フォローしました" };
+  }
+
+  private validateTag(tagData: TagInput) {
+    if (!tagData.name || !tagData.slug) {
+      throw new Error("名前とスラグは必須入力です");
     }
   }
 }
