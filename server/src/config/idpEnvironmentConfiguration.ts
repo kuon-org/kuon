@@ -9,6 +9,7 @@ const IDP_METADATA_FIELDS = new Set([
   "BUTTON_COLOR",
   "TEXT_COLOR",
   "IS_ACTIVE",
+  "CONFIG_JSON",
 ]);
 
 const SECRET_FIELD_PATTERN = /(?:SECRET|PASSWORD|TOKEN|CERT)$/i;
@@ -26,11 +27,18 @@ export type EnvironmentIdp = {
   config: Record<string, unknown>;
 };
 
-const parseJsonField = (name: string, value: string): unknown => {
+const parseJsonObject = (
+  name: string,
+  value: string,
+): Record<string, unknown> => {
   try {
-    return JSON.parse(value);
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error();
+    }
+    return parsed as Record<string, unknown>;
   } catch {
-    throw new Error(`${name} must contain valid JSON`);
+    throw new Error(`${name} must contain a valid JSON object`);
   }
 };
 
@@ -38,12 +46,17 @@ const buildConfig = (
   key: string,
   fields: Record<string, string>,
 ): Record<string, unknown> => {
-  const config: Record<string, unknown> = {};
+  const config = fields.CONFIG_JSON
+    ? parseJsonObject(`KUON_IDP__${key}__CONFIG_JSON`, fields.CONFIG_JSON)
+    : {};
 
   for (const [field, value] of Object.entries(fields)) {
     if (IDP_METADATA_FIELDS.has(field)) continue;
     const configKey = field.toLowerCase();
-    config[configKey] = field === "MAPPING" ? parseJsonField(`KUON_IDP__${key}__MAPPING`, value) : value;
+    config[configKey] =
+      field === "MAPPING"
+        ? parseJsonObject(`KUON_IDP__${key}__MAPPING`, value)
+        : value;
   }
 
   return config;
@@ -52,18 +65,24 @@ const buildConfig = (
 export const getEnvironmentIdps = (): EnvironmentIdp[] => {
   const grouped = readGroupedEnvironmentConfiguration("KUON_IDP");
 
-  return Object.entries(grouped).map(([key, fields]) => ({
-    key,
-    provider_name: fields.PROVIDER_NAME || key,
-    display_name: fields.DISPLAY_NAME || fields.PROVIDER_NAME || key,
-    provider_type: (fields.PROVIDER_TYPE || "OIDC").toUpperCase(),
-    description: fields.DESCRIPTION,
-    logo_url: fields.LOGO_URL,
-    button_color: fields.BUTTON_COLOR,
-    text_color: fields.TEXT_COLOR,
-    is_active: fields.IS_ACTIVE !== "false",
-    config: buildConfig(key, fields),
-  }));
+  return Object.entries(grouped).map(([key, fields]) => {
+    if (fields.IS_ACTIVE !== undefined && !["true", "false"].includes(fields.IS_ACTIVE)) {
+      throw new Error(`KUON_IDP__${key}__IS_ACTIVE must be true or false`);
+    }
+
+    return {
+      key,
+      provider_name: fields.PROVIDER_NAME || key,
+      display_name: fields.DISPLAY_NAME || fields.PROVIDER_NAME || key,
+      provider_type: (fields.PROVIDER_TYPE || "OIDC").toUpperCase(),
+      description: fields.DESCRIPTION,
+      logo_url: fields.LOGO_URL,
+      button_color: fields.BUTTON_COLOR,
+      text_color: fields.TEXT_COLOR,
+      is_active: fields.IS_ACTIVE !== "false",
+      config: buildConfig(key, fields),
+    };
+  });
 };
 
 export const getEnvironmentIdp = (
