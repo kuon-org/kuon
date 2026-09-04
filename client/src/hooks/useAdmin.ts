@@ -22,8 +22,17 @@ interface Users {
 interface ServerSetting {
     key: string;
     value: string;
-    created_at: string;
-    updated_at: string;
+    updatedAt: string | null;
+    source: "environment" | "database";
+    readOnly: boolean;
+}
+
+interface IdpListItem {
+    provider_name: string;
+    display_name: string;
+    is_active: boolean;
+    source: "environment" | "database";
+    readOnly: boolean;
 }
 
 export interface AdminRuntimeStatus {
@@ -62,26 +71,25 @@ export const useAdminQuery = (provider_name?: string) => {
         queryKey: ["allIdpList"],
         queryFn: async () => {
             const { data } = await apiClient.get("/admin/idp_list");
-            return data as { provider_name: string, display_name: string, is_active: boolean }[];
+            return data as IdpListItem[];
         }
     });
 
     const idpConfMutation = useMutation({
         mutationFn: async (values: { provider_name: string;[key: string]: any }) => {
-            // config だけでなく provider_name もトップレベルに置いて送信
             const { provider_name, ...rest } = values;
             const { data } = await apiClient.post(`/admin/idp_settings`, {
                 provider_name,
-                ...rest // ここに client_id, auth_url, mapping などが入る
+                ...rest
             });
             return data;
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["idpConf", provider_name] });
+            await queryClient.invalidateQueries({ queryKey: ["allIdpList"] });
         }
     });
 
-    // 追加: Discovery 取得関数
     const fetchDiscovery = async (issuerHost: string) => {
         const { data } = await apiClient.get(`/admin/idp_settings/discovery`, {
             params: { issuer_host: issuerHost }
@@ -95,6 +103,7 @@ export const useAdminQuery = (provider_name?: string) => {
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["idpConf", provider_name] });
+            await queryClient.invalidateQueries({ queryKey: ["allIdpList"] });
         }
     })
 
@@ -111,7 +120,6 @@ export const useAdminQuery = (provider_name?: string) => {
             return await apiClient.delete(`/admin/idp_settings/${target_name}`);
         },
         onSuccess: async () => {
-            // 一覧と現在の設定キャッシュをクリア
             await queryClient.invalidateQueries({ queryKey: ["allIdpList"] });
             await queryClient.invalidateQueries({ queryKey: ["idpConf"] });
         }
@@ -130,7 +138,7 @@ export const useAdminQuery = (provider_name?: string) => {
         users_isError: getUsers.isError,
         user_toggle_active: toggleUserActive.mutate,
         user_toggle_active_isPending: toggleUserActive.isPending,
-        deleteIdpConf: idpDeleteMutation.mutateAsync, // mutateAsyncにしてawaitできるようにする
+        deleteIdpConf: idpDeleteMutation.mutateAsync,
         deleteIdp_isPending: idpDeleteMutation.isPending
     }
 }
