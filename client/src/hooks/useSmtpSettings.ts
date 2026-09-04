@@ -10,11 +10,13 @@ export type SmtpSettings = {
   fromName: string;
   passwordConfigured: boolean;
   configured: boolean;
+  source: "environment" | "database";
+  readOnly: boolean;
 };
 
 export type UpdateSmtpSettingsInput = Omit<
   SmtpSettings,
-  "passwordConfigured" | "configured"
+  "passwordConfigured" | "configured" | "source" | "readOnly"
 > & {
   password?: string;
 };

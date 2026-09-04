@@ -95,6 +95,7 @@ pnpm dev
 
 - [Architecture](docs/architecture.md) — Kuonのシステム構成・アーキテクチャ
 - [Development Guide](docs/development.md) — 開発環境の構築・開発手順
+- [Environment Configuration](docs/environment-configuration.md) — Server Settings / SMTP / OIDC / OAuth2 / SAMLを環境変数から構成する方法
 - [Contributing Guide](CONTRIBUTING.md) — ブランチ、Commit、Pull Requestなどの開発ルール
 
 ---

@@ -47,18 +47,6 @@ idpRouter.use(
  *     summary: 全IDPプロバイダー一覧取得 (管理者)
  *     tags:
  *       - IDP
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       '200':
- *         description: 成功
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items: { $ref: '#/components/schemas/IdpProvider' }
- *       '401':
- *         description: 未ログイン
  */
 idpRouter.get(
   "/admin/idp_list",
@@ -73,28 +61,6 @@ idpRouter.get(
  *     summary: OIDCディスカバリー
  *     tags:
  *       - IDP
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: issuer_host
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       '200':
- *         description: 成功
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 auth_url: { type: string }
- *                 token_url: { type: string }
- *                 user_info_url: { type: string }
- *       '400':
- *         description: issuer_hostが必要
- *       '401':
- *         description: 未ログイン
  */
 idpRouter.get(
   "/admin/idp_settings/discovery",
@@ -104,26 +70,39 @@ idpRouter.get(
 
 /**
  * @openapi
+ * /api/admin/idp_settings/{provider_name}/test:
+ *   post:
+ *     summary: 現在有効なIDP設定の疎通確認
+ *     tags:
+ *       - IDP
+ */
+idpRouter.post(
+  "/admin/idp_settings/:provider_name/test",
+  authenticateToken,
+  idpConfController.testConnectivity,
+);
+
+/**
+ * @openapi
+ * /api/admin/idp_registry/{provider_name}:
+ *   delete:
+ *     summary: 未構成・未参照のIDP Registryをクリーンアップ
+ *     tags:
+ *       - IDP
+ */
+idpRouter.delete(
+  "/admin/idp_registry/:provider_name",
+  authenticateToken,
+  idpConfController.cleanupOrphanProvider,
+);
+
+/**
+ * @openapi
  * /api/admin/idp_settings/{provider_name}:
  *   get:
  *     summary: IDP設定取得 (管理者)
  *     tags:
  *       - IDP
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: provider_name
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       '200':
- *         description: 成功
- *         content:
- *           application/json:
- *             schema: { $ref: '#/components/schemas/IdpConfiguration' }
- *       '401':
- *         description: 未ログイン
  */
 idpRouter.get(
   "/admin/idp_settings/:provider_name",
@@ -138,18 +117,6 @@ idpRouter.get(
  *     summary: IDP設定削除 (管理者)
  *     tags:
  *       - IDP
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: provider_name
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       '200':
- *         description: 成功
- *       '401':
- *         description: 未ログイン
  */
 idpRouter.delete(
   "/admin/idp_settings/:provider_name",
@@ -164,27 +131,6 @@ idpRouter.delete(
  *     summary: IDP設定保存・更新 (管理者)
  *     tags:
  *       - IDP
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               provider_name: { type: string }
- *               config: { type: object }
- *     responses:
- *       '200':
- *         description: 成功
- *         content:
- *           application/json:
- *             schema: { $ref: '#/components/schemas/IdpConfiguration' }
- *       '400':
- *         description: provider_nameが必要
- *       '401':
- *         description: 未ログイン
  */
 idpRouter.post(
   "/admin/idp_settings",
@@ -199,18 +145,6 @@ idpRouter.post(
  *     summary: IDPアクティブ状態トグル (管理者)
  *     tags:
  *       - IDP
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: provider_name
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       '200':
- *         description: 成功
- *       '401':
- *         description: 未ログイン
  */
 idpRouter.post(
   "/admin/idp_settings/toggle_active/:provider_name",
