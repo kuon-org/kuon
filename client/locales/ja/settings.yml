@@ -29,6 +29,14 @@ account:
   unlinkConfirm: "{{provider}} との連携を解除しますか？"
   unlink: "{{provider}} との連携を解除する"
   link: "{{provider}} と連携する"
+  usernameUpdated: ユーザ名を更新しました！
+  usernameUpdateFailed: ユーザ名の更新に失敗しました
+  usernameAlreadyExists: このユーザ名は既に使用されています
+  usernameReserved: このユーザ名は使用できません
+  avatarChanged: アイコンを切り替えました
+  avatarChangeFailed: 切り替えに失敗しました
+  unlinked: 連携を解除しました
+  unlinkFailed: 解除に失敗しました
 
 avatarUpload:
   title: プロフィール画像アップロード
@@ -37,12 +45,16 @@ avatarUpload:
   selectRequired: ファイルを選択してください。
   uploading: アップロード中...
   submit: 新しい画像を送信する
+  success: 画像をアップロードしました。ページリロードで反映されます。
+  failed: 画像アップロードに失敗しました
 
 profile:
   title: 公開用プロフィール
   displayName: 表示名
   bio: 自己紹介
   bioMaxLength: "自己紹介は{{max}}文字以内で入力してください。"
+  updated: プロフィールを更新しました！
+  updateFailed: プロフィールの更新に失敗しました
 
 security:
   title: セキュリティ
@@ -53,6 +65,7 @@ security:
   lastUsedAt: "最終利用: {{date}}"
   currentSessionCannotRevoke: 現在のセッションは無効化できません
   revoke: 無効化
+  sessionRevoked: 無効化しました
 
 twoFactor:
   title: 二段階認証の設定
@@ -64,6 +77,8 @@ twoFactor:
   enterCode: アプリに表示された6桁のコードを入力してください
   code: 認証コード
   register: 登録する
+  enabledSuccess: 二段階認証を有効化しました！
+  verifyFailed: 認証コードの検証に失敗しました
 
 uploads:
   title: アップロードしたファイル
@@ -87,6 +102,10 @@ apiKeys:
   neverUsed: 未利用
   revoke: 失効させる
   revokeConfirm: このAPIキーを失効させますか？この操作は取り消せません。
+  created: APIキーを作成しました。一度しか表示されないため、必ず控えてください。
+  createFailed: APIキーの作成に失敗しました
+  revoked: APIキーを失効させました
+  revokeFailed: APIキーの削除に失敗しました
   dialog:
     title: APIキーの新規発行
     name: 名前

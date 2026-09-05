@@ -24,6 +24,9 @@ twoFactor:
   invalidCode: 認証コードが正しくありません
   sessionExpired: 認証セッションの有効期限が切れました
 
+logout:
+  success: ログアウトしました
+
 forgotPassword:
   title: パスワードを忘れた場合
   unavailable: このKuonではメールによるパスワード再設定を利用できません。
