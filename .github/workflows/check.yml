@@ -1,4 +1,4 @@
-name: Check
+name: Typecheck
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  typecheck:
     runs-on: ubuntu-latest
 
     steps:
@@ -34,5 +34,5 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm --filter server exec prisma generate
 
-      - name: Run checks
-        run: pnpm run check
+      - name: Typecheck
+        run: pnpm run typecheck
