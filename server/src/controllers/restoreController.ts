@@ -1,5 +1,6 @@
 import type { Response } from "express";
 import { rm } from "node:fs/promises";
+import { AppError, ValidationError } from "../errors/AppError.js";
 import type { AuthRequest } from "../middlewares/auth.js";
 import { isAuthenticated } from "../middlewares/auth.js";
 import type { RestoreService } from "../services/restoreService.js";
@@ -14,13 +15,17 @@ export class RestoreController {
 
     try {
       if (!isAuthenticated(req)) {
-        return res.status(401).json({ message: "未ログインです" });
+        throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
       }
       if (req.user.sessionId === "apikey") {
-        return res.status(403).json({ message: "API KeyではRestoreを実行できません" });
+        throw new AppError(
+          403,
+          "RESTORE_API_KEY_FORBIDDEN",
+          "Restore is not available with API key authentication",
+        );
       }
       if (!uploadedPath) {
-        return res.status(400).json({ message: "バックアップファイルを指定してください" });
+        throw new ValidationError({ backup: ["BACKUP_FILE_REQUIRED"] });
       }
 
       void eventLogger.warning("restore.started", {
@@ -40,6 +45,8 @@ export class RestoreController {
       });
       return res.status(200).json(result);
     } catch (error) {
+      if (error instanceof AppError) throw error;
+
       console.error("❌ Restore failed:", error);
       if (isAuthenticated(req)) {
         void eventLogger.error("restore.failed", {
@@ -53,12 +60,7 @@ export class RestoreController {
           },
         });
       }
-      return res.status(500).json({
-        message:
-          error instanceof Error
-            ? `復元に失敗しました: ${error.message}`
-            : "復元に失敗しました",
-      });
+      throw new AppError(500, "RESTORE_FAILED", "Restore failed");
     } finally {
       if (uploadedPath) {
         await rm(uploadedPath, { force: true }).catch(() => {});
