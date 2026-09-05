@@ -12,7 +12,7 @@ export const Webhooks = () => {
   const { metadata, metadataLoading, metadataError, webhooks, webhooksLoading, getWebhook, getDeliveries, saveWebhook, savePending, deleteWebhook, deletePending, setWebhookActive, previewPayload, previewPending, testSend, testPending } = useWebhookUser();
   const [editingId, setEditingId] = useState<string>();
   const [mode, setMode] = useState<"builder" | "json">("builder");
-  const [name, setName] = useState("My webhook");
+  const [name, setName] = useState("");
   const [provider, setProvider] = useState<WebhookInput["provider"]>("generic");
   const [url, setUrl] = useState("");
   const [event, setEvent] = useState("article.published");
@@ -27,7 +27,7 @@ export const Webhooks = () => {
   const presets = useMemo(() => metadata?.presets.filter((preset) => preset.event === event) ?? [], [metadata, event]);
   const syncPayload = (value: unknown) => { setPayload(value); setJsonText(JSON.stringify(value, null, 2)); setJsonError(undefined); };
   const applyJson = (text: string) => { setJsonText(text); try { setPayload(JSON.parse(text)); setJsonError(undefined); } catch (error) { setJsonError(error instanceof Error ? error.message : "Invalid JSON"); } };
-  const resetEditor = () => { setEditingId(undefined); setName("My webhook"); setProvider("generic"); setUrl(""); setEvent(metadata?.events[0]?.type ?? "article.published"); setHeaders([]); syncPayload(defaultPayload); setPreview(undefined); setTestResult(undefined); setDeliveries(undefined); setMode("builder"); };
+  const resetEditor = () => { setEditingId(undefined); setName(""); setProvider("generic"); setUrl(""); setEvent(metadata?.events[0]?.type ?? "article.published"); setHeaders([]); syncPayload(defaultPayload); setPreview(undefined); setTestResult(undefined); setDeliveries(undefined); setMode("builder"); };
   const loadWebhook = async (id: string) => { const detail: WebhookDetail = await getWebhook(id); setEditingId(detail.id); setName(detail.name); setProvider(detail.provider); setUrl(detail.url); setEvent(detail.event); setHeaders(detail.headers ?? []); syncPayload(detail.payloadTemplate); setPreview(undefined); setTestResult(undefined); setDeliveries(await getDeliveries(id)); };
   const applyPreset = (id: string) => { const preset = presets.find((item) => item.id === id); if (!preset) return; setProvider(preset.provider); syncPayload(preset.payloadTemplate); };
   const input = (): UserWebhookInput => ({ name, provider, url, httpMethod: "POST", payloadTemplate: payload, event, headers, isActive: true });
@@ -44,7 +44,7 @@ export const Webhooks = () => {
     <WebhookEventProviderFields events={metadata?.events ?? []} event={event} onEventChange={setEvent} provider={provider} onProviderChange={setProvider} presets={presets} onApplyPreset={applyPreset} />
     <WebhookHeaderEditor headers={headers} onChange={setHeaders} />
     <WebhookPayloadEditor mode={mode} onModeChange={setMode} payload={payload} onPayloadChange={syncPayload} variables={variables} jsonText={jsonText} jsonError={jsonError} onJsonChange={applyJson} />
-    <Stack direction="row" spacing={1} flexWrap="wrap"><Button variant="contained" disabled={savePending || !!jsonError || !event} onClick={async () => { await saveWebhook({ id: editingId, input: input() }); resetEditor(); }}>{editingId ? t("webhooks.save") : t("webhooks.create")}</Button><Button disabled={previewPending || !!jsonError} onClick={async () => setPreview((await previewPayload({ payloadTemplate: payload, eventType: event })).payload)}>{t("webhooks.preview")}</Button><Button disabled={testPending || !url || !!jsonError} onClick={async () => setTestResult(await testSend({ url, headers, payloadTemplate: payload, eventType: event }))}>{t("webhooks.testSend")}</Button></Stack>
+    <Stack direction="row" spacing={1} flexWrap="wrap"><Button variant="contained" disabled={savePending || !!jsonError || !event || !name} onClick={async () => { await saveWebhook({ id: editingId, input: input() }); resetEditor(); }}>{editingId ? t("webhooks.save") : t("webhooks.create")}</Button><Button disabled={previewPending || !!jsonError} onClick={async () => setPreview((await previewPayload({ payloadTemplate: payload, eventType: event })).payload)}>{t("webhooks.preview")}</Button><Button disabled={testPending || !url || !!jsonError} onClick={async () => setTestResult(await testSend({ url, headers, payloadTemplate: payload, eventType: event }))}>{t("webhooks.testSend")}</Button></Stack>
     {preview !== undefined && <Paper variant="outlined" sx={{ p: 2 }}><Typography variant="subtitle2" mb={1}>{t("webhooks.preview")}</Typography><Box component="pre" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word", m: 0 }}>{JSON.stringify(preview, null, 2)}</Box></Paper>}
     {testResult && <Alert severity={testResult.ok ? "success" : "warning"}>HTTP {testResult.status} / {testResult.durationMs} ms</Alert>}
     <WebhookDeliveryLog deliveries={deliveries} />
