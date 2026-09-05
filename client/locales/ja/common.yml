@@ -1,2 +1,27 @@
 app:
   name: Kuon
+
+actions:
+  cancel: キャンセル
+  back: 戻る
+
+loading: 読み込み中
+
+errors:
+  loginRequired: ログインしてください。
+  server: サーバエラー
+
+follow:
+  follow: フォロー
+  following: フォロー中
+
+confirmLeave:
+  title: 変更を保存せずに戻りますか？
+  description: 未保存の変更は失われます。
+
+editor:
+  enableScrollSync: スクロールを同期
+  disableScrollSync: スクロール同期を解除
+
+theme:
+  label: テーマ
