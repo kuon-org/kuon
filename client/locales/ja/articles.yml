@@ -37,6 +37,41 @@ feed:
   viewTrends: トレンド一覧を見る
   recommendationHint: タグのフォローや記事のいいねをするとここに記事が表示されます
 
+editor:
+  title: 記事執筆
+  cancel: キャンセル
+  close: 閉じる
+  saveDraft: 下書き保存
+  publishSettings: 投稿設定へ
+  titleField: タイトル
+  tags: タグ
+  tagPlaceholder: Enterで追加
+  selectExistingTag: 既存タグから選択
+  noTagCreatePermission: 新しいタグを作成する権限がありません
+  summary: 要約
+  settingsTitle: 投稿設定
+  visibilityTitle: 公開範囲の設定
+  public: "🌐 全体に公開（一覧に表示）"
+  unlisted: "🔗 限定公開（URLを知っている人のみ）"
+  private: "🔒 非公開（自分のみ閲覧）"
+  back: 戻る
+  sending: 送信中...
+  savePrivate: 保存（非公開）
+  savePublic: 保存して公開
+  saveUnlisted: 保存して限定公開
+  draftSaved: 下書きを保存しました。
+  published: 記事を公開しました
+  saveFailed: 保存に失敗しました。通信状況を確認してください。
+  webhook:
+    title: Webhook通知
+    description: 公開時に選択した通知先へ記事情報を送信します。この設定はブラウザに保存されます。
+    enable: Webhookで通知する
+    noTargets: 利用可能なWebhook通知先がありません。管理者がWebhookを有効化・設定すると選択できます。
+    targets: 通知先
+    targetPlaceholder: 通知先チャネルを選択
+    multiple: 複数選択できます
+    noSelection: 通知がONですが通知先が選択されていません。このままでは通知されません。
+
 stock:
   title: ストック
   listTitle: ストックリスト
