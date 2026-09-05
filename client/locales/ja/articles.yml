@@ -79,6 +79,19 @@ editor:
     multiple: 複数選択できます
     noSelection: 通知がONですが通知先が選択されていません。このままでは通知されません。
 
+notifications:
+  createFailed: 記事の作成に失敗しました
+  updateFailed: 記事の更新に失敗しました
+  likeFailed: いいねに失敗しました。
+  liked: いいねしました
+  unliked: いいねを解除しました
+  uploadFailed: 画像アップロードに失敗しました
+  rollbackSuccess: 下書きを破棄して公開済みの状態に戻しました
+  deleteSuccess: 記事を削除しました
+  deleteFailed: 削除に失敗しました
+  restoreSuccess: 記事を復元しました
+  hardDeleteSuccess: 記事を完全に削除しました
+
 stock:
   title: ストック
   listTitle: ストックリスト
