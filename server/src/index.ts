@@ -25,6 +25,7 @@ import notificationRouter from "./routes/notificationRouter.js";
 import serverEventRouter from "./routes/serverEventRouter.js";
 import { requireSiteAuthentication } from "./middlewares/siteAccess.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
+import { normalizeApiErrorResponses } from "./middlewares/apiResponse.js";
 import { serverSettingsService } from "./services/serverSettingsService.js";
 import { runtimeMaintenanceGate } from "./services/runtimeMaintenanceService.js";
 import path from "node:path";
@@ -44,6 +45,7 @@ else if (!isNaN(Number(trustProxy))) app.set("trust proxy", Number(trustProxy));
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({ origin: "http://localhost:5050", credentials: true }));
+app.use(normalizeApiErrorResponses);
 app.use("/api-docs", ...swaggerUiMiddleware());
 
 // Public settings must stay reachable so the SPA can switch to the maintenance screen.
