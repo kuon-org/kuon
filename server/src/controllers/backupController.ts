@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import { AppError } from "../errors/AppError.js";
 import type { AuthRequest } from "../middlewares/auth.js";
 import { isAuthenticated } from "../middlewares/auth.js";
 import type { BackupService } from "../services/backupService.js";
@@ -9,12 +10,15 @@ export class BackupController {
 
   exportBackup = async (req: AuthRequest, res: Response) => {
     if (!isAuthenticated(req)) {
-      return res.status(401).json({ message: "未ログインです" });
+      throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
     }
 
-    // Backups contain sensitive instance data and must never be exportable via API keys.
     if (req.user.sessionId === "apikey") {
-      return res.status(403).json({ message: "APIキーではバックアップを作成できません" });
+      throw new AppError(
+        403,
+        "BACKUP_API_KEY_FORBIDDEN",
+        "Backup export is not available with API key authentication",
+      );
     }
 
     const startedAt = Date.now();
@@ -57,7 +61,13 @@ export class BackupController {
           });
         }
         if (error && !res.headersSent) {
-          res.status(500).json({ message: "バックアップの送信に失敗しました" });
+          res.status(500).json({
+            error: {
+              code: "BACKUP_DOWNLOAD_FAILED",
+              message: "Backup download failed",
+              details: null,
+            },
+          });
         }
       });
     } catch (error) {
@@ -70,12 +80,8 @@ export class BackupController {
           error: error instanceof Error ? error.message : String(error),
         },
       });
-      return res.status(500).json({
-        message:
-          error instanceof Error
-            ? `バックアップの作成に失敗しました: ${error.message}`
-            : "バックアップの作成に失敗しました",
-      });
+      console.error("Backup creation failed", error);
+      throw new AppError(500, "BACKUP_CREATE_FAILED", "Backup creation failed");
     }
   };
 }
