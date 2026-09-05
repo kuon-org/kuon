@@ -25,6 +25,18 @@ pickup:
   noPublishedArticles: 公開されている記事がありません
   done: 完了
 
+feed:
+  loadFailed: 記事の取得に失敗しました
+  empty: 記事がありません
+  loadingMore: 読み込み中...
+  loadMore: もっと読み込む
+  trends: トレンド
+  timeline: タイムライン
+  recommended: おすすめの記事
+  trendingArticles: トレンドの記事
+  viewTrends: トレンド一覧を見る
+  recommendationHint: タグのフォローや記事のいいねをするとここに記事が表示されます
+
 stock:
   title: ストック
   listTitle: ストックリスト
@@ -99,3 +111,17 @@ trash:
   hardDelete: 完全削除
   hardDeleteConfirm: 完全に削除しますか？
   empty: ゴミ箱は空です
+
+drafts:
+  title: 下書き一覧
+  unpublishedOnly: 未投稿の下書きのみ表示
+  published: 公開済み
+  updatedAt: "最終更新: {{date}}"
+  untitled: タイトル未設定
+  emptyBody: 本文未入力
+  edit: 編集する
+  rollback: 下書きを削除する
+  delete: 削除
+  empty: 下書きはありません
+  rollbackConfirm: "「{{title}}」の編集内容を破棄して、公開中の状態に戻しますか？"
+  deleteConfirm: "「{{title}}」を完全に削除しますか？ゴミ箱へ移動します。"
