@@ -13,7 +13,7 @@ export const UploadedImages = () => {
   if (uploadedImages_isLoading) return shell(<Typography>{t("uploads.loading")}</Typography>);
   if (!uploadedImages || uploadedImages.length === 0) return shell(<Typography>{t("uploads.empty")}</Typography>);
   const handleCopy = (src: string) => navigator.clipboard.writeText(`![](${src})`);
-  const formatDate = (value: string) => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(value));
+  const formatDate = (value: string | Date) => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(value));
 
   return (
     <Paper sx={{ mx: "auto", flex: 1, p: 3, minWidth: { md: "600px", lg: "850px" } }}>
