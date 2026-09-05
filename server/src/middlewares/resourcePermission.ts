@@ -2,22 +2,21 @@ import type { NextFunction, Response } from "express";
 import prisma from "../prisma/client.js";
 import type { PermissionKey } from "../constants/permissions.js";
 import { permissionService } from "../services/permissionService.js";
+import { AppError } from "../errors/AppError.js";
 import { AuthRequest, isAuthenticated } from "./auth.js";
 
-const deny = (res: Response, permission: PermissionKey) =>
-  res.status(403).json({
-    code: "PERMISSION_DENIED",
-    message: "この操作を実行する権限がありません",
-    permission,
-  });
+const permissionDenied = (permission: PermissionKey) =>
+  new AppError(403, "PERMISSION_DENIED", "Permission denied", { permission });
 
 export const requireArticlePermission = (
   ownPermission: PermissionKey,
   anyPermission: PermissionKey,
 ) => {
-  return async (req: AuthRequest, res: Response, next: NextFunction) => {
+  return async (req: AuthRequest, _res: Response, next: NextFunction) => {
     if (!isAuthenticated(req)) {
-      return res.status(401).json({ message: "未ログインです" });
+      return next(
+        new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required"),
+      );
     }
 
     try {
@@ -28,20 +27,27 @@ export const requireArticlePermission = (
         req.authorization = { resourceScope: "any" };
         return next();
       }
-      if (!permissions.has(ownPermission)) return deny(res, ownPermission);
+      if (!permissions.has(ownPermission)) return next(permissionDenied(ownPermission));
 
       const articleId = String(req.params.articleId);
       const article = await prisma.articles.findUnique({
         where: { id: articleId },
         select: { user_id: true },
       });
-      if (!article) return res.status(404).json({ message: "記事が見つかりません" });
-      if (article.user_id !== req.user.userId) return deny(res, ownPermission);
+      if (!article) {
+        return next(new AppError(404, "ARTICLE_NOT_FOUND", "Article not found"));
+      }
+      if (article.user_id !== req.user.userId) {
+        return next(permissionDenied(ownPermission));
+      }
       req.authorization = { resourceScope: "own" };
       return next();
     } catch (error) {
+      if (error instanceof AppError) return next(error);
       console.error("Article permission check failed", error);
-      return res.status(500).json({ message: "権限の確認に失敗しました" });
+      return next(
+        new AppError(500, "PERMISSION_CHECK_FAILED", "Permission check failed"),
+      );
     }
   };
 };
@@ -50,9 +56,11 @@ export const requireCommentPermission = (
   ownPermission: PermissionKey,
   anyPermission: PermissionKey,
 ) => {
-  return async (req: AuthRequest, res: Response, next: NextFunction) => {
+  return async (req: AuthRequest, _res: Response, next: NextFunction) => {
     if (!isAuthenticated(req)) {
-      return res.status(401).json({ message: "未ログインです" });
+      return next(
+        new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required"),
+      );
     }
 
     try {
@@ -63,20 +71,27 @@ export const requireCommentPermission = (
         req.authorization = { resourceScope: "any" };
         return next();
       }
-      if (!permissions.has(ownPermission)) return deny(res, ownPermission);
+      if (!permissions.has(ownPermission)) return next(permissionDenied(ownPermission));
 
       const commentId = String(req.params.commentId);
       const comment = await prisma.comments.findUnique({
         where: { id: commentId },
         select: { user_id: true },
       });
-      if (!comment) return res.status(404).json({ message: "コメントが見つかりません" });
-      if (comment.user_id !== req.user.userId) return deny(res, ownPermission);
+      if (!comment) {
+        return next(new AppError(404, "COMMENT_NOT_FOUND", "Comment not found"));
+      }
+      if (comment.user_id !== req.user.userId) {
+        return next(permissionDenied(ownPermission));
+      }
       req.authorization = { resourceScope: "own" };
       return next();
     } catch (error) {
+      if (error instanceof AppError) return next(error);
       console.error("Comment permission check failed", error);
-      return res.status(500).json({ message: "権限の確認に失敗しました" });
+      return next(
+        new AppError(500, "PERMISSION_CHECK_FAILED", "Permission check failed"),
+      );
     }
   };
 };

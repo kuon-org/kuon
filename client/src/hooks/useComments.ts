@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../api/client";
+import type { ApiError } from "../api/FetchHttpClient";
+import { getApiErrorMessage } from "../utils/errorHelpers";
 import { useNotify } from "./useNotify";
 
 // --- 型定義 ---
@@ -92,8 +94,8 @@ export const useComments = (articleId?: string, commentId?: string) => {
       // コメント一覧を最新に更新
       queryClient.invalidateQueries({ queryKey: ["comments", articleId] });
     },
-    onError: (err: any) => {
-      error(err.response?.data?.message ?? "コメントの投稿に失敗しました");
+    onError: (apiError: ApiError) => {
+      error(getApiErrorMessage(apiError, "コメントの投稿に失敗しました"));
     },
   });
 

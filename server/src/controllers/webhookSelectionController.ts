@@ -1,11 +1,12 @@
 import type { Response } from "express";
+import { AppError } from "../errors/AppError.js";
 import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
 import { webhookSelectionService } from "../services/webhookSelectionService.js";
 
 export class WebhookSelectionController {
   getArticlePublishedTargets = async (req: AuthRequest, res: Response) => {
     if (!isAuthenticated(req)) {
-      return res.status(401).json({ message: "未ログインです" });
+      throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
     }
 
     try {
@@ -14,10 +15,12 @@ export class WebhookSelectionController {
       );
       return res.status(200).json(targets);
     } catch (error) {
-      return res.status(500).json({
-        message:
-          error instanceof Error ? error.message : "Webhook一覧の取得に失敗しました",
-      });
+      console.error("Webhook target list fetch failed", error);
+      throw new AppError(
+        500,
+        "WEBHOOK_TARGET_LIST_FETCH_FAILED",
+        "Failed to fetch webhook targets",
+      );
     }
   };
 }

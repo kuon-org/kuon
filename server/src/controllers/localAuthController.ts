@@ -12,6 +12,7 @@ import {
   verifyPending2FAToken,
 } from "../utils/pending2faToken/index.js";
 import { getDeviceNameFromUserAgent } from "../utils/uaParser/index.js";
+import { AppError, ValidationError } from "../errors/AppError.js";
 
 export class LocalAuthController {
   constructor(
@@ -79,23 +80,23 @@ export class LocalAuthController {
         message: "ログインに成功しました",
         user: { id: user.id, username: user.username },
       });
-    } catch (error: any) {
-      if (error.message === "EmailVerificationRequired") {
-        return res.status(403).json({
-          code: "EMAIL_VERIFICATION_REQUIRED",
-          message: "メールアドレスの確認が完了していません",
-        });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "";
+      if (errorMessage === "EmailVerificationRequired") {
+        throw new AppError(
+          403,
+          "EMAIL_VERIFICATION_REQUIRED",
+          "Email verification is required",
+        );
       }
       if (
         ["InvalidCredentials", "AccountNotFound", "UserNotFound"].includes(
-          error.message,
+          errorMessage,
         )
       ) {
-        return res.status(401).json({ message: "認証に失敗しました" });
+        throw new AppError(401, "INVALID_CREDENTIALS", "Invalid credentials");
       }
-      return res
-        .status(500)
-        .json({ message: error.message || "エラーが発生しました" });
+      throw error;
     }
   };
 
@@ -104,12 +105,14 @@ export class LocalAuthController {
     const pendingToken = req.cookies.pending_2fa_token;
 
     if (!pendingToken) {
-      return res.status(401).json({
-        message: "二段階認証の有効期限が切れています。ログインをやり直してください。",
-      });
+      throw new AppError(
+        401,
+        "TWO_FACTOR_SESSION_EXPIRED",
+        "Two-factor authentication session has expired",
+      );
     }
     if (typeof token !== "string" || !/^\d{6}$/.test(token)) {
-      return res.status(400).json({ message: "6桁の認証コードを入力してください" });
+      throw new ValidationError({ token: ["TWO_FACTOR_CODE_INVALID_FORMAT"] });
     }
 
     try {
@@ -131,16 +134,16 @@ export class LocalAuthController {
         message: "二段階認証が完了しました",
         user: { id: user.id, username: user.username },
       });
-    } catch (error: any) {
-      if (error?.name === "TokenExpiredError") {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "TokenExpiredError") {
         res.clearCookie("pending_2fa_token", getCookieOptions(0));
-        return res.status(401).json({
-          message: "二段階認証の有効期限が切れています。ログインをやり直してください。",
-        });
+        throw new AppError(
+          401,
+          "TWO_FACTOR_SESSION_EXPIRED",
+          "Two-factor authentication session has expired",
+        );
       }
-      return res.status(400).json({
-        message: error.message || "認証コードの検証に失敗しました",
-      });
+      throw new AppError(400, "INVALID_2FA_CODE", "Invalid two-factor authentication code");
     }
   };
 }

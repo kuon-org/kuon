@@ -4,8 +4,9 @@ import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNotify } from "../../hooks/useNotify";
 import apiClient from "../../api/client";
-import type { HttpError } from "../../api/FetchHttpClient";
+import type { ApiError } from "../../api/FetchHttpClient";
 import type { AuthUser } from "../../hooks/useAuth";
+import { getApiErrorMessage } from "../../utils/errorHelpers";
 
 const shakeAnimation = keyframes`
   0%, 100% { transform: translateX(0); }
@@ -43,8 +44,13 @@ export const Login2FA = () => {
       // 認証済みユーザーを /login/2fa から / へリダイレクトする。
       // ここで先に navigate すると古い Router context で判定され、ちらつく。
     },
-    onError: (err: HttpError) => {
-      error(err.response?.data?.message || "認証コードが正しくありません");
+    onError: (err: ApiError) => {
+      error(
+        getApiErrorMessage(err, "認証コードが正しくありません", {
+          INVALID_2FA_CODE: "認証コードが正しくありません",
+          TWO_FACTOR_SESSION_EXPIRED: "認証セッションの有効期限が切れました",
+        }),
+      );
       setShake(true);
       setToken("");
       inputRef.current?.focus();
