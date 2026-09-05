@@ -91,13 +91,19 @@ field単位のvalidation errorは`VALIDATION_ERROR`と`details.fields`を使用�
 
 ## Server implementation
 
-新しいServerコードでは、Controllerから直接エラーJSONを組み立てず`AppError`をthrowして共通`errorHandler`へ渡します。
+Serverコードでは、Controllerから旧形式のエラーJSONを組み立てず`AppError`または`ValidationError`をthrowして共通`errorHandler`へ渡します。
 
 ```ts
 throw new AppError(404, "ARTICLE_NOT_FOUND", "Article not found");
 ```
 
-既存Controllerに残っている`res.status(...).json(...)`は移行期間中、`normalizeApiErrorResponses` middlewareによって公開レスポンスを標準形式へ正規化します。新規実装ではこの経路を増やさないでください。
+```ts
+throw new ValidationError({
+  username: ["USERNAME_TOO_SHORT"],
+});
+```
+
+multer等のcallback内などExpressのerror middlewareへ自然にthrowできない箇所では、同じ標準形式のJSONを明示的に返します。旧`{ message }`や`{ code, message }`形式との互換レイヤーは設けません。
 
 ## Client implementation
 
@@ -158,6 +164,8 @@ Client内部で完結する通知は、翻訳済みの文字列を直接`useNoti
 - HTML/OGP share response
 - redirect
 
-成功時はそれぞれのContent-Typeを使用します。ただしAPI処理中に4xx/5xxとなった場合、可能な限り標準JSON error responseを返します。
+成功時はそれぞれのContent-Typeを使用します。ただし通常のAPI処理中に4xx/5xxとなった場合、可能な限り標準JSON error responseを返します。
+
+`/share`のようにHTML/OGP自体が公開契約となるendpointは、そのContent-Typeに適したerror responseを許容します。
 
 `FetchHttpClient`は成功時の`responseType`が`blob`/`text`でも、error時は標準JSON errorを独立してparseします。
