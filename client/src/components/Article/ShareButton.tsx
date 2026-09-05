@@ -1,5 +1,6 @@
 import ShareIcon from "@mui/icons-material/Share";
 import { IconButton, Tooltip } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { useNotify } from "../../hooks/useNotify";
 
 interface ShareButtonProps {
@@ -9,6 +10,7 @@ interface ShareButtonProps {
 }
 
 export const ShareButton = ({ articleId, title, summary }: ShareButtonProps) => {
+  const { t } = useTranslation("articles");
   const { success, error } = useNotify();
 
   const handleShare = async () => {
@@ -27,27 +29,22 @@ export const ShareButton = ({ articleId, title, summary }: ShareButtonProps) => 
         if (shareError instanceof DOMException && shareError.name === "AbortError") {
           return;
         }
-
-        error("記事の共有に失敗しました");
+        error(t("share.failed"));
         return;
       }
     }
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      success("共有リンクをコピーしました");
+      success(t("share.copied"));
     } catch {
-      error("共有リンクのコピーに失敗しました");
+      error(t("share.copyFailed"));
     }
   };
 
   return (
-    <Tooltip title="共有">
-      <IconButton
-        aria-label="記事を共有"
-        onClick={handleShare}
-        sx={{ color: "text.secondary" }}
-      >
+    <Tooltip title={t("share.tooltip")}>
+      <IconButton aria-label={t("share.ariaLabel")} onClick={handleShare} sx={{ color: "text.secondary" }}>
         <ShareIcon />
       </IconButton>
     </Tooltip>
