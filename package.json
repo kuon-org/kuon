@@ -15,7 +15,7 @@
     "build:client": "pnpm --filter client build",
     "build:server": "pnpm --filter server build",
     "lint": "pnpm --filter client lint",
-    "typecheck": "pnpm --filter client exec tsc --noEmit && pnpm --filter server typecheck",
+    "typecheck": "pnpm --filter client i18n:check && pnpm --filter client exec tsc --noEmit && pnpm --filter server typecheck",
     "check": "pnpm run lint && pnpm run typecheck",
     "test:e2e": "pnpm --filter @kuon/e2e test",
     "test:e2e:ui": "pnpm --filter @kuon/e2e test:ui",

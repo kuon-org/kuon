@@ -1,0 +1,45 @@
+title: ユーザー
+
+profile:
+  loading: 読み込み中...
+  notFound: ユーザーが見つかりません
+  contribution: Contribution
+  posts: 投稿
+  following: フォロー
+  followers: フォロワー
+  edit: プロフィールを編集する
+  follow: フォローする
+  followingButton: フォロー中
+
+followers:
+  title: フォロワー
+  empty: フォロワーはいません
+
+following:
+  title: フォローしているユーザー
+  empty: フォローしているユーザーはいません
+
+followingTags:
+  title: "フォロー中のタグ({{count}})"
+  empty: フォロー中のタグはありません
+  loadError: タグの取得に失敗しました
+  viewAll: すべて見る
+  pageTitle: フォロー中のタグ
+  discoverTitle: フォローするタグを見つけよう
+  discoverAction: タグを探す
+
+articles:
+  title: 投稿した記事
+  loadError: 記事の取得に失敗しました。
+  empty: 記事がまだ投稿されていません。
+
+pickup:
+  title: ピックアップ記事
+  configure: ピックアップ記事を設定する
+  emptyHint: あなたがアピールしたい記事を設定してみましょう :)
+  configFailed: ピックアップ記事の設定に失敗しました
+
+notifications:
+  followed: フォローしました
+  unfollowed: フォロー解除しました
+  followFailed: フォローに失敗しました

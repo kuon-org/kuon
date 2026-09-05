@@ -6,6 +6,7 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 interface ConfirmLeaveDialogProps {
   open: boolean;
@@ -17,20 +18,21 @@ export const ConfirmLeaveDialog = ({
   onClose,
 }: ConfirmLeaveDialogProps) => {
   const router = useRouter();
+  const { t } = useTranslation("common");
 
   const handleConfirm = () => {
     onClose();
-    router.history.back(); // 👈 戻る処理
+    router.history.back();
   };
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>変更を保存せずに戻りますか？</DialogTitle>
-      <DialogContent>未保存の変更は失われます。</DialogContent>
+      <DialogTitle>{t("confirmLeave.title")}</DialogTitle>
+      <DialogContent>{t("confirmLeave.description")}</DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>キャンセル</Button>
+        <Button onClick={onClose}>{t("actions.cancel")}</Button>
         <Button onClick={handleConfirm} color="error" variant="contained">
-          戻る
+          {t("actions.back")}
         </Button>
       </DialogActions>
     </Dialog>

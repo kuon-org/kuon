@@ -13,6 +13,9 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "material-symbols";
 import "./styles/admonitions.css";
 import store from "./store";
+import { initializeI18n } from "./i18n";
+
+await initializeI18n();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

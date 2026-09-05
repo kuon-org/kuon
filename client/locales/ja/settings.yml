@@ -1,0 +1,187 @@
+title: 設定
+
+menu:
+  account: アカウント
+  profile: 公開用プロフィール
+  notifications: 通知
+  security: セキュリティ
+  password: パスワード変更
+  twoFactor: 二段階認証
+  apiKeys: APIキー設定
+  webhooks: Webhooks
+  uploads: アップロードしたファイル
+
+common:
+  update: 更新する
+  updating: 更新中...
+  cancel: キャンセル
+  required: "{{field}}を入力してください。"
+  maxLength: "{{max}}文字以内で入力してください。"
+
+account:
+  title: アカウント
+  avatar: 使用するアイコン
+  changeImage: 画像を変更
+  uploadImage: "＋ 画像を\nアップロード"
+  username: ユーザ名
+  usernameField: ユーザー名
+  externalServices: 外部サービス
+  unlinkConfirm: "{{provider}} との連携を解除しますか？"
+  unlink: "{{provider}} との連携を解除する"
+  link: "{{provider}} と連携する"
+  usernameUpdated: ユーザ名を更新しました！
+  usernameUpdateFailed: ユーザ名の更新に失敗しました
+  usernameAlreadyExists: このユーザ名は既に使用されています
+  usernameReserved: このユーザ名は使用できません
+  avatarChanged: アイコンを切り替えました
+  avatarChangeFailed: 切り替えに失敗しました
+  unlinked: 連携を解除しました
+  unlinkFailed: 解除に失敗しました
+
+avatarUpload:
+  title: プロフィール画像アップロード
+  chooseFile: ファイルを選択
+  notSelected: 選択されていません
+  selectRequired: ファイルを選択してください。
+  uploading: アップロード中...
+  submit: 新しい画像を送信する
+  success: 画像をアップロードしました。ページリロードで反映されます。
+  failed: 画像アップロードに失敗しました
+
+profile:
+  title: 公開用プロフィール
+  displayName: 表示名
+  bio: 自己紹介
+  bioMaxLength: "自己紹介は{{max}}文字以内で入力してください。"
+  updated: プロフィールを更新しました！
+  updateFailed: プロフィールの更新に失敗しました
+
+security:
+  title: セキュリティ
+  logoutAll: すべてログアウト
+  unknownDevice: 不明なデバイス
+  currentSession: 現在のセッション
+  createdAt: "作成: {{date}}"
+  lastUsedAt: "最終利用: {{date}}"
+  currentSessionCannotRevoke: 現在のセッションは無効化できません
+  revoke: 無効化
+  sessionRevoked: 無効化しました
+
+twoFactor:
+  title: 二段階認証の設定
+  enabled: 二段階認証は現在有効です。
+  reconfigureHint: 新しい端末で設定したい場合は、一度無効化してください。
+  disable: 無効化する
+  enable: 二段階認証を有効化する
+  scanQr: 下のQRコードをGoogle Authenticatorでスキャンしてください
+  enterCode: アプリに表示された6桁のコードを入力してください
+  code: 認証コード
+  register: 登録する
+  enabledSuccess: 二段階認証を有効化しました！
+  verifyFailed: 認証コードの検証に失敗しました
+
+uploads:
+  title: アップロードしたファイル
+  loading: 読み込み中...
+  empty: 画像はまだアップロードされていません
+  uploadedAt: "アップロード: {{date}}"
+  size: "サイズ: {{size}} KB"
+  copyUrl: 画像URLをコピー
+
+apiKeys:
+  title: APIキー設定
+  create: 新しいキーを発行
+  info: APIキーを使用すると、外部アプリケーション（VSCode拡張機能など）から本システムにアクセスできます。キーの取り扱いには十分注意してください。
+  columns:
+    name: 名前
+    prefix: プレフィックス
+    expiresAt: 有効期限
+    lastUsedAt: 最終利用
+  empty: 有効なAPIキーはありません
+  neverExpires: 無期限
+  neverUsed: 未利用
+  revoke: 失効させる
+  revokeConfirm: このAPIキーを失効させますか？この操作は取り消せません。
+  created: APIキーを作成しました。一度しか表示されないため、必ず控えてください。
+  createFailed: APIキーの作成に失敗しました
+  revoked: APIキーを失効させました
+  revokeFailed: APIキーの削除に失敗しました
+  dialog:
+    title: APIキーの新規発行
+    name: 名前
+    namePlaceholder: "例: VSCode Extension"
+    expiresAt: 有効期限
+    days: "{{count}}日間"
+    issue: 発行する
+  generated:
+    title: APIキーが生成されました
+    warning: このキーはセキュリティ上の理由により、二度と表示されません。今すぐコピーして安全な場所に保管してください。
+    saved: 保存しました
+
+webhooks:
+  title: Webhooks
+  description: 自分の記事へのコメント・いいねなどを外部サービスへ通知できます。
+  unavailable: ユーザーWebhookは現在利用できません。管理者がWebhooksとユーザーWebhookを有効にすると設定できます。
+  metadataLoading: Webhook情報を読み込み中...
+  configured: 登録済みWebhook
+  loading: 読み込み中...
+  empty: まだWebhookは登録されていません。
+  new: 新しいWebhook
+  edit: Webhookを編集
+  active: 有効
+  disabled: 無効
+  editAction: 編集
+  deleteAction: 削除
+  deleteConfirm: "Webhook「{{name}}」を削除しますか？"
+  name: 名前
+  url: Webhook URL
+  save: 変更を保存
+  create: Webhookを作成
+  preview: プレビュー
+  testSend: テスト送信
+  event: イベント
+  applyTemplate: テンプレートを適用...
+  headers: ヘッダー
+  addHeader: ヘッダーを追加
+  headerName: 名前
+  headerValue: 値
+  secretValue: シークレット値
+  secret: シークレット
+  builder: ビジュアルビルダー
+  jsonHint: 選択したイベントで利用可能なKuon variableを使用できます
+  deliveryLogs: 配信ログ
+  noDeliveries: 配信履歴はありません。
+  failed: 失敗
+  variables: 利用可能な変数
+  copyVariable: "{{label}} — クリックでコピー"
+  payloadStructure: ペイロード構造
+  property: プロパティ
+  item: アイテム
+  nodeTypes:
+    variable: Kuon値
+    text: テキスト
+    number: 数値
+    boolean: 真偽値
+    null: Null
+    object: オブジェクト {}
+    array: 配列 []
+
+notifications:
+  title: 通知
+  description: Kuon内で受け取る通知の種類を設定します。
+  dedupeInfo: 同じ記事が複数の条件に該当した場合でも、通知は1件にまとめて表示されます。
+  articleComment:
+    label: 記事へのコメント
+    description: 自分の記事にコメントが投稿されたときに通知します。
+  commentReply:
+    label: コメントへの返信
+    description: 自分のコメントに返信が投稿されたときに通知します。
+  followedTagArticle:
+    label: フォロー中タグの新着記事
+    description: フォローしているタグが付いた記事が公開されたときに通知します。
+  followedUserArticle:
+    label: フォロー中ユーザーの新着記事
+    description: フォローしているユーザーが記事を公開したときに通知します。
+  userFollow:
+    label: ユーザーからのフォロー
+    description: ほかのユーザーからフォローされたときに通知します。

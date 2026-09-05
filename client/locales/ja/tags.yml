@@ -1,0 +1,43 @@
+title: タグ
+
+list:
+  title: タグ一覧
+  loadError: タグの取得中にエラーが発生しました。
+  articleCount: "（{{count}}記事）"
+
+detail:
+  loadError: タグ情報の取得中にエラーが発生しました。
+  notFound: "{{slug}}タグは存在しません"
+  edit: タグを編集する
+  articles: 記事
+  followers: フォロワー
+  follow: フォローする
+  following: フォロー中
+
+articles:
+  title: "{{name}}に関する記事一覧"
+  empty: まだ記事が投稿されていません
+  emptyHint: 初めての投稿者になりましょう！
+
+following:
+  title: フォロー中のタグ
+  collapse: 閉じる
+  showMore: もっと見る
+
+edit:
+  title: "{{name}}の編集"
+  displayName: 表示名
+  slug: 識別子
+  uploadIcon: タグアイコンをアップロード
+  description: タグの説明
+  update: 更新する
+  updating: 更新中...
+  success: タグを更新しました
+  uploadError: 画像のアップロードに失敗しました
+  permissionDenied: 権限がありません
+
+notifications:
+  followed: フォローしました
+  unfollowed: フォロー解除しました
+  saveFailed: タグの保存に失敗しました
+  uploadFailed: 画像アップロードに失敗しました

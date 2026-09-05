@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import apiClient from "../api/client";
 import type { ApiError } from "../api/FetchHttpClient";
 import { getApiErrorMessage } from "../utils/errorHelpers";
@@ -26,19 +27,18 @@ interface Ranking {
   contribution: number;
 }
 export const useUserQuery = (username?: string, userId?: string) => {
+  const { t } = useTranslation("users");
   const { error, notify } = useNotify();
   const queryClient = useQueryClient();
-  // ユーザ情報を取得
   const userQuery = useQuery<User>({
     queryKey: ["user", username],
     queryFn: async () => {
       const res = await apiClient.get<User>(`/users/${username}`);
       return res.data;
     },
-    enabled: !!username, // usernameがある場合のみ実行
+    enabled: !!username,
   });
 
-  // userQueryの結果がある場合にのみ実行
   const isFollowingQuery = useQuery({
     queryKey: ["isFollowing", userQuery.data?.id],
     queryFn: async () => {
@@ -47,7 +47,7 @@ export const useUserQuery = (username?: string, userId?: string) => {
       );
       return res.data;
     },
-    enabled: !!queryClient.getQueryData(["authUser"]), // userIdが確定してから実行
+    enabled: !!queryClient.getQueryData(["authUser"]),
   });
 
   const getFollowing = useQuery({
@@ -97,10 +97,10 @@ export const useUserQuery = (username?: string, userId?: string) => {
         queryKey: ["follower", followeeId],
       });
 
-      notify(data.isFollow ? "フォローしました" : "フォロー解除しました");
+      notify(data.isFollow ? t("notifications.followed") : t("notifications.unfollowed"));
     },
     onError: () => {
-      error("フォローに失敗しました");
+      error(t("notifications.followFailed"));
     },
   });
   const getPickupArticles = useQuery({
@@ -123,7 +123,7 @@ export const useUserQuery = (username?: string, userId?: string) => {
       queryClient.invalidateQueries({ queryKey: ["pickup", userId] });
     },
     onError: (apiError: ApiError) => {
-      error(getApiErrorMessage(apiError, "ピックアップ記事の設定に失敗しました"));
+      error(getApiErrorMessage(apiError, t("pickup.configFailed")));
     },
   });
 
@@ -138,7 +138,7 @@ export const useUserQuery = (username?: string, userId?: string) => {
       queryClient.invalidateQueries({ queryKey: ["pickup", userId] });
     },
     onError: (apiError: ApiError) => {
-      error(getApiErrorMessage(apiError, "ピックアップ記事の設定に失敗しました"));
+      error(getApiErrorMessage(apiError, t("pickup.configFailed")));
     },
   });
 

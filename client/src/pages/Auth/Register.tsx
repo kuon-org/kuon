@@ -5,43 +5,48 @@ import { TextField, Button, Box, Typography, Container, Alert, CircularProgress 
 import { NavButton } from "../../components/common/NavButton";
 import { useNavigate } from "@tanstack/react-router";
 import { useLocalRegistrationStatus } from "../../hooks/useLocalRegistrationStatus";
+import apiClient from "../../api/client";
+import type { ApiError } from "../../api/FetchHttpClient";
+import { getApiErrorMessage } from "../../utils/errorHelpers";
+import { useTranslation } from "react-i18next";
 
 type UsernameRules = { reservedUsernames: string[]; pattern: string; minLength: number; maxLength: number };
 
+type RegisterForm = { username: string; displayName: string; email: string; password: string };
+
 const Register: React.FC = () => {
+  const { t } = useTranslation("auth");
   const [serverError, setServerError] = useState<string | null>(null);
   const navigate = useNavigate();
   const registrationStatus = useLocalRegistrationStatus();
   const usernameRulesQuery = useQuery({
     queryKey: ["username-rules"],
     queryFn: async (): Promise<UsernameRules> => {
-      const response = await fetch("/api/username-rules");
-      if (!response.ok) throw new Error("ユーザー名ルールの取得に失敗しました");
-      return response.json();
+      const { data } = await apiClient.get<UsernameRules>("/username-rules");
+      return data;
     },
     staleTime: Infinity,
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await fetch("/api/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "サーバーエラーが発生しました");
-      }
-      return response.json();
-    },
+    mutationFn: async (data: RegisterForm) => apiClient.post("/register", data),
     onSuccess: (_data, variables) => {
       if (registrationStatus.data?.emailVerificationRequired) {
-        window.location.assign(
-          `/verify-email?email=${encodeURIComponent(variables.email)}`,
-        );
+        window.location.assign(`/verify-email?email=${encodeURIComponent(variables.email)}`);
         return;
       }
-      alert("登録が完了しました！");
+      alert(t("register.success"));
       navigate({ to: "/login" });
     },
-    onError: (error: Error) => setServerError(error.message),
+    onError: (error: ApiError) => {
+      setServerError(
+        getApiErrorMessage(error, t("register.registrationFailed"), {
+          USERNAME_ALREADY_EXISTS: t("register.usernameAlreadyExists"),
+          USERNAME_RESERVED: t("register.usernameReserved"),
+          EMAIL_ALREADY_EXISTS: t("register.emailAlreadyExists"),
+        }),
+      );
+    },
   });
 
   const form = useForm({
@@ -50,24 +55,16 @@ const Register: React.FC = () => {
   });
 
   if (registrationStatus.isLoading) {
-    return (
-      <Container maxWidth="xs">
-        <Box sx={{ mt: 8, display: "flex", justifyContent: "center" }}>
-          <CircularProgress />
-        </Box>
-      </Container>
-    );
+    return <Container maxWidth="xs"><Box sx={{ mt: 8, display: "flex", justifyContent: "center" }}><CircularProgress /></Box></Container>;
   }
 
   if (registrationStatus.data?.localAccountRegistrationAllowed === false) {
     return (
       <Container maxWidth="xs">
         <Box sx={{ mt: 8, display: "flex", flexDirection: "column", gap: 2 }}>
-          <Typography component="h1" variant="h5">新規アカウント登録</Typography>
-          <Alert severity="info">
-            このKuonではローカルアカウントの新規登録が無効化されています。外部IdPを利用するか、管理者にお問い合わせください。
-          </Alert>
-          <NavButton path="/login" message="ログイン画面へ戻る" variant="outlined" fullWidth />
+          <Typography component="h1" variant="h5">{t("register.title")}</Typography>
+          <Alert severity="info">{t("register.disabled")}</Alert>
+          <NavButton path="/login" message={t("login.back")} variant="outlined" fullWidth />
         </Box>
       </Container>
     );
@@ -76,45 +73,37 @@ const Register: React.FC = () => {
   return (
     <Container maxWidth="xs">
       <Box sx={{ mt: 8, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <Typography component="h1" variant="h5">新規アカウント登録</Typography>
-        {registrationStatus.data?.initialSetup && (
-          <Alert severity="info" sx={{ mt: 2, width: "100%" }}>
-            初期セットアップ中です。最初に作成したアカウントには管理者権限が付与されます。
-          </Alert>
-        )}
-        {registrationStatus.data?.emailVerificationRequired && (
-          <Alert severity="info" sx={{ mt: 2, width: "100%" }}>
-            登録後、入力したメールアドレス宛に確認メールを送信します。確認完了後にログインできます。
-          </Alert>
-        )}
+        <Typography component="h1" variant="h5">{t("register.title")}</Typography>
+        {registrationStatus.data?.initialSetup && <Alert severity="info" sx={{ mt: 2, width: "100%" }}>{t("register.initialSetup")}</Alert>}
+        {registrationStatus.data?.emailVerificationRequired && <Alert severity="info" sx={{ mt: 2, width: "100%" }}>{t("register.emailVerificationRequired")}</Alert>}
         <form onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); form.handleSubmit(); }} style={{ width: "100%", marginTop: "24px" }}>
           {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
-          {usernameRulesQuery.isError && <Alert severity="warning" sx={{ mb: 2 }}>ユーザー名ルールを取得できませんでした。登録時にサーバー側で検証されます。</Alert>}
+          {usernameRulesQuery.isError && <Alert severity="warning" sx={{ mb: 2 }}>{t("register.usernameRulesUnavailable")}</Alert>}
           <form.Field name="username" validators={{ onChange: ({ value }) => {
             const normalized = value.trim().toLowerCase();
-            if (!normalized) return "ユーザー名は必須です";
+            if (!normalized) return t("validation.required", { field: t("register.username") });
             const rules = usernameRulesQuery.data;
-            if (rules && (normalized.length < rules.minLength || normalized.length > rules.maxLength)) return `ユーザー名は${rules.minLength}〜${rules.maxLength}文字で入力してください`;
-            if (rules?.pattern && !new RegExp(rules.pattern).test(normalized)) return "英数字・_・-が使用できます。先頭と末尾は英数字にしてください";
-            if (rules?.reservedUsernames.includes(normalized)) return "このユーザー名は予約されているため使用できません";
+            if (rules && (normalized.length < rules.minLength || normalized.length > rules.maxLength)) return t("validation.usernameLength", { min: rules.minLength, max: rules.maxLength });
+            if (rules?.pattern && !new RegExp(rules.pattern).test(normalized)) return t("validation.usernamePattern");
+            if (rules?.reservedUsernames.includes(normalized)) return t("validation.usernameReserved");
             return undefined;
           } }}>
-            {(field) => <TextField fullWidth label="ユーザー名" margin="normal" value={field.state.value} inputProps={{ maxLength: usernameRulesQuery.data?.maxLength }} onBlur={() => { field.handleChange(field.state.value.trim().toLowerCase()); field.handleBlur(); }} onChange={(e) => field.handleChange(e.target.value.toLowerCase())} error={field.state.meta.errors.length > 0} helperText={field.state.meta.errors.join(", ") || "4〜16文字。英数字・_・-が使用できます（先頭・末尾は英数字）"} disabled={usernameRulesQuery.isLoading} />}
+            {(field) => <TextField fullWidth label={t("register.username")} margin="normal" value={field.state.value} inputProps={{ maxLength: usernameRulesQuery.data?.maxLength }} onBlur={() => { field.handleChange(field.state.value.trim().toLowerCase()); field.handleBlur(); }} onChange={(e) => field.handleChange(e.target.value.toLowerCase())} error={field.state.meta.errors.length > 0} helperText={field.state.meta.errors.join(", ") || t("validation.usernameHint", { min: usernameRulesQuery.data?.minLength ?? 4, max: usernameRulesQuery.data?.maxLength ?? 16 })} disabled={usernameRulesQuery.isLoading} />}
           </form.Field>
-          <form.Field name="displayName" validators={{ onChange: ({ value }) => !value ? "表示名は必須です" : undefined }}>
-            {(field) => <TextField fullWidth label="表示名" margin="normal" value={field.state.value} onBlur={field.handleBlur} onChange={(e) => field.handleChange(e.target.value)} error={field.state.meta.errors.length > 0} helperText={field.state.meta.errors.join(", ")} />}
+          <form.Field name="displayName" validators={{ onChange: ({ value }) => !value ? t("validation.required", { field: t("register.displayName") }) : undefined }}>
+            {(field) => <TextField fullWidth label={t("register.displayName")} margin="normal" value={field.state.value} onBlur={field.handleBlur} onChange={(e) => field.handleChange(e.target.value)} error={field.state.meta.errors.length > 0} helperText={field.state.meta.errors.join(", ")} />}
           </form.Field>
-          <form.Field name="email" validators={{ onChange: ({ value }) => { if (!value) return "メールアドレスは必須です"; if (!/^\S+@\S+$/.test(value)) return "無効な形式です"; return undefined; } }}>
-            {(field) => <TextField fullWidth label="メールアドレス" type="email" margin="normal" value={field.state.value} onBlur={field.handleBlur} onChange={(e) => field.handleChange(e.target.value)} error={field.state.meta.errors.length > 0} helperText={field.state.meta.errors.join(", ")} />}
+          <form.Field name="email" validators={{ onChange: ({ value }) => { if (!value) return t("validation.required", { field: t("register.email") }); if (!/^\S+@\S+$/.test(value)) return t("validation.invalidFormat"); return undefined; } }}>
+            {(field) => <TextField fullWidth label={t("register.email")} type="email" margin="normal" value={field.state.value} onBlur={field.handleBlur} onChange={(e) => field.handleChange(e.target.value)} error={field.state.meta.errors.length > 0} helperText={field.state.meta.errors.join(", ")} />}
           </form.Field>
-          <form.Field name="password" validators={{ onChange: ({ value }) => value.length < 6 ? "パスワードは6文字以上必要です" : undefined }}>
-            {(field) => <TextField fullWidth label="パスワード" type="password" margin="normal" value={field.state.value} onBlur={field.handleBlur} onChange={(e) => field.handleChange(e.target.value)} error={field.state.meta.errors.length > 0} helperText={field.state.meta.errors.join(", ")} />}
+          <form.Field name="password" validators={{ onChange: ({ value }) => value.length < 6 ? t("validation.passwordMinLength", { min: 6 }) : undefined }}>
+            {(field) => <TextField fullWidth label={t("register.password")} type="password" margin="normal" value={field.state.value} onBlur={field.handleBlur} onChange={(e) => field.handleChange(e.target.value)} error={field.state.meta.errors.length > 0} helperText={field.state.meta.errors.join(", ")} />}
           </form.Field>
           <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-            {([canSubmit, isSubmitting]) => <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }} disabled={!canSubmit || mutation.isPending}>{mutation.isPending || isSubmitting ? <CircularProgress size={24} /> : "登録する"}</Button>}
+            {([canSubmit, isSubmitting]) => <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }} disabled={!canSubmit || mutation.isPending}>{mutation.isPending || isSubmitting ? <CircularProgress size={24} /> : t("register.submit")}</Button>}
           </form.Subscribe>
         </form>
-        <NavButton path="/login" message="アカウントをお持ちですか？ログインはこちら" variant="outlined" fullWidth />
+        <NavButton path="/login" message={t("register.loginLink")} variant="outlined" fullWidth />
       </Box>
     </Container>
   );

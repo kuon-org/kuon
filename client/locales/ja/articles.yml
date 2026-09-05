@@ -1,0 +1,190 @@
+title: 記事
+
+status:
+  loading: 読み込み中…
+  notFound: 記事が見つかりません
+
+dates:
+  updatedAt: "最終更新日 {{date}}"
+  createdAt: "投稿日 {{date}}"
+
+share:
+  tooltip: 共有
+  ariaLabel: 記事を共有
+  failed: 記事の共有に失敗しました
+  copied: 共有リンクをコピーしました
+  copyFailed: 共有リンクのコピーに失敗しました
+
+pickup:
+  title: ピックアップ記事の設定
+  fetchFailed: 記事の取得に失敗しました
+  picked: ピックアップ中
+  notSet: 未設定
+  loadMore: もっと読み込む
+  allLoaded: すべての記事を表示しました
+  noPublishedArticles: 公開されている記事がありません
+  done: 完了
+
+feed:
+  loadFailed: 記事の取得に失敗しました
+  empty: 記事がありません
+  loadingMore: 読み込み中...
+  loadMore: もっと読み込む
+  trends: トレンド
+  timeline: タイムライン
+  recommended: おすすめの記事
+  trendingArticles: トレンドの記事
+  viewTrends: トレンド一覧を見る
+  recommendationHint: タグのフォローや記事のいいねをするとここに記事が表示されます
+
+search:
+  title: 詳細検索
+  results: "「{{query}}」の検索結果"
+  enterKeyword: 検索キーワードを入力してください
+  noResults: 一致する記事が見つかりませんでした。
+  noResultsHint: キーワードを変えるか、タグ指定などを試してみてください。
+  placeholder: タイトル、本文、接頭辞で検索...
+  filters:
+    tag: タグ (tag:)
+    user: ユーザー (user:)
+    title: タイトル指定 (title:)
+    created: 記事作成日 (created:>=2026/01/01)
+    updated: 記事更新日 (updated:>=2026/01/01)
+
+editor:
+  title: 記事執筆
+  cancel: キャンセル
+  close: 閉じる
+  saveDraft: 下書き保存
+  publishSettings: 投稿設定へ
+  titleField: タイトル
+  tags: タグ
+  tagPlaceholder: Enterで追加
+  selectExistingTag: 既存タグから選択
+  noTagCreatePermission: 新しいタグを作成する権限がありません
+  permissionDenied: 編集権限がありません
+  summary: 要約
+  settingsTitle: 投稿設定
+  visibilityTitle: 公開範囲の設定
+  public: "🌐 全体に公開（一覧に表示）"
+  unlisted: "🔗 限定公開（URLを知っている人のみ）"
+  private: "🔒 非公開（自分のみ閲覧）"
+  back: 戻る
+  sending: 送信中...
+  savePrivate: 保存（非公開）
+  savePublic: 保存して公開
+  saveUnlisted: 保存して限定公開
+  draftSaved: 下書きを保存しました。
+  published: 記事を公開しました
+  saveFailed: 保存に失敗しました。通信状況を確認してください。
+  webhook:
+    title: Webhook通知
+    description: 公開時に選択した通知先へ記事情報を送信します。この設定はブラウザに保存されます。
+    enable: Webhookで通知する
+    noTargets: 利用可能なWebhook通知先がありません。管理者がWebhookを有効化・設定すると選択できます。
+    targets: 通知先
+    targetPlaceholder: 通知先チャネルを選択
+    multiple: 複数選択できます
+    noSelection: 通知がONですが通知先が選択されていません。このままでは通知されません。
+
+notifications:
+  createFailed: 記事の作成に失敗しました
+  updateFailed: 記事の更新に失敗しました
+  likeFailed: いいねに失敗しました。
+  liked: いいねしました
+  unliked: いいねを解除しました
+  uploadFailed: 画像アップロードに失敗しました
+  rollbackSuccess: 下書きを破棄して公開済みの状態に戻しました
+  deleteSuccess: 記事を削除しました
+  deleteFailed: 削除に失敗しました
+  restoreSuccess: 記事を復元しました
+  hardDeleteSuccess: 記事を完全に削除しました
+
+stock:
+  title: ストック
+  listTitle: ストックリスト
+  all: すべてのストック
+  newList: 新しいリストを作成
+  latest: 新着ストックリスト
+  loadMore: もっと見る
+  allLoaded: すべてのリストを表示しました
+  notFound: リストが見つかりませんでした。
+  noDescription: 説明はありません。
+  noBio: 自己紹介はありません。
+  articleCount: "{{count}} 記事"
+  articleCountLong: "{{count}} 件の記事"
+  createdAt: "作成日: {{date}}"
+  author: 作成者
+  follow: フォロー
+  following: フォロー中
+  stock: ストック
+  unstock: ストック解除
+  saveTo: 保存先...
+  settings: ストックリストの設定
+  searchResult: "「{{query}}」の条件に一致する記事を表示中"
+  searchPlaceholder: リスト内を詳細検索...
+  searchTag: タグ (tag:)
+  searchUser: ユーザー (user:)
+  searchTitle: タイトル指定 (title:)
+  searchCreated: 記事作成日 (created:>=2026/01/01)
+  searchUpdated: 記事更新日 (updated:>=2026/01/01)
+  create:
+    title: ストックリストを作成する
+    name: ストックリストの名前
+    namePlaceholder: "例: 後で読む、技術ネタ"
+    required: 必須
+    optional: 任意
+    visibility: 公開範囲
+    private: "🔒 非公開"
+    limited: "🔗 限定公開"
+    public: "🌐 公開"
+    tags: タグの設定
+    tagSearch: タグを検索して追加...
+    selectExistingTag: 既存タグから選択
+    noTagCreatePermission: 新しいタグを作成する権限がありません
+    description: 概要
+    descriptionPlaceholder: どのようなリストか説明を入力
+    cancel: キャンセル
+    creating: 作成中...
+    create: 作成
+  edit:
+    title: ストックリストを編集
+    newTitle: 新しいストックリストを作成
+    delete: このリストを削除
+    deleteConfirm: 本当にこのストックリストを削除しますか？
+    name: リスト名
+    namePlaceholder: "例: 後で読む"
+    visibility: 公開範囲
+    tags: タグ（任意）
+    description: 概要
+    autoSave: 自動保存
+    autoSaveDescription: ストックリスト追加時に自動でこのリストに追加する
+    cancel: キャンセル
+    creating: 作成中...
+    updating: 更新中...
+    save: リストを保存する
+
+trash:
+  title: ゴミ箱
+  description: ここにある記事は公開されません。復元するか、完全に削除してください。
+  loading: 読み込み中...
+  untitled: 無題の記事
+  deletedAt: "削除日: {{date}}"
+  restore: 復元
+  hardDelete: 完全削除
+  hardDeleteConfirm: 完全に削除しますか？
+  empty: ゴミ箱は空です
+
+drafts:
+  title: 下書き一覧
+  unpublishedOnly: 未投稿の下書きのみ表示
+  published: 公開済み
+  updatedAt: "最終更新: {{date}}"
+  untitled: タイトル未設定
+  emptyBody: 本文未入力
+  edit: 編集する
+  rollback: 下書きを削除する
+  delete: 削除
+  empty: 下書きはありません
+  rollbackConfirm: "「{{title}}」の編集内容を破棄して、公開中の状態に戻しますか？"
+  deleteConfirm: "「{{title}}」を完全に削除しますか？ゴミ箱へ移動します。"

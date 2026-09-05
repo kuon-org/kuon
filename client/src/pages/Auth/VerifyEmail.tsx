@@ -1,16 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Container, TextField, Typography } from "@mui/material";
 import { NavButton } from "../../components/common/NavButton";
+import apiClient from "../../api/client";
+import type { ApiError } from "../../api/FetchHttpClient";
+import { getApiErrorMessage } from "../../utils/errorHelpers";
+import { useTranslation } from "react-i18next";
 
 const VerifyEmail = () => {
+  const { t } = useTranslation("auth");
   const search = useMemo(() => new URLSearchParams(window.location.search), []);
   const token = search.get("token") ?? "";
   const [email, setEmail] = useState(search.get("email") ?? "");
@@ -24,21 +21,17 @@ const VerifyEmail = () => {
 
     const verify = async () => {
       try {
-        const response = await fetch(
-          `/api/email-verification/verify?token=${encodeURIComponent(token)}`,
-        );
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.message || "メール確認に失敗しました");
-        setSuccess(data.message || "メールアドレスの確認が完了しました");
+        await apiClient.get(`/email-verification/verify?token=${encodeURIComponent(token)}`);
+        setSuccess(t("verifyEmail.verifySuccess"));
       } catch (e) {
-        setError(e instanceof Error ? e.message : "メール確認に失敗しました");
+        setError(getApiErrorMessage(e as ApiError, t("verifyEmail.verifyFailed")));
       } finally {
         setVerifying(false);
       }
     };
 
     void verify();
-  }, [token]);
+  }, [t, token]);
 
   const resend = async () => {
     if (!email.trim()) return;
@@ -46,16 +39,10 @@ const VerifyEmail = () => {
     setSuccess(null);
     setResending(true);
     try {
-      const response = await fetch("/api/email-verification/resend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.message || "確認メールの再送に失敗しました");
-      setSuccess(data.message || "確認メールを再送しました");
+      await apiClient.post("/email-verification/resend", { email: email.trim() });
+      setSuccess(t("verifyEmail.resendSuccess"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "確認メールの再送に失敗しました");
+      setError(getApiErrorMessage(e as ApiError, t("verifyEmail.resendFailed")));
     } finally {
       setResending(false);
     }
@@ -64,51 +51,25 @@ const VerifyEmail = () => {
   return (
     <Container maxWidth="xs">
       <Box sx={{ mt: 8, display: "flex", flexDirection: "column", gap: 2 }}>
-        <Typography component="h1" variant="h5">
-          メールアドレスの確認
-        </Typography>
-
+        <Typography component="h1" variant="h5">{t("verifyEmail.title")}</Typography>
         {verifying && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <CircularProgress size={24} />
-            <Typography>確認しています...</Typography>
+            <Typography>{t("verifyEmail.verifying")}</Typography>
           </Box>
         )}
-
         {success && <Alert severity="success">{success}</Alert>}
         {error && <Alert severity="error">{error}</Alert>}
-
-        {!token && (
-          <Alert severity="info">
-            登録したメールアドレス宛に確認メールを送信しました。メール内のURLを開いて確認を完了してください。
-          </Alert>
-        )}
-
+        {!token && <Alert severity="info">{t("verifyEmail.sent")}</Alert>}
         {!verifying && !success && (
           <>
-            <TextField
-              fullWidth
-              type="email"
-              label="登録メールアドレス"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-            <Button
-              variant="outlined"
-              disabled={!email.trim() || resending}
-              onClick={resend}
-            >
-              {resending ? <CircularProgress size={22} /> : "確認メールを再送"}
+            <TextField fullWidth type="email" label={t("verifyEmail.email")} value={email} onChange={(event) => setEmail(event.target.value)} />
+            <Button variant="outlined" disabled={!email.trim() || resending} onClick={resend}>
+              {resending ? <CircularProgress size={22} /> : t("verifyEmail.resend")}
             </Button>
           </>
         )}
-
-        <NavButton
-          path="/login"
-          message={success ? "ログインする" : "ログイン画面へ戻る"}
-          variant="contained"
-          fullWidth
-        />
+        <NavButton path="/login" message={success ? t("login.loginNow") : t("login.back")} variant="contained" fullWidth />
       </Box>
     </Container>
   );

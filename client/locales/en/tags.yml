@@ -1,0 +1,43 @@
+title: Tags
+
+list:
+  title: Tags
+  loadError: Failed to load tags.
+  articleCount: "({{count}} articles)"
+
+detail:
+  loadError: Failed to load tag information.
+  notFound: "Tag {{slug}} does not exist"
+  edit: Edit tag
+  articles: Articles
+  followers: Followers
+  follow: Follow
+  following: Following
+
+articles:
+  title: "Articles about {{name}}"
+  empty: No articles have been published yet
+  emptyHint: Be the first to publish one!
+
+following:
+  title: Followed tags
+  collapse: Collapse
+  showMore: Show more
+
+edit:
+  title: "Edit {{name}}"
+  displayName: Display name
+  slug: Identifier
+  uploadIcon: Upload tag icon
+  description: Tag description
+  update: Update
+  updating: Updating...
+  success: Tag updated
+  uploadError: Failed to upload image
+  permissionDenied: You do not have permission
+
+notifications:
+  saveFailed: Failed to save the tag
+  followed: Followed tag
+  unfollowed: Unfollowed tag
+  uploadFailed: Failed to upload image

@@ -18,10 +18,13 @@ import {
   MenuItem,
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 import { AuthSettingForm } from "./AuthSettingForm";
 import { useAdminQuery } from "../../../hooks/useAdmin";
+import { useNotify } from "../../../hooks/useNotify";
 
 export const SAMLManager = () => {
+  const { t } = useTranslation("admin");
   const {
     allIdps,
     allIdps_isLoading,
@@ -35,6 +38,7 @@ export const SAMLManager = () => {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const { error } = useNotify();
 
   const samlItems =
     allIdps?.filter(
@@ -54,6 +58,7 @@ export const SAMLManager = () => {
 
     try {
       if (allIdps?.some((provider) => provider.provider_name === newName)) {
+        error(t("security.idp.manager.duplicate"));
         return;
       }
       await updateIdpConf({
@@ -68,15 +73,16 @@ export const SAMLManager = () => {
       await refetchIdpList();
       setSelectedProvider(newName);
       setNewSuffix("");
-    } catch (error) {
-      console.error("Failed to create SAML provider:", error);
+    } catch (error_) {
+      console.error("Failed to create SAML provider:", error_);
+      error(t("security.idp.manager.addFailed"));
     } finally {
       setIsAdding(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!selectedProvider) return;
+    if (deleteConfirmText !== "delete me" || !selectedProvider) return;
     setIsDeleting(true);
     try {
       await deleteIdpConf(selectedProvider);
@@ -84,6 +90,8 @@ export const SAMLManager = () => {
       setOpenDeleteModal(false);
       setDeleteConfirmText("");
       await refetchIdpList();
+    } catch {
+      error(t("security.idp.manager.deleteFailed"));
     } finally {
       setIsDeleting(false);
     }
@@ -95,10 +103,10 @@ export const SAMLManager = () => {
     <Box>
       <Box sx={{ display: "flex", gap: 2, mb: 3, alignItems: "flex-end" }}>
         <FormControl sx={{ minWidth: 200 }} size="small">
-          <InputLabel>編集するプロバイダ</InputLabel>
+          <InputLabel>{t("security.idp.manager.editProvider")}</InputLabel>
           <Select
             value={selectedProvider}
-            label="編集するプロバイダ"
+            label={t("security.idp.manager.editProvider")}
             onChange={(e) => setSelectedProvider(e.target.value)}
           >
             {samlProviders.map((name) => (
@@ -109,9 +117,9 @@ export const SAMLManager = () => {
           </Select>
         </FormControl>
         <TextField
-          label="新規SAMLプロバイダ追加"
+          label={t("security.idp.manager.addProvider", { type: "SAML" })}
           variant="standard"
-          placeholder="keycloak など"
+          placeholder={t("security.idp.manager.samlPlaceholder")}
           value={newSuffix}
           onChange={(e) => setNewSuffix(e.target.value)}
           disabled={isAdding}
@@ -127,7 +135,9 @@ export const SAMLManager = () => {
           onClick={handleAdd}
           disabled={!newSuffix || isAdding}
         >
-          {isAdding ? "追加中..." : "追加"}
+          {isAdding
+            ? t("security.idp.manager.adding")
+            : t("security.idp.manager.add")}
         </Button>
         <Button
           variant="outlined"
@@ -136,7 +146,7 @@ export const SAMLManager = () => {
           onClick={() => setOpenDeleteModal(true)}
           disabled={!selectedProvider || selectedItem?.readOnly}
         >
-          削除
+          {t("common.delete")}
         </Button>
       </Box>
 
@@ -153,13 +163,15 @@ export const SAMLManager = () => {
         open={openDeleteModal}
         onClose={() => !isDeleting && setOpenDeleteModal(false)}
       >
-        <DialogTitle>SAML設定の削除</DialogTitle>
+        <DialogTitle>
+          {t("security.idp.manager.deleteTitle", { type: "SAML" })}
+        </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
-            プロバイダ <strong>{selectedProvider}</strong>{" "}
-            を削除しようとしています。
-            この操作は取り消せません。実行するには以下に{" "}
-            <strong>delete me</strong> と入力してください。
+            {t("security.idp.manager.deleteDescription", {
+              provider: selectedProvider,
+              confirmation: "delete me",
+            })}
           </DialogContentText>
           <TextField
             fullWidth
@@ -170,13 +182,17 @@ export const SAMLManager = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDeleteModal(false)}>キャンセル</Button>
+          <Button onClick={() => setOpenDeleteModal(false)}>
+            {t("common.cancel")}
+          </Button>
           <Button
             onClick={handleDelete}
             color="error"
             disabled={deleteConfirmText !== "delete me" || isDeleting}
           >
-            {isDeleting ? "削除中..." : "完全に削除する"}
+            {isDeleting
+              ? t("security.idp.manager.deleting")
+              : t("security.idp.manager.deletePermanently")}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,9 +1,10 @@
 // src/hooks/useAuth.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import apiClient from "../api/client";
 import type { ApiError } from "../api/FetchHttpClient";
-import { useState } from "react";
 import authClient from "../api/authClient";
+import i18n from "../i18n";
 import { useNotify } from "./useNotify";
 import { getApiErrorMessage } from "../utils/errorHelpers";
 
@@ -24,12 +25,12 @@ export interface AuthUser {
 }
 
 export interface ActiveIdp {
-  provider_name: string; // "twitter"
-  display_name: string; // "Twitter（X）"
-  provider_type: string; // "OAUTH2"
-  logo_url?: string; // アイコンURL
-  button_color?: string; // ボタン背景色
-  text_color?: string; // ボタン文字色
+  provider_name: string;
+  display_name: string;
+  provider_type: string;
+  logo_url?: string;
+  button_color?: string;
+  text_color?: string;
 }
 
 interface UploadedImage {
@@ -92,7 +93,6 @@ export interface SessionDevice {
   is_current: boolean;
 }
 
-// --- APIキー関連の型 ---
 export interface UserApiKey {
   id: string;
   name: string;
@@ -104,7 +104,7 @@ export interface UserApiKey {
 }
 
 export interface CreateApiKeyResponse extends UserApiKey {
-  rawKey: string; // 作成時のみ返却される生キー
+  rawKey: string;
 }
 
 export const useAuthQuery = () => {
@@ -112,22 +112,21 @@ export const useAuthQuery = () => {
   const { error, success, notify } = useNotify();
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  // ✅ 現在のログインユーザーを取得
+
   const authQuery = useQuery({
     queryKey: ["authUser"],
     queryFn: async () => {
       try {
         const { data } = await apiClient.get<AuthUser>("/me");
-        return data; // { id, username } など
+        return data;
       } catch {
-        return null; // 未ログインなら null
+        return null;
       }
     },
     retry: false,
     staleTime: Infinity,
   });
 
-  // ✅ ログイン用ミューテーション
   const loginMutation = useMutation({
     mutationFn: async (value: any) => {
       const { data } = await apiClient.post("/login", value);
@@ -135,41 +134,43 @@ export const useAuthQuery = () => {
     },
     onSuccess: async (data) => {
       if (data.requires2FA) {
-        // 🔹 2FA入力ステップに切り替える
-        sessionStorage.setItem("pendingEmail", data.email); // ← 後でverifyで使う
+        sessionStorage.setItem("pendingEmail", data.email);
       } else {
-        notify("ログインしました！");
+        notify(i18n.t("auth:login.success"));
         await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       }
     },
     onError: (apiError: ApiError) => {
       setServerError(
-        getApiErrorMessage(apiError, "認証に失敗しました", {
-          EMAIL_VERIFICATION_REQUIRED: "メールアドレスの確認が必要です",
+        getApiErrorMessage(apiError, i18n.t("auth:login.failed"), {
+          EMAIL_VERIFICATION_REQUIRED: i18n.t(
+            "auth:login.emailVerificationRequired",
+          ),
         }),
       );
     },
   });
+
   const loginVerify2FA = useMutation({
     mutationFn: async ({ email, token }: { email: string; token: string }) => {
       const { data } = await apiClient.post("/login/verify-2fa", {
         email,
         token,
       });
-      return data; // { success: true, user }
+      return data;
     },
     onSuccess: async () => {
-      success("二段階認証が完了しました！");
-      // 認証成功後、ユーザー情報を再取得してトップへ
+      success(i18n.t("auth:twoFactor.success"));
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       sessionStorage.removeItem("pendingEmail");
     },
     onError: (apiError: ApiError) => {
-      error(getApiErrorMessage(apiError, "認証コードが正しくありません"));
+      error(
+        getApiErrorMessage(apiError, i18n.t("auth:twoFactor.invalidCode")),
+      );
     },
   });
 
-  // ✅ ログアウト用ミューテーション
   const logoutMutation = useMutation({
     mutationFn: async () => {
       await apiClient.post("/logout");
@@ -179,7 +180,7 @@ export const useAuthQuery = () => {
       queryClient.removeQueries({ queryKey: ["uploaded_images"] });
       queryClient.removeQueries({ queryKey: ["userAvatars"] });
       queryClient.clear();
-      success("ログアウトしました");
+      success(i18n.t("auth:logout.success"));
     },
   });
 
@@ -195,15 +196,19 @@ export const useAuthQuery = () => {
       const { data } = await apiClient.post("/users/settings/verify2fa", {
         token,
       });
-      return data; // { success: true, message: "二段階認証を有効化しました" }
+      return data;
     },
-    onSuccess: async (data) => {
-      success(data.message || "二段階認証を有効化しました！");
-      // ログイン情報を再取得
+    onSuccess: async () => {
+      success(i18n.t("settings:twoFactor.enabledSuccess"));
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
     onError: (apiError: ApiError) => {
-      error(getApiErrorMessage(apiError, "認証コードの検証に失敗しました"));
+      error(
+        getApiErrorMessage(
+          apiError,
+          i18n.t("settings:twoFactor.verifyFailed"),
+        ),
+      );
     },
   });
 
@@ -213,7 +218,6 @@ export const useAuthQuery = () => {
       return data;
     },
     onSuccess: async () => {
-      // ログイン情報を再取得
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
   });
@@ -243,12 +247,14 @@ export const useAuthQuery = () => {
       });
       return data;
     },
-    onSuccess: async (data) => {
-      setSuccessMessage(data.message || "プロフィールを更新しました！");
+    onSuccess: async () => {
+      setSuccessMessage(i18n.t("settings:profile.updated"));
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
     onError: (apiError: ApiError) => {
-      setServerError(getApiErrorMessage(apiError, "プロフィールの更新に失敗しました"));
+      setServerError(
+        getApiErrorMessage(apiError, i18n.t("settings:profile.updateFailed")),
+      );
     },
   });
 
@@ -259,16 +265,22 @@ export const useAuthQuery = () => {
       });
       return data;
     },
-    onSuccess: async (data) => {
-      setSuccessMessage(data.message || "ユーザ名を更新しました！");
+    onSuccess: async () => {
+      setSuccessMessage(i18n.t("settings:account.usernameUpdated"));
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
     onError: (apiError: ApiError) => {
       setServerError(
-        getApiErrorMessage(apiError, "ユーザ名の更新に失敗しました", {
-          USERNAME_ALREADY_EXISTS: "このユーザ名は既に使用されています",
-          USERNAME_RESERVED: "このユーザ名は使用できません",
-        }),
+        getApiErrorMessage(
+          apiError,
+          i18n.t("settings:account.usernameUpdateFailed"),
+          {
+            USERNAME_ALREADY_EXISTS: i18n.t(
+              "settings:account.usernameAlreadyExists",
+            ),
+            USERNAME_RESERVED: i18n.t("settings:account.usernameReserved"),
+          },
+        ),
       );
     },
   });
@@ -287,7 +299,6 @@ export const useAuthQuery = () => {
       const { data } = await apiClient.get<UserIdpinfo>(
         "/users/settings/idpinfo",
       );
-      // ※ APIが { user_avatars: [...] } の形式で返す場合は data.user_avatars にしてください
       return data;
     },
     enabled: !!authQuery.data,
@@ -299,13 +310,12 @@ export const useAuthQuery = () => {
       return data;
     },
     onSuccess: async () => {
-      // ユーザー情報（ヘッダー等のアイコン）とアバター一覧を再取得
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
-      success("アイコンを切り替えました");
+      success(i18n.t("settings:account.avatarChanged"));
     },
     onError: () => {
-      error("切り替えに失敗しました");
+      error(i18n.t("settings:account.avatarChangeFailed"));
     },
   });
 
@@ -315,15 +325,17 @@ export const useAuthQuery = () => {
       return data;
     },
     onSuccess: async () => {
-      // ユーザー情報、アバター一覧、IDP連携情報をすべて更新
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
-      success("連携を解除しました");
+      success(i18n.t("settings:account.unlinked"));
     },
     onError: (apiError: ApiError) => {
-      error(getApiErrorMessage(apiError, "解除に失敗しました"));
+      error(
+        getApiErrorMessage(apiError, i18n.t("settings:account.unlinkFailed")),
+      );
     },
   });
+
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -335,11 +347,13 @@ export const useAuthQuery = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
-      success("画像をアップロードしました。ページリロードで反映されます。");
+      success(i18n.t("settings:avatarUpload.success"));
     },
     onError: (apiError: ApiError) => {
       console.error(apiError);
-      error(getApiErrorMessage(apiError, "画像アップロードに失敗しました"));
+      error(
+        getApiErrorMessage(apiError, i18n.t("settings:avatarUpload.failed")),
+      );
     },
   });
 
@@ -363,7 +377,7 @@ export const useAuthQuery = () => {
       queryClient.removeQueries({ queryKey: ["uploaded_images"] });
       queryClient.removeQueries({ queryKey: ["userAvatars"] });
       queryClient.clear();
-      success("ログアウトしました");
+      success(i18n.t("auth:logout.success"));
     },
   });
 
@@ -374,22 +388,19 @@ export const useAuthQuery = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["device"] });
-      success("無効化しました");
+      success(i18n.t("settings:security.sessionRevoked"));
     },
   });
 
-  // --- APIキー一覧の取得 ---
   const getApiKeysQuery = useQuery({
     queryKey: ["user-api-keys"],
     queryFn: async () => {
       const res = await apiClient.get<UserApiKey[]>("/users/settings/api-keys");
       return res.data;
     },
-    // ログイン中のみ有効にする
     enabled: !!authQuery.data,
   });
 
-  // --- APIキーの作成 ---
   const createApiKeyMutation = useMutation({
     mutationFn: async (data: { name: string; expiresAt: string | null }) => {
       const res = await apiClient.post<CreateApiKeyResponse>(
@@ -400,16 +411,15 @@ export const useAuthQuery = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-api-keys"] });
-      success(
-        "APIキーを作成しました。一度しか表示されないため、必ず控えてください。",
-      );
+      success(i18n.t("settings:apiKeys.created"));
     },
     onError: (apiError: ApiError) => {
-      error(getApiErrorMessage(apiError, "APIキーの作成に失敗しました"));
+      error(
+        getApiErrorMessage(apiError, i18n.t("settings:apiKeys.createFailed")),
+      );
     },
   });
 
-  // --- APIキーの削除（失効） ---
   const revokeApiKeyMutation = useMutation({
     mutationFn: async (apiKeyId: string) => {
       const res = await apiClient.delete(
@@ -419,10 +429,12 @@ export const useAuthQuery = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-api-keys"] });
-      success("APIキーを失効させました");
+      success(i18n.t("settings:apiKeys.revoked"));
     },
     onError: (apiError: ApiError) => {
-      error(getApiErrorMessage(apiError, "APIキーの削除に失敗しました"));
+      error(
+        getApiErrorMessage(apiError, i18n.t("settings:apiKeys.revokeFailed")),
+      );
     },
   });
 
@@ -472,7 +484,7 @@ export const useAuthQuery = () => {
 
     apiKeys: getApiKeysQuery.data,
     apiKeys_isLoading: getApiKeysQuery.isLoading,
-    createApiKey: createApiKeyMutation.mutateAsync, // rawKeyを受け取るためにmutateAsyncが便利
+    createApiKey: createApiKeyMutation.mutateAsync,
     createApiKey_isPending: createApiKeyMutation.isPending,
     revokeApiKey: revokeApiKeyMutation.mutate,
     revokeApiKey_isPending: revokeApiKeyMutation.isPending,

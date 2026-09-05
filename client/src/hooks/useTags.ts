@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import apiClient from "../api/client";
 import type { ApiError } from "../api/FetchHttpClient";
 import { getApiErrorMessage } from "../utils/errorHelpers";
@@ -49,10 +50,10 @@ export interface UserFollowingTags {
 }
 
 export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
+  const { t } = useTranslation("tags");
   const queryClient = useQueryClient();
   const { notify, error } = useNotify();
   const { user } = useAuthQuery();
-  // 🏷 タグ一覧取得
   const tagsQuery = useQuery<Tags[]>({
     queryKey: ["tags"],
     queryFn: async () => {
@@ -70,19 +71,17 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
     enabled: !!slug,
   });
 
-  // ➕ タグの作成・更新 (Upsert)
   const upsertTagMutation = useMutation({
     mutationFn: async (newTag: UpsertTagData) => {
       const res = await apiClient.post("/tags", newTag);
       return res.data;
     },
     onSuccess: () => {
-      // タグ一覧のキャッシュを更新
       queryClient.invalidateQueries({ queryKey: ["tags"] });
       queryClient.invalidateQueries({ queryKey: ["tag", slug] });
     },
     onError: (apiError: ApiError) => {
-      error(getApiErrorMessage(apiError, "タグの保存に失敗しました"));
+      error(getApiErrorMessage(apiError, t("notifications.saveFailed")));
     },
   });
 
@@ -127,7 +126,7 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
       queryClient.invalidateQueries({
         queryKey: ["myFollowingTags"],
       });
-      notify(data.isFollowing ? "フォローしました" : "フォロー解除しました");
+      notify(data.isFollowing ? t("notifications.followed") : t("notifications.unfollowed"));
     },
   });
 
@@ -145,7 +144,7 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
       return res.data as { url: string };
     },
     onError: (apiError: ApiError) => {
-      error(getApiErrorMessage(apiError, "画像アップロードに失敗しました"));
+      error(getApiErrorMessage(apiError, t("notifications.uploadFailed")));
     },
   });
 
@@ -156,7 +155,7 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
     tag: getTagQuery.data,
     tag_isLoading: getTagQuery.isLoading,
     tag_isError: getTagQuery.isError,
-    upsertTag: upsertTagMutation.mutateAsync, // 非同期で待機できるようにAsync版を公開
+    upsertTag: upsertTagMutation.mutateAsync,
     isUpserting: upsertTagMutation.isPending,
     uploadImage: uploadImageMutation.mutateAsync,
     followingTags: getFollowingTags.data,

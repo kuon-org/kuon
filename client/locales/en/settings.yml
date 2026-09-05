@@ -1,0 +1,187 @@
+title: Settings
+
+menu:
+  account: Account
+  profile: Public profile
+  notifications: Notifications
+  security: Security
+  password: Change password
+  twoFactor: Two-factor authentication
+  apiKeys: API key settings
+  webhooks: Webhooks
+  uploads: Uploaded files
+
+common:
+  update: Update
+  updating: Updating...
+  cancel: Cancel
+  required: "Please enter {{field}}."
+  maxLength: "Please enter no more than {{max}} characters."
+
+account:
+  title: Account
+  avatar: Avatar
+  changeImage: Change image
+  uploadImage: "+ Upload\nimage"
+  username: Username
+  usernameField: Username
+  externalServices: External services
+  unlinkConfirm: "Unlink {{provider}}?"
+  unlink: "Unlink {{provider}}"
+  link: "Link {{provider}}"
+  usernameUpdated: Username updated!
+  usernameUpdateFailed: Failed to update username
+  usernameAlreadyExists: This username is already in use
+  usernameReserved: This username cannot be used
+  avatarChanged: Avatar changed
+  avatarChangeFailed: Failed to change avatar
+  unlinked: Account unlinked
+  unlinkFailed: Failed to unlink account
+
+avatarUpload:
+  title: Upload profile image
+  chooseFile: Choose file
+  notSelected: No file selected
+  selectRequired: Please select a file.
+  uploading: Uploading...
+  submit: Upload new image
+  success: Image uploaded. Reload the page to see the change.
+  failed: Failed to upload image
+
+profile:
+  title: Public profile
+  displayName: Display name
+  bio: Bio
+  bioMaxLength: "Bio must be no more than {{max}} characters."
+  updated: Profile updated!
+  updateFailed: Failed to update profile
+
+security:
+  title: Security
+  logoutAll: Sign out everywhere
+  unknownDevice: Unknown device
+  currentSession: Current session
+  createdAt: "Created: {{date}}"
+  lastUsedAt: "Last used: {{date}}"
+  currentSessionCannotRevoke: The current session cannot be revoked
+  revoke: Revoke
+  sessionRevoked: Session revoked
+
+twoFactor:
+  title: Two-factor authentication
+  enabled: Two-factor authentication is currently enabled.
+  reconfigureHint: To set up a new device, disable two-factor authentication first.
+  disable: Disable
+  enable: Enable two-factor authentication
+  scanQr: Scan the QR code below with Google Authenticator
+  enterCode: Enter the 6-digit code shown in your authenticator app
+  code: Authentication code
+  register: Enable
+  enabledSuccess: Two-factor authentication enabled!
+  verifyFailed: Failed to verify the authentication code
+
+uploads:
+  title: Uploaded files
+  loading: Loading...
+  empty: No images have been uploaded yet
+  uploadedAt: "Uploaded: {{date}}"
+  size: "Size: {{size}} KB"
+  copyUrl: Copy image URL
+
+apiKeys:
+  title: API key settings
+  create: Create new key
+  info: API keys allow external applications such as VS Code extensions to access Kuon. Keep your keys secure.
+  columns:
+    name: Name
+    prefix: Prefix
+    expiresAt: Expires
+    lastUsedAt: Last used
+  empty: No active API keys
+  neverExpires: Never
+  neverUsed: Never used
+  revoke: Revoke
+  revokeConfirm: Revoke this API key? This action cannot be undone.
+  created: API key created. It will only be shown once, so make sure to save it.
+  createFailed: Failed to create API key
+  revoked: API key revoked
+  revokeFailed: Failed to revoke API key
+  dialog:
+    title: Create API key
+    name: Name
+    namePlaceholder: "Example: VS Code Extension"
+    expiresAt: Expiration
+    days: "{{count}} days"
+    issue: Create
+  generated:
+    title: API key created
+    warning: For security reasons, this key will never be shown again. Copy it now and store it somewhere safe.
+    saved: Done
+
+webhooks:
+  title: Webhooks
+  description: Send notifications about comments, likes, and other activity on your articles to external services.
+  unavailable: User webhooks are currently unavailable. An administrator must enable both Webhooks and user webhooks.
+  metadataLoading: Loading webhook information...
+  configured: Configured webhooks
+  loading: Loading...
+  empty: No webhooks have been configured yet.
+  new: New webhook
+  edit: Edit webhook
+  active: Active
+  disabled: Disabled
+  editAction: Edit
+  deleteAction: Delete
+  deleteConfirm: "Delete webhook ‘{{name}}’?"
+  name: Name
+  url: Webhook URL
+  save: Save changes
+  create: Create webhook
+  preview: Preview
+  testSend: Send test
+  event: Event
+  applyTemplate: Apply template...
+  headers: Headers
+  addHeader: Add header
+  headerName: Name
+  headerValue: Value
+  secretValue: Secret value
+  secret: Secret
+  builder: Visual builder
+  jsonHint: You can use Kuon variables available for the selected event
+  deliveryLogs: Delivery logs
+  noDeliveries: No delivery history.
+  failed: Failed
+  variables: Available variables
+  copyVariable: "{{label}} — click to copy"
+  payloadStructure: Payload structure
+  property: Property
+  item: Item
+  nodeTypes:
+    variable: Kuon value
+    text: Text
+    number: Number
+    boolean: Boolean
+    null: Null
+    object: Object {}
+    array: Array []
+
+notifications:
+  title: Notifications
+  description: Choose which notifications you receive in Kuon.
+  dedupeInfo: If an article matches multiple conditions, Kuon combines them into a single notification.
+  articleComment:
+    label: Comments on your articles
+    description: Notify you when someone comments on one of your articles.
+  commentReply:
+    label: Replies to your comments
+    description: Notify you when someone replies to one of your comments.
+  followedTagArticle:
+    label: New articles with followed tags
+    description: Notify you when an article with a tag you follow is published.
+  followedUserArticle:
+    label: New articles from followed users
+    description: Notify you when a user you follow publishes an article.
+  userFollow:
+    label: New followers
+    description: Notify you when another user follows you.

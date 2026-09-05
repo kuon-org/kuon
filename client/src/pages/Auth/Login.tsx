@@ -20,8 +20,10 @@ import apiClient from "../../api/client";
 import type { ApiError } from "../../api/FetchHttpClient";
 import { useNotify } from "../../hooks/useNotify";
 import { getApiErrorMessage } from "../../utils/errorHelpers";
+import { useTranslation } from "react-i18next";
 
 const Login: React.FC = () => {
+  const { t } = useTranslation("auth");
   const { activeIdp, activeIdp_isLoading } = useAuthQuery();
   const registrationStatus = useLocalRegistrationStatus();
   const passwordResetStatus = useQuery({
@@ -52,15 +54,15 @@ const Login: React.FC = () => {
         return;
       }
 
-      notify("ログインしました！");
+      notify(t("login.success"));
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       navigate({ to: "/" });
     },
     onError: (error: ApiError) => {
       setServerError(
-        getApiErrorMessage(error, "認証に失敗しました", {
-          EMAIL_VERIFICATION_REQUIRED: "メールアドレスの確認が必要です",
-          INVALID_CREDENTIALS: "メールアドレス、ユーザーネーム、またはパスワードが正しくありません",
+        getApiErrorMessage(error, t("login.failed"), {
+          EMAIL_VERIFICATION_REQUIRED: t("login.emailVerificationRequired"),
+          INVALID_CREDENTIALS: t("login.invalidCredentials"),
         }),
       );
       setNeedsEmailVerification(error.code === "EMAIL_VERIFICATION_REQUIRED");
@@ -85,7 +87,7 @@ const Login: React.FC = () => {
   return (
     <Container maxWidth="md">
       <Typography variant="h4" sx={{ mt: 4 }}>
-        Kuon にログイン
+        {t("login.title")}
       </Typography>
       <Divider sx={{ mt: 4 }} />
       <Box
@@ -94,10 +96,7 @@ const Login: React.FC = () => {
           display: "flex",
           justifyContent: "center",
           gap: 4,
-          flexDirection: {
-            xs: "column",
-            sm: "row",
-          },
+          flexDirection: { xs: "column", sm: "row" },
         }}
       >
         {activeIdp && activeIdp.length > 0 && (
@@ -119,7 +118,7 @@ const Login: React.FC = () => {
                 href={`/auth/${idp.provider_name}/login`}
                 sx={{ mb: 1 }}
               >
-                {idp.display_name} でログイン
+                {t("login.idpButton", { provider: idp.display_name })}
               </Button>
             ))}
           </Box>
@@ -128,9 +127,8 @@ const Login: React.FC = () => {
         <Divider orientation={activeIdp ? "horizontal" : "vertical"} flexItem />
         <Box sx={{ flex: 1 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            ローカルアカウントでログイン
+            {t("login.localTitle")}
           </Typography>
-
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -138,27 +136,17 @@ const Login: React.FC = () => {
               form.handleSubmit();
             }}
           >
-            {serverError && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {serverError}
-              </Alert>
-            )}
+            {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
             {needsEmailVerification && (
               <Box sx={{ mb: 2 }}>
-                <NavButton
-                  fullWidth
-                  path="/verify-email"
-                  message="確認メールを再送する"
-                  variant="outlined"
-                />
+                <NavButton fullWidth path="/verify-email" message={t("login.resendVerification")} variant="outlined" />
               </Box>
             )}
-
             <form.Field name="identifier">
               {(field) => (
                 <TextField
                   fullWidth
-                  label="メールアドレスまたはユーザーネーム"
+                  label={t("login.identifier")}
                   margin="normal"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
@@ -167,12 +155,11 @@ const Login: React.FC = () => {
                 />
               )}
             </form.Field>
-
             <form.Field name="password">
               {(field) => (
                 <TextField
                   fullWidth
-                  label="パスワード"
+                  label={t("login.password")}
                   type="password"
                   margin="normal"
                   value={field.state.value}
@@ -182,10 +169,7 @@ const Login: React.FC = () => {
                 />
               )}
             </form.Field>
-
-            <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-            >
+            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isSubmitting]) => (
                 <Button
                   type="submit"
@@ -194,33 +178,19 @@ const Login: React.FC = () => {
                   sx={{ mt: 3, mb: 2 }}
                   disabled={!canSubmit || loginMutation.isPending}
                 >
-                  {loginMutation.isPending || isSubmitting ? (
-                    <CircularProgress size={24} />
-                  ) : (
-                    "ログイン"
-                  )}
+                  {loginMutation.isPending || isSubmitting ? <CircularProgress size={24} /> : t("login.submit")}
                 </Button>
               )}
             </form.Subscribe>
           </form>
           {passwordResetStatus.data?.available && (
             <Box sx={{ mb: 2 }}>
-              <NavButton
-                fullWidth
-                path="/forgot-password"
-                message="パスワードを忘れた場合"
-                variant="text"
-              />
+              <NavButton fullWidth path="/forgot-password" message={t("login.forgotPassword")} variant="text" />
             </Box>
           )}
           {localRegistrationAllowed && (
             <Box sx={{ display: "flex", mx: "auto", justifyContent: "center" }}>
-              <NavButton
-                fullWidth
-                path="/register"
-                message="アカウント作成はこちら"
-                variant="outlined"
-              />
+              <NavButton fullWidth path="/register" message={t("login.createAccount")} variant="outlined" />
             </Box>
           )}
         </Box>
