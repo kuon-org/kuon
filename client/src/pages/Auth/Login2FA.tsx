@@ -7,6 +7,7 @@ import apiClient from "../../api/client";
 import type { ApiError } from "../../api/FetchHttpClient";
 import type { AuthUser } from "../../hooks/useAuth";
 import { getApiErrorMessage } from "../../utils/errorHelpers";
+import { useTranslation } from "react-i18next";
 
 const shakeAnimation = keyframes`
   0%, 100% { transform: translateX(0); }
@@ -21,6 +22,7 @@ const blinkAnimation = keyframes`
 `;
 
 export const Login2FA = () => {
+  const { t } = useTranslation("auth");
   const [token, setToken] = useState("");
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const [shake, setShake] = useState<boolean>(false);
@@ -30,25 +32,20 @@ export const Login2FA = () => {
 
   const verifyMutation = useMutation({
     mutationFn: async (totpToken: string) => {
-      const { data } = await apiClient.post("/login/verify-2fa", {
-        token: totpToken,
-      });
+      const { data } = await apiClient.post("/login/verify-2fa", { token: totpToken });
       return data;
     },
     onSuccess: async () => {
       const { data: user } = await apiClient.get<AuthUser>("/me");
       queryClient.setQueryData(["authUser"], user);
       sessionStorage.removeItem("pendingEmail");
-      success("二段階認証が完了しました！");
-      // authUser の更新を受けた AppRouter が router.invalidate() を行い、
-      // 認証済みユーザーを /login/2fa から / へリダイレクトする。
-      // ここで先に navigate すると古い Router context で判定され、ちらつく。
+      success(t("twoFactor.success"));
     },
     onError: (err: ApiError) => {
       error(
-        getApiErrorMessage(err, "認証コードが正しくありません", {
-          INVALID_2FA_CODE: "認証コードが正しくありません",
-          TWO_FACTOR_SESSION_EXPIRED: "認証セッションの有効期限が切れました",
+        getApiErrorMessage(err, t("twoFactor.invalidCode"), {
+          INVALID_2FA_CODE: t("twoFactor.invalidCode"),
+          TWO_FACTOR_SESSION_EXPIRED: t("twoFactor.sessionExpired"),
         }),
       );
       setShake(true);
@@ -66,29 +63,15 @@ export const Login2FA = () => {
   const handleChange = (value: string) => {
     const numericValue = value.replace(/\D/g, "").slice(0, 6);
     setToken(numericValue);
-    if (numericValue.length === 6) {
-      handleVerify(numericValue);
-    }
+    if (numericValue.length === 6) handleVerify(numericValue);
   };
 
   return (
-    <Paper
-      sx={{
-        mx: "auto",
-        mt: 8,
-        p: 4,
-        maxWidth: "400px",
-        textAlign: "center",
-      }}
-    >
-      <Typography variant="h6" gutterBottom>
-        二段階認証コードを入力
-      </Typography>
-
+    <Paper sx={{ mx: "auto", mt: 8, p: 4, maxWidth: "400px", textAlign: "center" }}>
+      <Typography variant="h6" gutterBottom>{t("twoFactor.title")}</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Google Authenticator に表示された6桁のコードを入力してください。
+        {t("twoFactor.description")}
       </Typography>
-
       <input
         ref={inputRef}
         value={token}
@@ -98,69 +81,27 @@ export const Login2FA = () => {
         inputMode="numeric"
         maxLength={6}
         autoComplete="one-time-code"
-        style={{
-          position: "absolute",
-          width: 1,
-          height: 1,
-          opacity: 0,
-          pointerEvents: "none",
-        }}
+        style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
       />
-
       <Box
         onClick={() => inputRef.current?.focus()}
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "8px",
-          mb: 3,
-          cursor: "text",
-          animation: shake ? `${shakeAnimation} 0.4s ease-in-out` : "none",
-        }}
+        sx={{ display: "flex", justifyContent: "center", gap: "8px", mb: 3, cursor: "text", animation: shake ? `${shakeAnimation} 0.4s ease-in-out` : "none" }}
       >
         {Array.from({ length: 6 }).map((_, index) => {
           const value = token[index];
           const isActive = isFocused && index === token.length;
-
           return (
             <div
               key={index}
-              style={{
-                width: "48px",
-                height: "56px",
-                borderRadius: "10px",
-                border: `2px solid ${isActive ? "#1976d2" : "#ccc"}`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "24px",
-                fontWeight: 500,
-                transition: "border-color 0.15s",
-              }}
+              style={{ width: "48px", height: "56px", borderRadius: "10px", border: `2px solid ${isActive ? "#1976d2" : "#ccc"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", fontWeight: 500, transition: "border-color 0.15s" }}
             >
-              {value ??
-                (isActive && (
-                  <Box
-                    component="span"
-                    sx={{
-                      animation: `${blinkAnimation} 1s step-end infinite`,
-                    }}
-                  >
-                    |
-                  </Box>
-                ))}
+              {value ?? (isActive && <Box component="span" sx={{ animation: `${blinkAnimation} 1s step-end infinite` }}>|</Box>)}
             </div>
           );
         })}
       </Box>
-
-      <Button
-        variant="contained"
-        fullWidth
-        onClick={() => handleVerify(token)}
-        disabled={verifyMutation.isPending || token.length < 6}
-      >
-        認証する
+      <Button variant="contained" fullWidth onClick={() => handleVerify(token)} disabled={verifyMutation.isPending || token.length < 6}>
+        {t("twoFactor.submit")}
       </Button>
     </Paper>
   );

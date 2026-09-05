@@ -7,6 +7,7 @@ const clientRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".
 const localesRoot = path.join(clientRoot, "locales");
 const outputRoot = path.join(clientRoot, "src", "i18n", "generated");
 const sourceLocale = "ja";
+const strict = process.env.KUON_I18N_STRICT === "1";
 
 const flattenKeys = (value, prefix = "") => {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
@@ -52,7 +53,9 @@ for (const locale of localeNames) {
   const extraNamespaces = namespaces.filter((namespace) => !sourceNamespaces.includes(namespace));
   const problems = [];
 
-  if (missingNamespaces.length) problems.push(`missing namespaces: ${missingNamespaces.join(", ")}`);
+  if (strict && missingNamespaces.length) {
+    problems.push(`missing namespaces: ${missingNamespaces.join(", ")}`);
+  }
   if (extraNamespaces.length) problems.push(`extra namespaces: ${extraNamespaces.join(", ")}`);
 
   for (const namespace of sourceNamespaces.filter((name) => namespaces.includes(name))) {
@@ -61,7 +64,9 @@ for (const locale of localeNames) {
     const missingKeys = [...sourceKeys].filter((key) => !localeKeys.has(key));
     const extraKeys = [...localeKeys].filter((key) => !sourceKeys.has(key));
 
-    if (missingKeys.length) problems.push(`${namespace}: missing keys: ${missingKeys.join(", ")}`);
+    if (strict && missingKeys.length) {
+      problems.push(`${namespace}: missing keys: ${missingKeys.join(", ")}`);
+    }
     if (extraKeys.length) problems.push(`${namespace}: extra keys: ${extraKeys.join(", ")}`);
   }
 

@@ -3,8 +3,10 @@ import { initReactI18next } from "react-i18next";
 import { localeLoaders, supportedLocales, type SupportedLocale } from "./localeLoaders";
 
 export const defaultLocale: SupportedLocale = "ja";
+const enabledLocales: SupportedLocale[] = [defaultLocale];
 
-const isSupportedLocale = (locale: string): locale is SupportedLocale =>
+const isEnabledLocale = (locale: string): locale is SupportedLocale =>
+  enabledLocales.includes(locale as SupportedLocale) &&
   supportedLocales.includes(locale as SupportedLocale);
 
 export const resolveLocale = (): SupportedLocale => {
@@ -12,7 +14,7 @@ export const resolveLocale = (): SupportedLocale => {
 
   for (const language of navigator.languages ?? [navigator.language]) {
     const locale = language.toLowerCase().split("-")[0];
-    if (isSupportedLocale(locale)) return locale;
+    if (isEnabledLocale(locale)) return locale;
   }
 
   return defaultLocale;
