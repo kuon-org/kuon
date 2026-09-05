@@ -14,12 +14,15 @@ import EditNoteIcon from "@mui/icons-material/EditNote";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import SettingsIcon from "@mui/icons-material/Settings";
 import InventoryIcon from "@mui/icons-material/Inventory";
+import LanguageIcon from "@mui/icons-material/Language";
 import { useNavigate } from "@tanstack/react-router";
 import { ThemeSelect } from "../../common/ThemeSelect";
+import { LanguageSelect } from "../../common/LanguageSelect";
 import ContrastIcon from "@mui/icons-material/Contrast";
 import DeleteIcon from "@mui/icons-material/Delete";
 import styled from "@emotion/styled";
 import { stocksRoute } from "../../../routes";
+import { useTranslation } from "react-i18next";
 
 const StyledListHeader = styled(Box)({
   display: "flex",
@@ -29,10 +32,13 @@ const StyledListHeader = styled(Box)({
   cursor: "pointer",
 });
 
+type MenuView = "main" | "theme" | "language";
+
 export const UserIcon = () => {
+  const { t } = useTranslation("common");
   const { user, logout, logout_isPending } = useAuthQuery();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [showThemeSelect, setShowThemeSelect] = useState(false);
+  const [menuView, setMenuView] = useState<MenuView>("main");
   const navigate = useNavigate();
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -41,7 +47,7 @@ export const UserIcon = () => {
 
   const handleCloseMenu = () => {
     setAnchorEl(null);
-    setShowThemeSelect(false);
+    setMenuView("main");
   };
 
   const handleLogout = async () => {
@@ -79,6 +85,7 @@ export const UserIcon = () => {
     navigate({ to: "/trash" });
     handleCloseMenu();
   };
+
   return (
     <>
       <IconButton onClick={handleOpenMenu} sx={{ p: 0 }}>
@@ -93,64 +100,60 @@ export const UserIcon = () => {
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleCloseMenu}
-        slotProps={{
-          paper: {
-            sx: {
-              width: 280,
-            },
-          },
-        }}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
+        slotProps={{ paper: { sx: { width: 280 } } }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        {!showThemeSelect ? (
+        {menuView === "main" ? (
           <Box>
             <MenuItem onClick={handleMyPage}>
               <PersonIcon sx={{ mr: 1 }} />
-              マイページ
+              {t("userMenu.myPage")}
             </MenuItem>
             <MenuItem onClick={handleStocks}>
               <InventoryIcon sx={{ mr: 1 }} />
-              ストックリスト
+              {t("userMenu.stocks")}
             </MenuItem>
-            <MenuItem onClick={() => setShowThemeSelect(true)}>
+            <MenuItem onClick={() => setMenuView("theme")}>
               <ContrastIcon sx={{ mr: 1 }} />
-              テーマカラー
+              {t("userMenu.theme")}
+            </MenuItem>
+            <MenuItem onClick={() => setMenuView("language")}>
+              <LanguageIcon sx={{ mr: 1 }} />
+              {t("userMenu.language")}
             </MenuItem>
 
             <Divider />
             <MenuItem onClick={handleDrafts}>
               <EditNoteIcon sx={{ mr: 1 }} />
-              下書き一覧
+              {t("userMenu.drafts")}
             </MenuItem>
             <MenuItem onClick={handleTrash}>
               <DeleteIcon sx={{ mr: 1 }} />
-              ゴミ箱
+              {t("userMenu.trash")}
             </MenuItem>
             <Divider />
             <MenuItem onClick={handleSettings}>
               <SettingsIcon sx={{ mr: 1 }} />
-              設定
+              {t("userMenu.settings")}
             </MenuItem>
             <MenuItem onClick={handleLogout}>
               <LogoutIcon sx={{ mr: 1 }} />
-              {logout_isPending ? "ログアウト中..." : "ログアウト"}
+              {logout_isPending ? t("userMenu.loggingOut") : t("userMenu.logout")}
             </MenuItem>
           </Box>
         ) : (
           <Box>
-            <StyledListHeader onClick={() => setShowThemeSelect(false)}>
+            <StyledListHeader onClick={() => setMenuView("main")}>
               <NavigateBeforeIcon />
-              ユーザーメニューへ戻る
+              {t("userMenu.back")}
             </StyledListHeader>
             <MenuItem>
-              <ThemeSelect label="テーマ" fullWidth />
+              {menuView === "theme" ? (
+                <ThemeSelect fullWidth />
+              ) : (
+                <LanguageSelect fullWidth />
+              )}
             </MenuItem>
           </Box>
         )}

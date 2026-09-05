@@ -25,3 +25,20 @@ editor:
 
 theme:
   label: テーマ
+
+language:
+  label: 言語
+  options:
+    ja: 日本語
+
+userMenu:
+  myPage: マイページ
+  stocks: ストックリスト
+  theme: テーマカラー
+  language: 言語
+  drafts: 下書き一覧
+  trash: ゴミ箱
+  settings: 設定
+  logout: ログアウト
+  loggingOut: ログアウト中...
+  back: ユーザーメニューへ戻る
