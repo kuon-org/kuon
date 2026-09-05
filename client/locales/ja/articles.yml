@@ -37,6 +37,13 @@ feed:
   viewTrends: トレンド一覧を見る
   recommendationHint: タグのフォローや記事のいいねをするとここに記事が表示されます
 
+search:
+  title: 詳細検索
+  results: "「{{query}}」の検索結果"
+  enterKeyword: 検索キーワードを入力してください
+  noResults: 一致する記事が見つかりませんでした。
+  noResultsHint: キーワードを変えるか、タグ指定などを試してみてください。
+
 editor:
   title: 記事執筆
   cancel: キャンセル

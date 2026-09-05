@@ -19,6 +19,11 @@ confirmLeave:
   title: 変更を保存せずに戻りますか？
   description: 未保存の変更は失われます。
 
+notFound:
+  title: お探しのページは見つかりませんでした。
+  description: 移動または削除されたか、URLが間違っている可能性があります。
+  home: ホームへ戻る
+
 editor:
   enableScrollSync: スクロールを同期
   disableScrollSync: スクロール同期を解除
