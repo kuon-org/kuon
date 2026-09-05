@@ -43,6 +43,13 @@ search:
   enterKeyword: 検索キーワードを入力してください
   noResults: 一致する記事が見つかりませんでした。
   noResultsHint: キーワードを変えるか、タグ指定などを試してみてください。
+  placeholder: タイトル、本文、接頭辞で検索...
+  filters:
+    tag: タグ (tag:)
+    user: ユーザー (user:)
+    title: タイトル指定 (title:)
+    created: 記事作成日 (created:>=2026/01/01)
+    updated: 記事更新日 (updated:>=2026/01/01)
 
 editor:
   title: 記事執筆

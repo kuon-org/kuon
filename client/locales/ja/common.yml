@@ -24,6 +24,23 @@ notFound:
   description: 移動または削除されたか、URLが間違っている可能性があります。
   home: ホームへ戻る
 
+globalError:
+  default:
+    title: 問題が発生しました
+    description: アプリケーションの読み込み中に予期しないエラーが発生しました。
+  forbidden:
+    title: アクセス権限がありません
+    description: この操作を行う権限がないか、閲覧が制限されています。
+  notFound:
+    title: データが見つかりませんでした
+    description: リクエストされたリソースは存在しないか、削除された可能性があります。
+  unauthorized:
+    title: 認証エラー
+    description: セッションが切れた可能性があります。再度ログインしてください。
+  retry: 再試行する
+  home: トップへ戻る
+  details: "エラーの詳細情報 (Status: {{status}})"
+
 editor:
   enableScrollSync: スクロールを同期
   disableScrollSync: スクロール同期を解除
