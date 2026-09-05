@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import { AppError, ValidationError } from "../errors/AppError.js";
 import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
 import { UserWebhookService } from "../services/userWebhookService.js";
 import { WebhookPreviewService } from "../services/webhookPreviewService.js";
@@ -21,11 +22,13 @@ export class UserWebhookController {
   ) {}
 
   private userId(req: AuthRequest): string {
-    if (!isAuthenticated(req)) throw new Error("未ログインです");
+    if (!isAuthenticated(req)) {
+      throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
+    }
     return req.user.userId;
   }
 
-  getMetadata = async (req: AuthRequest, res: Response) => {
+  getMetadata = async (_req: AuthRequest, res: Response) => {
     try {
       this.service.ensureAvailable();
       const events = webhookEventDefinitions
@@ -40,26 +43,30 @@ export class UserWebhookController {
         presets: webhookPresets.filter((preset) => allowedEvents.has(preset.event)),
       });
     } catch (error) {
-      return res.status(403).json({ message: error instanceof Error ? error.message : "利用できません" });
+      console.error("User webhook metadata unavailable", error);
+      throw new AppError(403, "USER_WEBHOOK_UNAVAILABLE", "User webhooks are unavailable");
     }
   };
 
   getAll = async (req: AuthRequest, res: Response) => {
     try {
-      const rows = await this.service.getAll(this.userId(req));
-      return res.status(200).json(rows);
+      return res.status(200).json(await this.service.getAll(this.userId(req)));
     } catch (error) {
-      return res.status(500).json({ message: error instanceof Error ? error.message : "取得に失敗しました" });
+      if (error instanceof AppError) throw error;
+      console.error("User webhook list fetch failed", error);
+      throw new AppError(500, "USER_WEBHOOK_LIST_FETCH_FAILED", "Failed to fetch user webhooks");
     }
   };
 
   getById = async (req: AuthRequest, res: Response) => {
     try {
       const webhook = await this.service.getById(String(req.params.id), this.userId(req));
-      if (!webhook) return res.status(404).json({ message: "Webhookが見つかりません" });
+      if (!webhook) throw new AppError(404, "WEBHOOK_NOT_FOUND", "Webhook not found");
       return res.status(200).json(hideSecretHeaders(webhook));
     } catch (error) {
-      return res.status(500).json({ message: error instanceof Error ? error.message : "取得に失敗しました" });
+      if (error instanceof AppError) throw error;
+      console.error("User webhook fetch failed", error);
+      throw new AppError(500, "USER_WEBHOOK_FETCH_FAILED", "Failed to fetch user webhook");
     }
   };
 
@@ -71,7 +78,9 @@ export class UserWebhookController {
       );
       return res.status(201).json(hideSecretHeaders(webhook));
     } catch (error) {
-      return res.status(400).json({ message: error instanceof Error ? error.message : "作成に失敗しました" });
+      if (error instanceof AppError) throw error;
+      console.error("User webhook creation failed", error);
+      throw new AppError(400, "USER_WEBHOOK_CREATE_FAILED", "Failed to create user webhook");
     }
   };
 
@@ -82,27 +91,31 @@ export class UserWebhookController {
         this.userId(req),
         req.body as Omit<UpdateWebhookInput, "scope" | "ownerUserId">,
       );
-      if (!webhook) return res.status(404).json({ message: "Webhookが見つかりません" });
+      if (!webhook) throw new AppError(404, "WEBHOOK_NOT_FOUND", "Webhook not found");
       return res.status(200).json(hideSecretHeaders(webhook));
     } catch (error) {
-      return res.status(400).json({ message: error instanceof Error ? error.message : "更新に失敗しました" });
+      if (error instanceof AppError) throw error;
+      console.error("User webhook update failed", error);
+      throw new AppError(400, "USER_WEBHOOK_UPDATE_FAILED", "Failed to update user webhook");
     }
   };
 
   setActive = async (req: AuthRequest, res: Response) => {
+    if (typeof req.body?.isActive !== "boolean") {
+      throw new ValidationError({ isActive: ["BOOLEAN_REQUIRED"] });
+    }
     try {
-      if (typeof req.body?.isActive !== "boolean") {
-        return res.status(400).json({ message: "isActiveを指定してください" });
-      }
       const webhook = await this.service.setActive(
         String(req.params.id),
         this.userId(req),
         req.body.isActive,
       );
-      if (!webhook) return res.status(404).json({ message: "Webhookが見つかりません" });
+      if (!webhook) throw new AppError(404, "WEBHOOK_NOT_FOUND", "Webhook not found");
       return res.status(200).json(webhook);
     } catch (error) {
-      return res.status(400).json({ message: error instanceof Error ? error.message : "状態変更に失敗しました" });
+      if (error instanceof AppError) throw error;
+      console.error("User webhook status update failed", error);
+      throw new AppError(400, "USER_WEBHOOK_STATUS_UPDATE_FAILED", "Failed to update user webhook status");
     }
   };
 
@@ -114,10 +127,12 @@ export class UserWebhookController {
         this.userId(req),
         Number.isFinite(parsed) ? parsed : 50,
       );
-      if (!logs) return res.status(404).json({ message: "Webhookが見つかりません" });
+      if (!logs) throw new AppError(404, "WEBHOOK_NOT_FOUND", "Webhook not found");
       return res.status(200).json(logs);
     } catch (error) {
-      return res.status(500).json({ message: error instanceof Error ? error.message : "Delivery Logs取得に失敗しました" });
+      if (error instanceof AppError) throw error;
+      console.error("User webhook deliveries fetch failed", error);
+      throw new AppError(500, "USER_WEBHOOK_DELIVERIES_FETCH_FAILED", "Failed to fetch user webhook deliveries");
     }
   };
 
@@ -131,7 +146,9 @@ export class UserWebhookController {
       });
       return res.status(200).json({ payload });
     } catch (error) {
-      return res.status(400).json({ message: error instanceof Error ? error.message : "Previewに失敗しました" });
+      if (error instanceof AppError) throw error;
+      console.error("User webhook preview failed", error);
+      throw new AppError(400, "USER_WEBHOOK_PREVIEW_FAILED", "User webhook preview failed");
     }
   };
 
@@ -147,17 +164,21 @@ export class UserWebhookController {
       });
       return res.status(200).json(result);
     } catch (error) {
-      return res.status(400).json({ message: error instanceof Error ? error.message : "Test Sendに失敗しました" });
+      if (error instanceof AppError) throw error;
+      console.error("User webhook test send failed", error);
+      throw new AppError(400, "USER_WEBHOOK_TEST_SEND_FAILED", "User webhook test send failed");
     }
   };
 
   delete = async (req: AuthRequest, res: Response) => {
     try {
       const deleted = await this.service.delete(String(req.params.id), this.userId(req));
-      if (!deleted) return res.status(404).json({ message: "Webhookが見つかりません" });
+      if (!deleted) throw new AppError(404, "WEBHOOK_NOT_FOUND", "Webhook not found");
       return res.status(204).send();
     } catch (error) {
-      return res.status(400).json({ message: error instanceof Error ? error.message : "削除に失敗しました" });
+      if (error instanceof AppError) throw error;
+      console.error("User webhook deletion failed", error);
+      throw new AppError(400, "USER_WEBHOOK_DELETE_FAILED", "Failed to delete user webhook");
     }
   };
 }
