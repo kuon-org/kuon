@@ -1,1 +1,308 @@
 title: Administration
+
+common:
+  loading: Loading...
+  loadFailed: Failed to load data
+  save: Save
+  cancel: Cancel
+  edit: Edit
+  delete: Delete
+  update: Update
+  enabled: Enabled
+  disabled: Disabled
+  configured: Configured
+  notConfigured: Not configured
+  allowed: Allow
+  notAllowed: Do not allow
+
+categories:
+  article: Articles
+  comment: Comments
+  user: Users
+  role: Roles
+  system: System
+
+dashboard:
+  title: Administration
+  description: Review the key status of this Kuon instance.
+  consoleTitle: Admin console
+  consoleDescription: Administrative features available with your current permissions are shown in the left menu. System settings permission is required to inspect server status and environment configuration.
+  fetchingStatus: Fetching status...
+  runtime:
+    title: Runtime information
+    loading: Fetching server information...
+    loadFailed: Failed to fetch server information.
+    uptime: Uptime
+    database: Database
+    connected: Connected
+    error: Error
+    unknown: Unknown
+    environmentVariables: Environment variables
+    sourceLabel: Environment variables
+  maintenance:
+    title: Maintenance
+    description: Indicates whether content access for regular users is suspended.
+    enabled: Maintenance mode
+    disabled: Normal operation
+  authentication:
+    title: Authentication
+    description: Controls whether unauthenticated users are required to sign in.
+    enabled: Sign-in required
+    disabled: Public access allowed
+  localRegistration:
+    title: Local registration
+    description: Indicates whether users can register new local accounts themselves.
+    enabled: Allowed
+    disabled: Disabled
+  notifications:
+    title: Notifications
+    description: Status of in-app notification generation.
+  webhooks:
+    title: Webhooks
+    description: Instance-wide webhook delivery status.
+
+users:
+  title: User management
+  loadFailed: Failed to load user information
+  total: Total users
+  active: Active
+  inactive: Inactive
+  statusAndRoles: Status / Roles
+  username: Username
+  displayName: Display name
+  email: Email address
+  createdAt: Created
+  lastLoginAt: Last login
+  stopAccount: Disable account
+  enableAccount: Enable account
+  configureRoles: Configure roles
+  roleDialogDescription: "Select the roles to assign to @{{username}}. Permissions from multiple roles are combined."
+
+roles:
+  title: Roles and permissions
+  description: Permissions are defined by Kuon and combined into the operations available to each role.
+  add: Add role
+  edit: Edit role
+  loadFailed: Failed to load role information
+  builtin: Built-in
+  permissionCount: "{{count}} permissions"
+  roleKey: Role key
+  roleKeyHint: Lowercase letters, numbers, _ and - are allowed. The key cannot be changed after creation.
+  displayName: Display name
+  descriptionLabel: Description
+  dependency: "Required by {{names}}"
+
+serverSettings:
+  title: Application settings
+  description: Manage instance-wide operational, notification, and integration settings.
+  updateFailed: Failed to update settings
+  envReadOnly: "Source: Environment — This setting is read-only because it is configured through environment variables."
+  maintenance:
+    title: Maintenance mode
+    description: When enabled, content access for regular users is suspended. Administrators can continue to access the admin console and disable maintenance mode.
+    warning: Maintenance mode is currently enabled. Regular users will see the maintenance page.
+  notifications:
+    title: In-app notifications
+    description: Enable in-app notifications for the entire instance. When disabled, new notifications are not generated and the notification bell is hidden from the top bar.
+  webhooks:
+    title: Webhooks
+    description: Allow webhook delivery across the instance. When disabled, no external notifications are sent even if individual webhooks are enabled.
+    userTitle: User webhooks
+    userDescription: Allow users to register and deliver their own webhooks. Enable this only when needed because it creates a path for sending information to external URLs.
+
+backup:
+  title: Backup & Restore
+  description: Back up and restore the Kuon database and uploaded files for migration and disaster recovery.
+  exportFailed: Failed to create the backup. Check the server logs.
+  backupTitle: Backup
+  backupDescription: Downloads a PostgreSQL logical backup, uploads, and manifest as a single tar.gz file. Infrastructure-specific secrets and .env are not included.
+  maintenanceHint: Enable maintenance mode first if you need to completely stop database and upload changes while creating the backup.
+  creating: Creating backup...
+  create: Create backup
+  restoreTitle: Restore
+  restoreWarning: This replaces the current database and uploaded files with the state from the backup. All sessions are invalidated and maintenance mode is enabled after completion.
+  restoreDescription: Infrastructure settings such as .env, DATABASE_URL, JWT secrets, and reverse proxy configuration are not restored.
+  chooseFile: Choose backup file
+  restore: Restore
+  restoreConfirmTitle: Restore from this backup?
+  restoreConfirmDescription: The current database is temporarily preserved before restoring and will be recovered when possible if the restore fails. Type RESTORE to continue.
+  restoring: Restoring...
+  executeRestore: Restore now
+  restoreFailed: Restore failed. Check the server logs.
+
+serverEvents:
+  title: Server Events
+  description: Review operational events generated inside the Kuon server.
+  refresh: Refresh
+  all: All
+  level: Level
+  category: Category
+  eventType: Event type
+  from: From
+  to: To
+  loadFailed: Failed to load the event log.
+  datetime: Date and time
+  source: Source
+  message: Message
+  empty: No events found.
+  detailTitle: Server Event Detail
+  metadata: Metadata
+  before: Before
+  after: After
+  context: Context
+
+smtp:
+  title: SMTP / Mail
+  description: Shared email delivery settings used for features such as email verification and password reset. Kuon can still be used when SMTP is not configured.
+  envReadOnly: "Source: Environment — These settings are read-only here because they are configured through environment variables."
+  configured: SMTP is configured.
+  saved: SMTP settings saved
+  saveFailed: Failed to save SMTP settings
+  testFailed: Failed to send the test email
+  useImplicitTls: Use implicit TLS / SMTPS
+  passwordConfigured: Configured
+  secretHidden: Secret values are not displayed.
+  keepPassword: Leave this blank when saving to keep the current password.
+  save: Save SMTP settings
+  testTitle: Test email
+  testDescription: Send an actual email using the currently active SMTP settings.
+  testTo: Recipient email address
+  testSend: Send test
+
+security:
+  title: Authentication & Security
+  description: Manage local authentication, external identity providers, 2FA, and other authentication settings.
+  identityProviders: Identity Providers
+  accessControl:
+    title: Access control
+    description: Control access to articles, tags, user information, and other content by unauthenticated users.
+    requireLogin: Require sign-in
+    allowPublic: Allow public access
+  localAccount:
+    title: ID / Password
+    registrationTitle: Local account registration
+    registrationDescription: When disabled, new local accounts cannot be created. Existing local-account sign-in and external IdP authentication are unaffected.
+    disabledWarning: New users can only be created through an external IdP. During initial setup when no users exist, registration remains available regardless of this setting.
+    verificationTitle: Email Verification
+    verificationDescription: When Required, newly created local accounts cannot sign in until the verification URL sent by email is opened.
+    verificationRequired: Email verification is currently Required. Verification emails use the SMTP settings under Application settings.
+  twoFactor:
+    title: 2FA / Security Policy
+    description: Require an additional Kuon TOTP challenge for users who enabled TOTP even when they authenticate through OIDC, OAuth2, or SAML.
+    require: Require
+    notRequire: Do not require
+  apiKey:
+    title: API Key
+    description: Allow API key issuance and authentication with issued API keys.
+  idp:
+    title: Authentication providers
+    preparing:
+      idPass: ID/Password settings form — coming soon
+      ldap: LDAP settings form — coming soon
+    oidc:
+      description: Configure a generic OpenID Connect provider.
+      issuerUrl: Issuer URL
+      issuerRequired: Enter the Issuer URL
+      advanced: Endpoint and attribute mapping details
+      discovery: Discover from Issuer URL
+      discoverySuccess: Discovery information loaded
+      discoveryFailed: Failed to load discovery information
+    saml:
+      description: Configure a SAML 2.0 provider.
+      basicSettings: Basic settings (Service Provider)
+      generatedAfterSave: Generated after saving
+      acsHint: Callback URL to register with the IdP
+      issuerHint: Identifier for this application, usually a metadata URL or domain
+      idpSettings: IdP settings (Identity Provider)
+      advancedSettings: Advanced settings (Clock Skew / Security)
+      clockSkew: Clock Skew (seconds)
+      clockSkewHint: Allowed clock difference from the IdP
+      expirationHint: SAML request expiration time
+      requireAssertionSignature: Require signed assertions
+      requireResponseSignature: Require the entire response to be signed
+      disableRequestedAuthnContext: Disable RequestedAuthnContext for compatibility with providers such as Azure AD
+      signatureAlgorithm: Signature algorithm
+      sha1Deprecated: SHA-1 (deprecated)
+      attributeMapping: Attribute mapping
+      save: Save SAML settings
+    registry:
+      title: Unused IdP Registry
+      description: IdP records with no ENV or database configuration. Only records that are not referenced by any user identity can be deleted.
+      cleanup: Clean up
+      cleanupFailed: Failed to clean up the IdP
+      inUse: " — Cannot delete because {{count}} user identities reference this IdP."
+      orphaned: " — Unused registry entry left after its ENV or database configuration was removed."
+    connectivity:
+      check: Check connectivity
+      checking: Checking...
+      description: Check reachability of the external IdP using the currently active settings.
+      success: Connectivity check succeeded
+      warning: Some items require attention
+      failed: Connectivity check failed
+    readOnly: "Source: Environment — This Identity Provider is read-only because it is configured through environment variables."
+    activeState: "Active state: {{state}}"
+    manager:
+      editProvider: Provider to edit
+      addProvider: "Add {{type}} provider"
+      oidcPlaceholder: e.g. google
+      samlPlaceholder: e.g. keycloak
+      add: Add
+      adding: Adding...
+      duplicate: A provider with that name already exists
+      addFailed: Failed to add provider
+      deleteFailed: Failed to delete provider. It may already be linked to a user.
+      deleteTitle: "Delete {{type}} settings"
+      deleteDescription: "You are about to delete provider {{provider}}. This cannot be undone. Type {{confirmation}} to continue."
+      deleting: Deleting...
+      deletePermanently: Delete permanently
+    form:
+      providerSettings: "{{provider}} settings"
+      providerState: "Provider state: {{state}}"
+      loginAllowed: "Allow sign-in through this {{type}} provider"
+      callbackUrl: Callback URL
+      callbackHint: Use this URL in the OAuth provider configuration
+      copied: Copied!
+      clientId: Client ID
+      clientSecret: Client Secret
+      update: Update
+      updated: Updated
+      saveSettings: Save settings
+      saved: Settings saved
+
+webhooks:
+  title: Webhooks
+  description: Send Kuon events to Discord, Slack, Teams, or any HTTP endpoint.
+  helpTooltip: Webhook settings help
+  policy: Webhook policy
+  enable: Enable webhooks
+  allowUser: Allow per-user webhooks
+  disabledInfo: Webhook definitions can still be saved, but event delivery is disabled while the global setting is off.
+  configured: Configured webhooks
+  new: New webhook
+  loading: Loading...
+  empty: No webhooks have been configured yet.
+  active: Active
+  disabled: Disabled
+  edit: Edit
+  delete: Delete
+  deleteConfirm: "Delete webhook ‘{{name}}’?"
+  editTitle: Edit webhook
+  newTitle: New webhook
+  name: Name
+  preview: Preview
+  testSend: Test Send
+  update: Update
+  save: Save
+  recentDeliveries: Recent deliveries
+  help:
+    title: Webhook settings help
+    urlTitle: 1. Destination URL
+    urlDescription: Specify a Discord Incoming Webhook, Slack Incoming Webhook, Teams Workflow/Webhook, or any HTTP endpoint URL.
+    eventTitle: 2. Event
+    eventDescription: Select one event for each webhook. Create separate webhook settings when sending different events to the same URL.
+    templateTitle: 3. Template
+    templateDescription: Apply a Discord, Slack, or Teams template for the selected event. You can freely edit it afterward.
+    valuesTitle: 4. Kuon values
+    valuesDescription: Available variables depend on the selected event. In JSON mode, you can copy them from the variable list.
+    testTitle: 5. Preview / Test Send
+    testDescription: Preview expands sample data into JSON, while Test Send sends an actual test notification to the destination.
