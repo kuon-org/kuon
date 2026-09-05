@@ -62,6 +62,7 @@ editor:
   tagPlaceholder: Enterで追加
   selectExistingTag: 既存タグから選択
   noTagCreatePermission: 新しいタグを作成する権限がありません
+  permissionDenied: 編集権限がありません
   summary: 要約
   settingsTitle: 投稿設定
   visibilityTitle: 公開範囲の設定
