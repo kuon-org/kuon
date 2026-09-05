@@ -1,2 +1,56 @@
 app:
   name: Kuon
+
+actions:
+  cancel: Cancel
+  back: Back
+
+loading: Loading
+
+errors:
+  loginRequired: Please sign in.
+  server: Server error
+
+follow:
+  follow: Follow
+  following: Following
+
+confirmLeave:
+  title: Leave without saving changes?
+  description: Unsaved changes will be lost.
+
+notFound:
+  title: The page you are looking for could not be found.
+  description: It may have been moved or deleted, or the URL may be incorrect.
+  home: Back to home
+
+maintenance:
+  title: Kuon is currently under maintenance
+  description: Kuon is currently undergoing maintenance. Please try again later.
+
+like:
+  ariaLabel: Like article
+
+editor:
+  enableScrollSync: Enable scroll sync
+  disableScrollSync: Disable scroll sync
+
+theme:
+  label: Theme
+
+language:
+  label: Language
+  options:
+    ja: Japanese
+
+userMenu:
+  myPage: My page
+  stocks: Stock lists
+  theme: Theme color
+  language: Language
+  drafts: Drafts
+  trash: Trash
+  settings: Settings
+  logout: Sign out
+  loggingOut: Signing out...
+  back: Back to user menu
