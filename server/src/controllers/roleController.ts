@@ -1,46 +1,51 @@
 import type { Response } from "express";
+import { AppError, ValidationError } from "../errors/AppError.js";
 import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
 import { permissionService } from "../services/permissionService.js";
 
-const errorResponse = (error: unknown) => {
+const toRoleError = (error: unknown): AppError => {
   const message = error instanceof Error ? error.message : "UnknownError";
   switch (message) {
     case "RoleNotFound":
-      return { status: 404, message: "ロールが見つかりません" };
+      return new AppError(404, "ROLE_NOT_FOUND", "Role not found");
     case "InvalidRoleName":
-      return { status: 400, message: "ロール名の形式が不正です" };
+      return new AppError(400, "INVALID_ROLE_NAME", "Invalid role name");
     case "BuiltinRoleCannotBeDeleted":
-      return { status: 400, message: "組み込みロールは削除できません" };
+      return new AppError(400, "BUILTIN_ROLE_CANNOT_BE_DELETED", "Built-in role cannot be deleted");
     case "AdminRequiredPermissions":
-      return { status: 400, message: "Adminに必須のPermissionは解除できません" };
+      return new AppError(400, "ADMIN_REQUIRED_PERMISSIONS", "Required admin permissions cannot be removed");
     case "AtLeastOneRoleRequired":
-      return { status: 400, message: "ユーザーには1つ以上のロールが必要です" };
+      return new AppError(400, "AT_LEAST_ONE_ROLE_REQUIRED", "At least one role is required");
     case "LastAdminCannotBeRemoved":
-      return { status: 400, message: "最後のAdminユーザーからAdminロールを解除できません" };
+      return new AppError(400, "LAST_ADMIN_CANNOT_BE_REMOVED", "Last admin role cannot be removed");
     default:
       if (message.startsWith("UnknownPermission:")) {
-        return { status: 400, message: "不明なPermissionが指定されています" };
+        return new AppError(400, "UNKNOWN_PERMISSION", "Unknown permission");
       }
       if (message.startsWith("PermissionEscalation:")) {
-        return {
-          status: 403,
-          message: "自分が持っていないPermissionをロールへ付与・割り当てることはできません",
-        };
+        return new AppError(403, "PERMISSION_ESCALATION_DENIED", "Permission escalation denied");
       }
-      return { status: 500, message: "ロール設定の処理に失敗しました" };
+      console.error("Role operation failed", error);
+      return new AppError(500, "ROLE_OPERATION_FAILED", "Role operation failed");
   }
+};
+
+const requireUser = (req: AuthRequest) => {
+  if (!isAuthenticated(req)) {
+    throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
+  }
+  return req.user;
 };
 
 export class RoleController {
   getMyPermissions = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) {
-      return res.status(401).json({ message: "未ログインです" });
-    }
+    const user = requireUser(req);
     try {
-      const permissions = await permissionService.getUserPermissions(req.user.userId);
+      const permissions = await permissionService.getUserPermissions(user.userId);
       return res.status(200).json({ permissions });
-    } catch {
-      return res.status(500).json({ message: "Permissionの取得に失敗しました" });
+    } catch (error) {
+      console.error("Permission fetch failed", error);
+      throw new AppError(500, "PERMISSIONS_FETCH_FAILED", "Failed to fetch permissions");
     }
   };
 
@@ -51,25 +56,23 @@ export class RoleController {
   getRoles = async (_req: AuthRequest, res: Response) => {
     try {
       return res.status(200).json(await permissionService.getRoles());
-    } catch {
-      return res.status(500).json({ message: "ロール一覧の取得に失敗しました" });
+    } catch (error) {
+      console.error("Role list fetch failed", error);
+      throw new AppError(500, "ROLE_LIST_FETCH_FAILED", "Failed to fetch roles");
     }
   };
 
   createRole = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) {
-      return res.status(401).json({ message: "未ログインです" });
-    }
+    const user = requireUser(req);
+    const { name, displayName, description, permissions } = req.body ?? {};
+    const fields: Record<string, string[]> = {};
+    if (typeof name !== "string") fields.name = ["STRING_REQUIRED"];
+    if (typeof displayName !== "string") fields.displayName = ["STRING_REQUIRED"];
+    if (!Array.isArray(permissions)) fields.permissions = ["ARRAY_REQUIRED"];
+    if (Object.keys(fields).length > 0) throw new ValidationError(fields);
+
     try {
-      const { name, displayName, description, permissions } = req.body ?? {};
-      if (
-        typeof name !== "string" ||
-        typeof displayName !== "string" ||
-        !Array.isArray(permissions)
-      ) {
-        return res.status(400).json({ message: "入力内容が不正です" });
-      }
-      const role = await permissionService.createRole(req.user.userId, {
+      const role = await permissionService.createRole(user.userId, {
         name,
         displayName,
         description: typeof description === "string" ? description : null,
@@ -77,62 +80,58 @@ export class RoleController {
       });
       return res.status(201).json(role);
     } catch (error) {
-      const result = errorResponse(error);
-      return res.status(result.status).json({ message: result.message });
+      throw toRoleError(error);
     }
   };
 
   updateRole = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) {
-      return res.status(401).json({ message: "未ログインです" });
-    }
+    const user = requireUser(req);
+    const roleId = String(req.params.roleId);
+    const { displayName, description, permissions } = req.body ?? {};
+    const fields: Record<string, string[]> = {};
+    if (typeof displayName !== "string") fields.displayName = ["STRING_REQUIRED"];
+    if (!Array.isArray(permissions)) fields.permissions = ["ARRAY_REQUIRED"];
+    if (Object.keys(fields).length > 0) throw new ValidationError(fields);
+
     try {
-      const roleId = String(req.params.roleId);
-      const { displayName, description, permissions } = req.body ?? {};
-      if (typeof displayName !== "string" || !Array.isArray(permissions)) {
-        return res.status(400).json({ message: "入力内容が不正です" });
-      }
-      const role = await permissionService.updateRole(req.user.userId, roleId, {
+      const role = await permissionService.updateRole(user.userId, roleId, {
         displayName,
         description: typeof description === "string" ? description : null,
         permissions,
       });
       return res.status(200).json(role);
     } catch (error) {
-      const result = errorResponse(error);
-      return res.status(result.status).json({ message: result.message });
+      throw toRoleError(error);
     }
   };
 
   deleteRole = async (req: AuthRequest, res: Response) => {
+    requireUser(req);
     try {
       await permissionService.deleteRole(String(req.params.roleId));
       return res.status(204).send();
     } catch (error) {
-      const result = errorResponse(error);
-      return res.status(result.status).json({ message: result.message });
+      throw toRoleError(error);
     }
   };
 
   assignUserRoles = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) {
-      return res.status(401).json({ message: "未ログインです" });
+    const user = requireUser(req);
+    const userId = String(req.params.userId);
+    const { roleIds } = req.body ?? {};
+    if (!Array.isArray(roleIds) || !roleIds.every((id) => typeof id === "string")) {
+      throw new ValidationError({ roleIds: ["STRING_ARRAY_REQUIRED"] });
     }
+
     try {
-      const userId = String(req.params.userId);
-      const { roleIds } = req.body ?? {};
-      if (!Array.isArray(roleIds) || !roleIds.every((id) => typeof id === "string")) {
-        return res.status(400).json({ message: "roleIdsにはロールIDの配列を指定してください" });
-      }
       const assignedRoleIds = await permissionService.assignRoles(
-        req.user.userId,
+        user.userId,
         userId,
         roleIds,
       );
       return res.status(200).json({ roleIds: assignedRoleIds });
     } catch (error) {
-      const result = errorResponse(error);
-      return res.status(result.status).json({ message: result.message });
+      throw toRoleError(error);
     }
   };
 }

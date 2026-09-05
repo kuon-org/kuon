@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import { AppError, ValidationError } from "../errors/AppError.js";
 import type { AuthRequest } from "../middlewares/auth.js";
 import { isAuthenticated } from "../middlewares/auth.js";
 import { mailService } from "../services/mailService.js";
@@ -8,76 +9,68 @@ import {
 } from "../services/smtpSettingsService.js";
 
 export class MailController {
-  getSettings = async (req: AuthRequest, res: Response) => {
+  private requireUser(req: AuthRequest) {
     if (!isAuthenticated(req)) {
-      return res.status(401).json({ message: "未ログインです" });
+      throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
     }
+    return req.user;
+  }
 
+  getSettings = async (req: AuthRequest, res: Response) => {
+    this.requireUser(req);
     try {
       return res.status(200).json(await smtpSettingsService.getPublic());
     } catch (error) {
-      return res.status(500).json({
-        message:
-          error instanceof Error ? error.message : "SMTP設定の取得に失敗しました",
-      });
+      console.error("SMTP settings fetch failed", error);
+      throw new AppError(500, "SMTP_SETTINGS_FETCH_FAILED", "Failed to fetch SMTP settings");
     }
   };
 
   updateSettings = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) {
-      return res.status(401).json({ message: "未ログインです" });
+    this.requireUser(req);
+    const body = req.body as Partial<UpdateSmtpSettingsInput>;
+    const fields: Record<string, string[]> = {};
+    if (typeof body.host !== "string") fields.host = ["STRING_REQUIRED"];
+    if (typeof body.port !== "number") fields.port = ["NUMBER_REQUIRED"];
+    if (typeof body.secure !== "boolean") fields.secure = ["BOOLEAN_REQUIRED"];
+    if (typeof body.username !== "string") fields.username = ["STRING_REQUIRED"];
+    if (typeof body.fromAddress !== "string") fields.fromAddress = ["STRING_REQUIRED"];
+    if (typeof body.fromName !== "string") fields.fromName = ["STRING_REQUIRED"];
+    if (body.password !== undefined && typeof body.password !== "string") {
+      fields.password = ["STRING_REQUIRED"];
     }
+    if (Object.keys(fields).length > 0) throw new ValidationError(fields);
 
     try {
-      const body = req.body as Partial<UpdateSmtpSettingsInput>;
-      if (
-        typeof body.host !== "string" ||
-        typeof body.port !== "number" ||
-        typeof body.secure !== "boolean" ||
-        typeof body.username !== "string" ||
-        typeof body.fromAddress !== "string" ||
-        typeof body.fromName !== "string" ||
-        (body.password !== undefined && typeof body.password !== "string")
-      ) {
-        return res.status(400).json({ message: "SMTP設定の形式が不正です" });
-      }
-
       const settings = await smtpSettingsService.update({
-        host: body.host,
-        port: body.port,
-        secure: body.secure,
-        username: body.username,
+        host: body.host!,
+        port: body.port!,
+        secure: body.secure!,
+        username: body.username!,
         password: body.password,
-        fromAddress: body.fromAddress,
-        fromName: body.fromName,
+        fromAddress: body.fromAddress!,
+        fromName: body.fromName!,
       });
       return res.status(200).json(settings);
     } catch (error) {
-      return res.status(400).json({
-        message:
-          error instanceof Error ? error.message : "SMTP設定の更新に失敗しました",
-      });
+      console.error("SMTP settings update failed", error);
+      throw new AppError(400, "SMTP_SETTINGS_UPDATE_FAILED", "Failed to update SMTP settings");
     }
   };
 
   sendTest = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) {
-      return res.status(401).json({ message: "未ログインです" });
-    }
-
+    this.requireUser(req);
     const { to } = req.body as { to?: unknown };
     if (typeof to !== "string" || !to.trim()) {
-      return res.status(400).json({ message: "送信先メールアドレスを指定してください" });
+      throw new ValidationError({ to: ["EMAIL_REQUIRED"] });
     }
 
     try {
       await mailService.sendTest(to.trim());
       return res.status(200).json({ message: "テストメールを送信しました" });
     } catch (error) {
-      return res.status(502).json({
-        message:
-          error instanceof Error ? error.message : "テストメールの送信に失敗しました",
-      });
+      console.error("SMTP test mail failed", error);
+      throw new AppError(502, "SMTP_TEST_SEND_FAILED", "Failed to send test email");
     }
   };
 }

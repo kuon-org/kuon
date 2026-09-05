@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { AppError, ValidationError } from "../errors/AppError.js";
 import { uuidv7 } from "../utils/uuid/index.js";
 import { ArticlesService } from "../services/articlesService.js";
 import { UploadImagesService } from "../services/uploadImagesService.js";
@@ -13,21 +14,41 @@ export class ArticlesController {
     private uploadImagesService: UploadImagesService,
   ) {}
 
-  // ExpressのRouterでコールバックとして渡すため、メソッドはアロー関数で定義して `this` を固定する
+  private requireUser(req: AuthRequest) {
+    if (!isAuthenticated(req)) {
+      throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
+    }
+    return req.user;
+  }
+
+  private mapArticleError(error: unknown, fallbackCode: string, fallbackMessage: string) {
+    if (error instanceof AppError) return error;
+    const message = error instanceof Error ? error.message : "";
+    switch (message) {
+      case "ArticleNotFound":
+        return new AppError(404, "ARTICLE_NOT_FOUND", "Article not found");
+      case "Forbidden":
+      case "Unauthorized":
+      case "Unauthorized or Not Found":
+        return new AppError(403, "ARTICLE_ACCESS_DENIED", "Article access denied");
+      case "No published version to rollback to":
+        return new AppError(404, "ARTICLE_PUBLISHED_VERSION_NOT_FOUND", "Published article version not found");
+      case "TitleRequired":
+        return new ValidationError({ title: ["ARTICLE_TITLE_REQUIRED"] });
+      default:
+        console.error(fallbackMessage, error);
+        return new AppError(500, fallbackCode, fallbackMessage);
+    }
+  }
+
   getArticles = async (req: Request, res: Response) => {
     try {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
       const q = req.query.q as string;
-
-      const result = await this.articlesService.getPublishedArticleList(
-        page,
-        limit,
-        q,
-      );
-      res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      res.json(await this.articlesService.getPublishedArticleList(page, limit, q));
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_LIST_FETCH_FAILED", "Failed to fetch articles");
     }
   };
 
@@ -41,15 +62,9 @@ export class ArticlesController {
         stock: req.query.stock ? parseFloat(req.query.stock as string) : undefined,
         comment: req.query.comment ? parseFloat(req.query.comment as string) : undefined,
       };
-
-      const result = await this.articlesService.getTrendingArticleList(
-        page,
-        limit,
-        weights,
-      );
-      res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      res.json(await this.articlesService.getTrendingArticleList(page, limit, weights));
+    } catch (error) {
+      throw this.mapArticleError(error, "TRENDING_ARTICLES_FETCH_FAILED", "Failed to fetch trending articles");
     }
   };
 
@@ -58,27 +73,20 @@ export class ArticlesController {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
       const userId = req.user?.userId ?? null;
-      const result = await this.articlesService.getRecommendArticleList(
-        userId,
-        page,
-        limit,
+      res.status(200).json(
+        await this.articlesService.getRecommendArticleList(userId, page, limit),
       );
-      res.status(200).json(result);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "RECOMMENDED_ARTICLES_FETCH_FAILED", "Failed to fetch recommended articles");
     }
   };
 
   getAllArticlesByUserId = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
-      const articles = await this.articlesService.getAllArticlesByUserId(
-        req.user.userId,
-      );
-      res.json(articles);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      res.json(await this.articlesService.getAllArticlesByUserId(user.userId));
+    } catch (error) {
+      throw this.mapArticleError(error, "USER_ARTICLES_FETCH_FAILED", "Failed to fetch user articles");
     }
   };
 
@@ -88,226 +96,186 @@ export class ArticlesController {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
       const q = req.query.q as string;
-
-      const result = await this.articlesService.getArticlesByUserId(
-        userId,
-        page,
-        limit,
-        q,
-      );
-      res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      res.json(await this.articlesService.getArticlesByUserId(userId, page, limit, q));
+    } catch (error) {
+      throw this.mapArticleError(error, "USER_ARTICLES_FETCH_FAILED", "Failed to fetch user articles");
     }
   };
 
   getArticle = async (req: AuthRequest, res: Response) => {
     try {
-      const userId = req.user?.userId;
-      const article = await this.articlesService.getArticle(
-        String(req.params.articleId),
-        userId,
+      res.json(
+        await this.articlesService.getArticle(
+          String(req.params.articleId),
+          req.user?.userId,
+        ),
       );
-      res.json(article);
-    } catch (error: any) {
-      let status = 500;
-      if (error.message === "ArticleNotFound") status = 404;
-      if (error.message === "Forbidden") status = 403;
-      res.status(status).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_FETCH_FAILED", "Failed to fetch article");
     }
   };
 
   getArticleMarkdown = async (req: AuthRequest, res: Response) => {
     try {
-      const userId = req.user?.userId;
       const article = await this.articlesService.getArticle(
         String(req.params.articleId),
-        userId,
+        req.user?.userId,
       );
       res.setHeader("Content-Type", "text/markdown; charset=utf-8");
       res.send(article.raw_content);
-    } catch (error: any) {
-      res
-        .status(error.message === "ArticleNotFound" ? 404 : 500)
-        .json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_MARKDOWN_FETCH_FAILED", "Failed to fetch article markdown");
     }
   };
 
   getArticleIsOwned = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
       const owned = await this.articlesService.getIsOwned(
         String(req.params.articleId),
-        req.user.userId,
+        user.userId,
       );
       res.json({ isOwned: owned });
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_OWNERSHIP_FETCH_FAILED", "Failed to fetch article ownership");
     }
   };
 
   getArticleLikeUserByArticleId = async (req: Request, res: Response) => {
     try {
-      const detail = await this.articlesService.getArticleLikeUserWithCount(
-        String(req.params.articleId),
+      res.json(
+        await this.articlesService.getArticleLikeUserWithCount(
+          String(req.params.articleId),
+        ),
       );
-      res.json(detail);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_LIKES_FETCH_FAILED", "Failed to fetch article likes");
     }
   };
 
   getIsLiked = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
       const isLike = await this.articlesService.getIsLiked(
         String(req.params.articleId),
-        req.user.userId,
+        user.userId,
       );
       res.json({ isLike });
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_LIKE_STATE_FETCH_FAILED", "Failed to fetch article like state");
     }
   };
 
   toggleLike = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
-      const result = await this.articlesService.toggleLike(
-        String(req.params.articleId),
-        req.user.userId,
+      res.json(
+        await this.articlesService.toggleLike(
+          String(req.params.articleId),
+          user.userId,
+        ),
       );
-      res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_LIKE_UPDATE_FAILED", "Failed to update article like state");
     }
   };
 
   createArticle = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
-      const newArticle = await this.articlesService.createArticle(
-        req.user.userId,
-        req.body,
-      );
-      res.status(201).json(newArticle);
-    } catch (error: any) {
-      const status = error.message === "TitleRequired" ? 400 : 500;
-      res.status(status).json({ message: error.message });
+      res.status(201).json(await this.articlesService.createArticle(user.userId, req.body));
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_CREATE_FAILED", "Failed to create article");
     }
   };
 
   updateArticle = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
-      const updated = await this.articlesService.updateArticle(
-        String(req.params.articleId),
-        req.user.userId,
-        req.body,
-        req.authorization?.resourceScope === "any",
+      res.json(
+        await this.articlesService.updateArticle(
+          String(req.params.articleId),
+          user.userId,
+          req.body,
+          req.authorization?.resourceScope === "any",
+        ),
       );
-      res.json(updated);
-    } catch (error: any) {
-      let status = 500;
-      if (error.message === "ArticleNotFound") status = 404;
-      if (error.message === "Forbidden") status = 403;
-      res.status(status).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_UPDATE_FAILED", "Failed to update article");
     }
   };
 
   rollBackDraft = async (req: AuthRequest, res: Response) => {
-    const articleId = String(req.params.articleId);
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
-      const rollback = await this.articlesService.rollbackDraft(
-        articleId,
-        req.user.userId,
-        req.authorization?.resourceScope === "any",
+      res.json(
+        await this.articlesService.rollbackDraft(
+          String(req.params.articleId),
+          user.userId,
+          req.authorization?.resourceScope === "any",
+        ),
       );
-      res.json(rollback);
-    } catch (error: any) {
-      let status = 500;
-      if (error.message === "Unauthorized or Not Found") status = 403;
-      if (error.message === "No published version to rollback to") status = 404;
-      res.status(status).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_ROLLBACK_FAILED", "Failed to rollback article draft");
     }
   };
 
   deleteArticle = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
       await this.articlesService.deleteArticle(
         String(req.params.articleId),
-        req.user.userId,
+        user.userId,
         req.authorization?.resourceScope === "any",
       );
       res.json({ message: "記事を削除しました" });
-    } catch (error: any) {
-      let status = 500;
-      if (error.message === "Unauthorized or Not Found") status = 403;
-      res.status(status).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_DELETE_FAILED", "Failed to delete article");
     }
   };
 
   getDeletedArticlesByUserId = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
-      const articles = await this.articlesService.getTrashArticles(
-        req.user.userId,
-      );
-      res.json(articles);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      res.json(await this.articlesService.getTrashArticles(user.userId));
+    } catch (error) {
+      throw this.mapArticleError(error, "TRASH_ARTICLES_FETCH_FAILED", "Failed to fetch deleted articles");
     }
   };
 
   restoreArticle = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
-      const restored = await this.articlesService.restoreArticle(
-        String(req.params.articleId),
-        req.user.userId,
-        req.authorization?.resourceScope === "any",
+      res.json(
+        await this.articlesService.restoreArticle(
+          String(req.params.articleId),
+          user.userId,
+          req.authorization?.resourceScope === "any",
+        ),
       );
-      res.json(restored);
-    } catch (error: any) {
-      let status = 500;
-      if (error.message === "Unauthorized") status = 403;
-      res.status(status).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_RESTORE_FAILED", "Failed to restore article");
     }
   };
 
   hardDeleteArticle = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
-      const hardDeleted = await this.articlesService.hardDeleteArticle(
-        String(req.params.articleId),
-        req.user.userId,
-        req.authorization?.resourceScope === "any",
+      res.json(
+        await this.articlesService.hardDeleteArticle(
+          String(req.params.articleId),
+          user.userId,
+          req.authorization?.resourceScope === "any",
+        ),
       );
-      res.json(hardDeleted);
-    } catch (error: any) {
-      let status = 500;
-      if (error.message === "Unauthorized") status = 403;
-      res.status(status).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_HARD_DELETE_FAILED", "Failed to permanently delete article");
     }
   };
 
   uploadArticleImage = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req))
-      return res.status(401).json({ message: "未ログインです" });
-
-    const userId = req.user.userId;
+    const user = this.requireUser(req);
+    const userId = user.userId;
     const uploadDir = path.join(process.cwd(), "public/uploads");
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
@@ -317,12 +285,27 @@ export class ArticlesController {
       filename: (_req, file, cb) =>
         cb(null, `${imageId}${path.extname(file.originalname)}`),
     });
-
     const upload = multer({ storage }).single("image");
 
-    upload(req, res, async (err: any) => {
-      if (err || !req.file)
-        return res.status(500).json({ message: "アップロード失敗" });
+    upload(req, res, async (error: any) => {
+      if (error) {
+        return res.status(500).json({
+          error: {
+            code: "ARTICLE_IMAGE_UPLOAD_FAILED",
+            message: "Article image upload failed",
+            details: null,
+          },
+        });
+      }
+      if (!req.file) {
+        return res.status(400).json({
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Validation failed",
+            details: { fields: { image: ["IMAGE_REQUIRED"] } },
+          },
+        });
+      }
 
       try {
         await this.uploadImagesService.registerImage(
@@ -331,26 +314,30 @@ export class ArticlesController {
           req.file,
           "article",
         );
-        res.status(200).json({ url: `/uploads/${req.file.filename}` });
-      } catch {
-        res.status(500).json({ message: "DB登録エラー" });
+        return res.status(200).json({ url: `/uploads/${req.file.filename}` });
+      } catch (dbError) {
+        console.error("Article image registration failed", dbError);
+        return res.status(500).json({
+          error: {
+            code: "ARTICLE_IMAGE_REGISTER_FAILED",
+            message: "Article image registration failed",
+            details: null,
+          },
+        });
       }
     });
   };
 
   getArticleMarp = async (req: AuthRequest, res: Response) => {
     try {
-      const userId = req.user?.userId;
-      const result = await this.articlesService.getArticleMarp(
-        String(req.params.articleId),
-        userId,
+      res.json(
+        await this.articlesService.getArticleMarp(
+          String(req.params.articleId),
+          req.user?.userId,
+        ),
       );
-      res.json(result);
-    } catch (error: any) {
-      let status = 500;
-      if (error.message === "ArticleNotFound") status = 404;
-      if (error.message === "Forbidden") status = 403;
-      res.status(status).json({ message: error.message });
+    } catch (error) {
+      throw this.mapArticleError(error, "ARTICLE_MARP_FETCH_FAILED", "Failed to fetch article Marp data");
     }
   };
 }

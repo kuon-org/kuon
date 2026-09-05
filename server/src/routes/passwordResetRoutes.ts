@@ -1,5 +1,6 @@
 import argon2 from "argon2";
 import { Router, type Request } from "express";
+import { AppError, ValidationError } from "../errors/AppError.js";
 import { authenticateToken, type AuthRequest } from "../middlewares/auth.js";
 import { UsersRepository } from "../repositories/usersRepository.js";
 import { passwordResetService } from "../services/passwordResetService.js";
@@ -40,10 +41,10 @@ router.get("/password-reset/status", async (_req, res) => {
 
 router.post("/password-reset/request", async (req, res) => {
   const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
-  if (!email) return res.status(400).json({ message: "メールアドレスが必要です" });
+  if (!email) throw new ValidationError({ email: ["EMAIL_REQUIRED"] });
 
   if (isRateLimited(getRequestIp(req))) {
-    return res.status(429).json({ message: "しばらく時間をおいてから再度お試しください" });
+    throw new AppError(429, "RATE_LIMITED", "Too many password reset requests");
   }
 
   try {
@@ -51,7 +52,11 @@ router.post("/password-reset/request", async (req, res) => {
     return res.status(200).json({ message: GENERIC_MESSAGE });
   } catch (error) {
     if (error instanceof Error && error.message === "SmtpNotConfigured") {
-      return res.status(503).json({ message: "パスワード再設定機能は利用できません" });
+      throw new AppError(
+        503,
+        "PASSWORD_RESET_UNAVAILABLE",
+        "Password reset is unavailable",
+      );
     }
     return res.status(200).json({ message: GENERIC_MESSAGE });
   }
@@ -61,41 +66,62 @@ router.post("/password-reset/reset", async (req, res) => {
   const token = typeof req.body?.token === "string" ? req.body.token : "";
   const newPassword = typeof req.body?.newPassword === "string" ? req.body.newPassword : "";
 
-  if (!token) return res.status(400).json({ message: "Reset Tokenが必要です" });
-  if (newPassword.length < 6) {
-    return res.status(400).json({ message: "パスワードは6文字以上必要です" });
-  }
+  const fields: Record<string, string[]> = {};
+  if (!token) fields.token = ["PASSWORD_RESET_TOKEN_REQUIRED"];
+  if (newPassword.length < 6) fields.newPassword = ["PASSWORD_TOO_SHORT"];
+  if (Object.keys(fields).length > 0) throw new ValidationError(fields);
 
   try {
     await passwordResetService.reset(token, newPassword);
     return res.status(200).json({ message: "パスワードを再設定しました" });
   } catch (error) {
     if (error instanceof Error && error.message === "PasswordResetTokenExpired") {
-      return res.status(410).json({ message: "再設定URLの有効期限が切れています" });
+      throw new AppError(
+        410,
+        "PASSWORD_RESET_TOKEN_EXPIRED",
+        "Password reset token has expired",
+      );
     }
-    return res.status(400).json({ message: "再設定URLが無効または使用済みです" });
+    throw new AppError(
+      400,
+      "PASSWORD_RESET_TOKEN_INVALID",
+      "Password reset token is invalid or already used",
+    );
   }
 });
 
 router.put("/password/change", authenticateToken, async (req: AuthRequest, res) => {
-  if (!req.user) return res.status(401).json({ message: "未ログインです" });
+  if (!req.user) {
+    throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
+  }
 
   const currentPassword =
     typeof req.body?.currentPassword === "string" ? req.body.currentPassword : "";
   const newPassword =
     typeof req.body?.newPassword === "string" ? req.body.newPassword : "";
 
-  if (!currentPassword || newPassword.length < 6) {
-    return res.status(400).json({ message: "入力内容を確認してください" });
-  }
+  const fields: Record<string, string[]> = {};
+  if (!currentPassword) fields.currentPassword = ["CURRENT_PASSWORD_REQUIRED"];
+  if (newPassword.length < 6) fields.newPassword = ["PASSWORD_TOO_SHORT"];
+  if (Object.keys(fields).length > 0) throw new ValidationError(fields);
 
   const account = await usersRepo.findLocalAccountByUserId(req.user.userId);
   if (!account?.password_hash) {
-    return res.status(400).json({ message: "ローカルパスワードが設定されていません" });
+    throw new AppError(
+      409,
+      "LOCAL_PASSWORD_NOT_CONFIGURED",
+      "Local password is not configured",
+    );
   }
 
   const valid = await argon2.verify(account.password_hash, currentPassword);
-  if (!valid) return res.status(400).json({ message: "現在のパスワードが正しくありません" });
+  if (!valid) {
+    throw new AppError(
+      400,
+      "CURRENT_PASSWORD_INVALID",
+      "Current password is invalid",
+    );
+  }
 
   await usersRepo.updatePassword(req.user.userId, newPassword);
   return res.status(200).json({ message: "パスワードを変更しました" });

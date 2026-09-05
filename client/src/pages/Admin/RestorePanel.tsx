@@ -15,6 +15,8 @@ import {
 } from "@mui/material";
 import RestoreOutlinedIcon from "@mui/icons-material/RestoreOutlined";
 import apiClient from "../../api/client";
+import type { ApiError } from "../../api/FetchHttpClient";
+import { getApiErrorMessage } from "../../utils/errorHelpers";
 
 export const RestorePanel = ({ onError }: { onError: (message: string | null) => void }) => {
   const queryClient = useQueryClient();
@@ -33,8 +35,13 @@ export const RestorePanel = ({ onError }: { onError: (message: string | null) =>
       await apiClient.post("/admin/backup/restore", form);
       queryClient.clear();
       window.location.assign("/login");
-    } catch (error: any) {
-      onError(error?.response?.data?.message ?? "復元に失敗しました。サーバログを確認してください。");
+    } catch (error) {
+      onError(
+        getApiErrorMessage(
+          error as ApiError,
+          "復元に失敗しました。サーバログを確認してください。",
+        ),
+      );
       setOpen(false);
       setConfirmation("");
     } finally {

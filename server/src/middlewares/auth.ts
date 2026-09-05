@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { serverSettingsService } from "../services/serverSettingsService.js";
 import { ServerSettingKey } from "../constants/serverSettings.js";
 import JWT_SECRET from "../utils/sessionTokens/jwtSecret.js";
+import { AppError } from "../errors/AppError.js";
 
 interface JwtPayload {
   userId: string;
@@ -75,20 +76,26 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
   const apiKey = req.header("x-api-key");
   if (apiKey) {
     const key = await validateApiKey(apiKey);
-    if (!key) return res.status(401).json({ message: "無効なAPIキーです" });
+    if (!key) {
+      return next(new AppError(401, "INVALID_API_KEY", "Invalid API key"));
+    }
     req.user = { userId: key.user_id, sessionId: "apikey" };
     return next();
   }
 
   const accessToken = req.cookies.access_token;
-  if (!accessToken) return res.status(401).json({ message: "認証が必要です" });
+  if (!accessToken) {
+    return next(
+      new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required"),
+    );
+  }
 
   try {
     const decoded = verifyAccessToken(accessToken);
     const session = await prisma.user_sessions.findUnique({ where: { id: decoded.sid } });
     if (!session || session.expires_at < new Date() || session.user_id !== decoded.userId) {
       clearAuthCookies(res);
-      return res.status(401).json({ message: "セッションが無効です" });
+      return next(new AppError(401, "SESSION_INVALID", "Session is invalid"));
     }
     req.user = { userId: decoded.userId, sessionId: decoded.sid };
     setSessionExpiryHeaders(
@@ -97,10 +104,14 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
       session.expires_at,
     );
     return next();
-  } catch (err: any) {
-    if (err.name === "TokenExpiredError") return res.status(401).json({ message: "アクセストークン期限切れ" });
+  } catch (err: unknown) {
+    if (err instanceof jwt.TokenExpiredError) {
+      return next(
+        new AppError(401, "ACCESS_TOKEN_EXPIRED", "Access token has expired"),
+      );
+    }
     clearAuthCookies(res);
-    return res.status(401).json({ message: "トークンが無効です" });
+    return next(new AppError(401, "TOKEN_INVALID", "Token is invalid"));
   }
 };
 
@@ -125,8 +136,8 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
         return next();
       }
       clearAuthCookies(res);
-    } catch (err: any) {
-      if (err.name !== "TokenExpiredError") clearAuthCookies(res);
+    } catch (err: unknown) {
+      if (!(err instanceof jwt.TokenExpiredError)) clearAuthCookies(res);
     }
   }
   if (refreshToken) {

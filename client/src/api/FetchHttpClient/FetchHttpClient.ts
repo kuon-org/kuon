@@ -1,6 +1,7 @@
 import type {
+  ApiError,
+  ApiErrorPayload,
   HttpClient,
-  HttpError,
   HttpResponse,
   RequestConfig,
   ResponseType,
@@ -137,24 +138,17 @@ export class FetchHttpClient implements HttpClient {
         }
       }
 
-      const errorData = await parseResponse<any>(res, requestConfig?.responseType);
+      const apiError = await parseApiError(res);
 
       if (
-        res.status === 503 &&
-        ["MAINTENANCE_MODE", "RUNTIME_MAINTENANCE"].includes(errorData?.code) &&
+        apiError.status === 503 &&
+        ["MAINTENANCE_MODE", "RUNTIME_MAINTENANCE"].includes(apiError.code) &&
         typeof window !== "undefined"
       ) {
         window.dispatchEvent(new Event(MAINTENANCE_MODE_EVENT));
       }
 
-      const error: HttpError = {
-        response: {
-          status: res.status,
-          data: errorData,
-        },
-      };
-
-      throw error;
+      throw apiError;
     }
 
     return {
@@ -180,6 +174,55 @@ export class FetchHttpClient implements HttpClient {
     }
 
     return headers;
+  }
+}
+
+async function parseApiError(res: Response): Promise<ApiError> {
+  const fallback: ApiError = {
+    status: res.status,
+    code: getDefaultErrorCode(res.status),
+  };
+
+  try {
+    const payload = (await res.json()) as unknown;
+    if (!isApiErrorPayload(payload)) return fallback;
+
+    return {
+      status: res.status,
+      code: payload.error.code,
+      message: payload.error.message,
+      details: payload.error.details,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function isApiErrorPayload(value: unknown): value is ApiErrorPayload {
+  if (!value || typeof value !== "object") return false;
+  const error = (value as { error?: unknown }).error;
+  if (!error || typeof error !== "object") return false;
+  return typeof (error as { code?: unknown }).code === "string";
+}
+
+function getDefaultErrorCode(status: number): string {
+  switch (status) {
+    case 400:
+      return "BAD_REQUEST";
+    case 401:
+      return "AUTHENTICATION_REQUIRED";
+    case 403:
+      return "PERMISSION_DENIED";
+    case 404:
+      return "NOT_FOUND";
+    case 409:
+      return "CONFLICT";
+    case 429:
+      return "RATE_LIMITED";
+    case 503:
+      return "SERVICE_UNAVAILABLE";
+    default:
+      return status >= 500 ? "INTERNAL_ERROR" : "REQUEST_FAILED";
   }
 }
 

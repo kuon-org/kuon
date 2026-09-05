@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Alert, Box, Button, CircularProgress, Paper, TextField, Typography } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import apiClient from "../../api/client";
-import type { HttpError } from "../../api/FetchHttpClient";
+import type { ApiError } from "../../api/FetchHttpClient";
+import { getApiErrorMessage } from "../../utils/errorHelpers";
 
 const ChangePassword = () => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -26,9 +27,13 @@ const ChangePassword = () => {
       setNewPassword("");
       setConfirmPassword("");
     },
-    onError: (error: HttpError<{ message?: string }>) => {
+    onError: (error: ApiError) => {
       setSuccess(false);
-      setMessage(error.response?.data?.message ?? "パスワードの変更に失敗しました");
+      setMessage(
+        getApiErrorMessage(error, "パスワードの変更に失敗しました", {
+          CURRENT_PASSWORD_INVALID: "現在のパスワードが正しくありません",
+        }),
+      );
     },
   });
 
