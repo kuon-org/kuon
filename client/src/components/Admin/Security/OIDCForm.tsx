@@ -23,6 +23,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ContentCopy,
 } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 import { useAdminQuery } from "../../../hooks/useAdmin";
 import { useNotify } from "../../../hooks/useNotify";
 
@@ -44,6 +45,7 @@ export const OIDCForm = ({
   updateIdpConf,
   toggleActive,
 }: OIDCFormProps) => {
+  const { t } = useTranslation("admin");
   const [showSecret, setShowSecret] = useState(false);
   const { fetchDiscovery } = useAdminQuery(provider_name);
   const [copied, setCopied] = useState(false);
@@ -51,7 +53,7 @@ export const OIDCForm = ({
   const handleCopy = () => {
     navigator.clipboard.writeText(initialData.redirect_uri);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1500); // コピー後の表示をちょっと出す
+    setTimeout(() => setCopied(false), 1500);
   };
   const form = useForm({
     defaultValues: {
@@ -71,28 +73,28 @@ export const OIDCForm = ({
     },
     onSubmit: async ({ value }) => {
       await updateIdpConf({ provider_name, config: value });
-      success("設定を保存しました");
+      success(t("security.idp.form.saved"));
     },
   });
 
   const handleDiscovery = async () => {
     const host = form.getFieldValue("issuer_host");
-    if (!host) return error("Issuer URLを入力してください");
+    if (!host) return error(t("security.idp.oidc.issuerRequired"));
     try {
       const data = await fetchDiscovery(host);
       form.setFieldValue("auth_url", data.auth_url || "");
       form.setFieldValue("token_url", data.token_url || "");
       form.setFieldValue("user_info_url", data.user_info_url || "");
-      success("Discovery情報を取得しました");
-    } catch (e) {
-      error("Discovery情報の取得に失敗しました");
+      success(t("security.idp.oidc.discoverySuccess"));
+    } catch {
+      error(t("security.idp.oidc.discoveryFailed"));
     }
   };
 
   return (
     <Box>
       <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-        {provider_name} の設定
+        {t("security.idp.form.providerSettings", { provider: provider_name })}
       </Typography>
       <Divider />
       <Paper
@@ -106,10 +108,12 @@ export const OIDCForm = ({
       >
         <Box>
           <Typography variant="subtitle1" fontWeight="bold">
-            プロバイダ状態: {isActive ? "有効" : "無効"}
+            {t("security.idp.form.providerState", {
+              state: isActive ? t("common.enabled") : t("common.disabled"),
+            })}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            このOIDCプロバイダ経由のログインを許可します
+            {t("security.idp.form.loginAllowed", { type: "OIDC" })}
           </Typography>
         </Box>
         <Switch
@@ -130,12 +134,12 @@ export const OIDCForm = ({
         <Grid container spacing={3}>
           <Grid size={12}>
             <TextField
-              label="コールバックURL"
+              label={t("security.idp.form.callbackUrl")}
               value={initialData.redirect_uri}
               fullWidth
               disabled
               InputProps={{
-                readOnly: true, // ここが読み取り専用
+                readOnly: true,
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton onClick={handleCopy}>
@@ -147,7 +151,7 @@ export const OIDCForm = ({
                   </InputAdornment>
                 ),
               }}
-              helperText="OAuthプロバイダー側の設定で利用してください"
+              helperText={t("security.idp.form.callbackHint")}
             />
           </Grid>
 
@@ -156,7 +160,7 @@ export const OIDCForm = ({
               <form.Field name="issuer_host">
                 {(field) => (
                   <TextField
-                    label="Issuer URL (発行元)"
+                    label={t("security.idp.oidc.issuerUrl")}
                     fullWidth
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
@@ -207,7 +211,7 @@ export const OIDCForm = ({
             <Accordion variant="outlined">
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="body2">
-                  エンドポイント・属性マッピング詳細
+                  {t("security.idp.oidc.advanced")}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -218,7 +222,7 @@ export const OIDCForm = ({
                       variant="outlined"
                       onClick={handleDiscovery}
                     >
-                      IssuerURLから自動取得
+                      {t("security.idp.oidc.discovery")}
                     </Button>
                   </Grid>
                   <Grid size={12}>
@@ -290,7 +294,11 @@ export const OIDCForm = ({
               sx={{ mt: 4, py: 1.5 }}
               disabled={!canSubmit}
             >
-              {isSubmitting ? <CircularProgress size={24} /> : "設定を保存"}
+              {isSubmitting ? (
+                <CircularProgress size={24} />
+              ) : (
+                t("security.idp.form.saveSettings")
+              )}
             </Button>
           )}
         </form.Subscribe>

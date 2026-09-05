@@ -194,6 +194,80 @@ security:
   apiKey:
     title: API Key
     description: API Keyの発行と、発行済みAPI Keyによる認証を許可します。
+  idp:
+    title: 認証機構設定
+    preparing:
+      idPass: ID/Pass 設定フォーム ※準備中
+      ldap: LDAP 設定フォーム ※準備中
+    oidc:
+      description: 汎用 OpenID Connect プロバイダを設定します。
+      issuerUrl: Issuer URL (発行元)
+      issuerRequired: Issuer URLを入力してください
+      advanced: エンドポイント・属性マッピング詳細
+      discovery: Issuer URLから自動取得
+      discoverySuccess: Discovery情報を取得しました
+      discoveryFailed: Discovery情報の取得に失敗しました
+    saml:
+      description: SAML 2.0 プロバイダを設定します。
+      basicSettings: 基本設定 (Service Provider)
+      generatedAfterSave: 保存後に生成されます
+      acsHint: IdP側に登録するコールバックURLです
+      issuerHint: 本アプリケーションの識別子（通常はメタデータのURLやドメイン）
+      idpSettings: IdP設定 (Identity Provider)
+      advancedSettings: 高度な設定 (Clock Skew / セキュリティ)
+      clockSkew: Clock Skew (秒)
+      clockSkewHint: IdPとの許容される時刻のズレ
+      expirationHint: SAMLリクエストの有効期限
+      requireAssertionSignature: アサーションの署名を必須とする
+      requireResponseSignature: レスポンス全体の署名を必須とする
+      disableRequestedAuthnContext: RequestedAuthnContext を無効化する (Azure AD等の互換用)
+      signatureAlgorithm: 署名アルゴリズム
+      sha1Deprecated: SHA-1 (非推奨)
+      attributeMapping: 属性マッピング設定
+      save: SAML設定を保存
+    registry:
+      title: 未使用IdP Registry
+      description: ENVやDB設定が存在しないIdPマスタです。ユーザーIdentityから参照されていないものだけ削除できます。
+      cleanup: クリーンアップ
+      cleanupFailed: IdPのクリーンアップに失敗しました
+      inUse: " — {{count}}件のユーザーIdentityから参照されているため削除できません。"
+      orphaned: " — ENVまたはDB設定を外した後に残った未使用マスタです。"
+    connectivity:
+      check: 疎通確認
+      checking: 確認中...
+      description: 現在有効な設定を使って外部IdPへの到達性を確認します。
+      success: 疎通確認に成功しました
+      warning: 確認が必要な項目があります
+      failed: 疎通確認に失敗しました
+    readOnly: "Source: Environment — このIdentity Providerは環境変数から設定されているため読み取り専用です。"
+    activeState: "有効状態: {{state}}"
+    manager:
+      editProvider: 編集するプロバイダ
+      addProvider: "新規{{type}}プロバイダ追加"
+      oidcPlaceholder: google など
+      samlPlaceholder: keycloak など
+      add: 追加
+      adding: 追加中...
+      duplicate: そのプロバイダ名は既に存在します
+      addFailed: プロバイダの追加に失敗しました
+      deleteFailed: 削除に失敗しました。ユーザーが既に連携している可能性があります。
+      deleteTitle: "{{type}}設定の削除"
+      deleteDescription: "プロバイダ {{provider}} を削除しようとしています。この操作は取り消せません。実行するには {{confirmation}} と入力してください。"
+      deleting: 削除中...
+      deletePermanently: 完全に削除する
+    form:
+      providerSettings: "{{provider}} の設定"
+      providerState: "プロバイダ状態: {{state}}"
+      loginAllowed: "この{{type}}プロバイダ経由のログインを許可します"
+      callbackUrl: コールバックURL
+      callbackHint: OAuthプロバイダー側の設定で利用してください
+      copied: コピーしました！
+      clientId: クライアントID
+      clientSecret: クライアントシークレット
+      update: 更新
+      updated: 更新しました
+      saveSettings: 設定を保存
+      saved: 設定を保存しました
 
 webhooks:
   title: Webhooks

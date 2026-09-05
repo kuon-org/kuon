@@ -18,11 +18,13 @@ import {
   DialogActions,
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 import { AuthSettingForm } from "./AuthSettingForm";
 import { useAdminQuery } from "../../../hooks/useAdmin";
 import { useNotify } from "../../../hooks/useNotify";
 
 export const OIDCManager = () => {
+  const { t } = useTranslation("admin");
   const {
     allIdps,
     allIdps_isLoading,
@@ -53,7 +55,7 @@ export const OIDCManager = () => {
     const newName = `oidc-${newSuffix.toLowerCase().trim()}`;
 
     if (allIdps?.some((provider) => provider.provider_name === newName)) {
-      error("そのプロバイダ名は既に存在します");
+      error(t("security.idp.manager.duplicate"));
       return;
     }
 
@@ -73,11 +75,12 @@ export const OIDCManager = () => {
       setNewSuffix("");
     } catch (e) {
       console.error(e);
-      error("プロバイダの追加に失敗しました");
+      error(t("security.idp.manager.addFailed"));
     } finally {
       setIsAdding(false);
     }
   };
+
   const handleDelete = async () => {
     if (deleteConfirmText !== "delete me" || !selectedProvider) return;
 
@@ -88,12 +91,13 @@ export const OIDCManager = () => {
       setDeleteConfirmText("");
       setSelectedProvider("");
       await refetchIdpList();
-    } catch (e) {
-      error("削除に失敗しました。ユーザーが既に連携している可能性があります。");
+    } catch {
+      error(t("security.idp.manager.deleteFailed"));
     } finally {
       setIsDeleting(false);
     }
   };
+
   if (allIdps_isLoading) return <CircularProgress />;
 
   return (
@@ -109,10 +113,10 @@ export const OIDCManager = () => {
         }}
       >
         <FormControl sx={{ minWidth: 200 }} size="small">
-          <InputLabel>編集するプロバイダ</InputLabel>
+          <InputLabel>{t("security.idp.manager.editProvider")}</InputLabel>
           <Select
             value={selectedProvider}
-            label="編集するプロバイダ"
+            label={t("security.idp.manager.editProvider")}
             onChange={(e) => setSelectedProvider(e.target.value)}
           >
             {oidcProviders.map((name) => (
@@ -124,9 +128,9 @@ export const OIDCManager = () => {
         </FormControl>
 
         <TextField
-          label="新規OIDCプロバイダ追加"
+          label={t("security.idp.manager.addProvider", { type: "OIDC" })}
           variant="standard"
-          placeholder="google など"
+          placeholder={t("security.idp.manager.oidcPlaceholder")}
           size="small"
           value={newSuffix}
           onChange={(e) => setNewSuffix(e.target.value)}
@@ -142,7 +146,9 @@ export const OIDCManager = () => {
           startIcon={<AddIcon />}
           disabled={!newSuffix || isAdding}
         >
-          {isAdding ? "追加中..." : "追加"}
+          {isAdding
+            ? t("security.idp.manager.adding")
+            : t("security.idp.manager.add")}
         </Button>
         <Button
           variant="outlined"
@@ -155,7 +161,7 @@ export const OIDCManager = () => {
             selectedItem?.readOnly
           }
         >
-          削除
+          {t("common.delete")}
         </Button>
       </Box>
 
@@ -172,13 +178,15 @@ export const OIDCManager = () => {
         open={openDeleteModal}
         onClose={() => !isDeleting && setOpenDeleteModal(false)}
       >
-        <DialogTitle>OIDC設定の削除</DialogTitle>
+        <DialogTitle>
+          {t("security.idp.manager.deleteTitle", { type: "OIDC" })}
+        </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
-            プロバイダ <strong>{selectedProvider}</strong>{" "}
-            を削除しようとしています。
-            この操作は取り消せません。実行するには以下に{" "}
-            <strong>delete me</strong> と入力してください。
+            {t("security.idp.manager.deleteDescription", {
+              provider: selectedProvider,
+              confirmation: "delete me",
+            })}
           </DialogContentText>
           <TextField
             fullWidth
@@ -194,7 +202,7 @@ export const OIDCManager = () => {
             onClick={() => setOpenDeleteModal(false)}
             disabled={isDeleting}
           >
-            キャンセル
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleDelete}
@@ -202,7 +210,9 @@ export const OIDCManager = () => {
             variant="contained"
             disabled={deleteConfirmText !== "delete me" || isDeleting}
           >
-            {isDeleting ? "削除中..." : "完全に削除する"}
+            {isDeleting
+              ? t("security.idp.manager.deleting")
+              : t("security.idp.manager.deletePermanently")}
           </Button>
         </DialogActions>
       </Dialog>
