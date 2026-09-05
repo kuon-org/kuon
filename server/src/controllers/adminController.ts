@@ -54,10 +54,12 @@ export class AdminController {
   updateServerSetting = async (req: AuthRequest, res: Response) => {
     this.requireUser(req);
     const { key, value } = req.body as { key?: unknown; value?: unknown };
-    const fields: Record<string, string[]> = {};
-    if (typeof key !== "string") fields.key = ["STRING_REQUIRED"];
-    if (typeof value !== "string") fields.value = ["STRING_REQUIRED"];
-    if (Object.keys(fields).length > 0) throw new ValidationError(fields);
+    if (typeof key !== "string" || typeof value !== "string") {
+      const fields: Record<string, string[]> = {};
+      if (typeof key !== "string") fields.key = ["STRING_REQUIRED"];
+      if (typeof value !== "string") fields.value = ["STRING_REQUIRED"];
+      throw new ValidationError(fields);
+    }
 
     try {
       if (
