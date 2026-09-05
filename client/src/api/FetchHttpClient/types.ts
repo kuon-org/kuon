@@ -14,19 +14,12 @@ export type ApiErrorPayload = {
   };
 };
 
-export type ApiError<T = any> = {
+export type ApiError = {
   status: number;
   code: string;
   message?: string;
   details?: unknown;
-  response?: {
-    status: number;
-    data: T;
-  };
 };
-
-/** @deprecated Use ApiError for new code. */
-export type HttpError<T = any> = ApiError<T>;
 
 export type RequestConfig = {
   params?: Record<string, string | number | boolean | undefined>;
