@@ -179,15 +179,16 @@ export class FetchHttpClient implements HttpClient {
 
 function normalizeApiError(status: number, data: any): ApiError {
   const standardError = data?.error;
-  const code =
-    standardError?.code ??
-    data?.code ??
-    getDefaultErrorCode(status);
+  const code = standardError?.code ?? data?.code ?? getDefaultErrorCode(status);
   const message =
     standardError?.message ??
     data?.message ??
     (typeof data?.error === "string" ? data.error : undefined);
   const details = standardError?.details ?? data?.details;
+  const responseData =
+    standardError && typeof standardError === "object"
+      ? { ...data, code, message, details }
+      : data;
 
   return {
     status,
@@ -196,7 +197,7 @@ function normalizeApiError(status: number, data: any): ApiError {
     details,
     response: {
       status,
-      data,
+      data: responseData,
     },
   };
 }
