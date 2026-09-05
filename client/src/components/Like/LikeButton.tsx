@@ -1,6 +1,7 @@
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { CircularProgress, IconButton } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { useNotify } from "../../hooks/useNotify";
 
@@ -16,18 +17,19 @@ export const LikeButton = ({
   isLikePending,
   mutateLike,
 }: LikeButtonProps) => {
+  const { t } = useTranslation("common");
   const { user } = useAuthQuery();
   const isAuth = !!user;
   const { error } = useNotify();
   const handleClick = () => {
-    if (!isAuth) return error("ログインしてください");
+    if (!isAuth) return error(t("errors.loginRequired"));
     mutateLike();
   };
   return (
     <IconButton
       onClick={handleClick}
       disabled={isLikePending}
-      aria-label="like-button"
+      aria-label={t("like.ariaLabel")}
       style={{
         width: "42px",
         height: "42px",
