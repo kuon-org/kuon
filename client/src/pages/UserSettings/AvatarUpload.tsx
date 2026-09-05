@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, type ChangeEvent } from "react";
 import { Box, Paper, Typography, Button, Avatar } from "@mui/material";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { useNavigate } from "@tanstack/react-router";
@@ -15,7 +15,7 @@ export const AvatarUpload = () => {
   const { error } = useNotify();
   const navigate = useNavigate();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
