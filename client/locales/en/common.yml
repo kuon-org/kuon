@@ -42,6 +42,7 @@ language:
   label: Language
   options:
     ja: Japanese
+    en: English
 
 userMenu:
   myPage: My page
@@ -54,3 +55,23 @@ userMenu:
   logout: Sign out
   loggingOut: Signing out...
   back: Back to user menu
+
+navigation:
+  home: Home
+  timeline: Timeline
+  trend: Trending
+  stocks: Stocks
+
+search:
+  placeholder: Search by keyword
+
+account:
+  login: Sign in
+  register: Create account
+
+article:
+  create: Create article
+
+ranking:
+  title: User ranking
+  contributions: "{{count}} contributions"
