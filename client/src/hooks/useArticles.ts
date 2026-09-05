@@ -6,6 +6,8 @@ import {
   useInfiniteQuery,
 } from "@tanstack/react-query";
 import apiClient from "../api/client";
+import type { ApiError } from "../api/FetchHttpClient";
+import { getApiErrorMessage } from "../utils/errorHelpers";
 import { useNotify } from "./useNotify";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -138,8 +140,9 @@ export const useArticles = (articleId?: string) => {
       queryClient.invalidateQueries({ queryKey: ["articles"] });
       queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
     },
-    onError: (err: any) => {
-      console.error(err);
+    onError: (apiError: ApiError) => {
+      console.error(apiError);
+      error(getApiErrorMessage(apiError, "記事の作成に失敗しました"));
     },
   });
   const editArticleMutation = useMutation({
@@ -155,8 +158,9 @@ export const useArticles = (articleId?: string) => {
       queryClient.invalidateQueries({ queryKey: ["article", articleId] });
       queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
     },
-    onError: (err: any) => {
-      console.error(err);
+    onError: (apiError: ApiError) => {
+      console.error(apiError);
+      error(getApiErrorMessage(apiError, "記事の更新に失敗しました"));
     },
   });
   // 📰 記事詳細の取得
@@ -359,9 +363,9 @@ export const useArticles = (articleId?: string) => {
       });
       return res.data as { url: string };
     },
-    onError: (err: any) => {
-      console.error(err);
-      error(err.response?.data?.message ?? "画像アップロードに失敗しました");
+    onError: (apiError: ApiError) => {
+      console.error(apiError);
+      error(getApiErrorMessage(apiError, "画像アップロードに失敗しました"));
     },
   });
 
@@ -390,8 +394,8 @@ export const useArticles = (articleId?: string) => {
       queryClient.invalidateQueries({ queryKey: ["article", id] });
       success("記事を削除しました");
     },
-    onError: (err: any) => {
-      error(err.response?.data?.message ?? "削除に失敗しました");
+    onError: (apiError: ApiError) => {
+      error(getApiErrorMessage(apiError, "削除に失敗しました"));
     },
   });
 
