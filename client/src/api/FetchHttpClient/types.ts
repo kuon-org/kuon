@@ -6,12 +6,27 @@ export type HttpResponse<T = any> = {
   headers: Record<string, string>;
 };
 
-export type HttpError<T = any> = {
+export type ApiErrorPayload = {
+  error: {
+    code: string;
+    message?: string;
+    details?: unknown;
+  };
+};
+
+export type ApiError<T = any> = {
+  status: number;
+  code: string;
+  message?: string;
+  details?: unknown;
   response?: {
     status: number;
     data: T;
   };
 };
+
+/** @deprecated Use ApiError for new code. */
+export type HttpError<T = any> = ApiError<T>;
 
 export type RequestConfig = {
   params?: Record<string, string | number | boolean | undefined>;
