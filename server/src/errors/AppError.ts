@@ -1,4 +1,5 @@
 export type ApiErrorDetails = unknown;
+export type ValidationFieldErrors = Record<string, string[]>;
 
 export class AppError extends Error {
   readonly status: number;
@@ -16,5 +17,12 @@ export class AppError extends Error {
     this.status = status;
     this.code = code;
     this.details = details;
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(fields: ValidationFieldErrors, message = "Validation failed") {
+    super(400, "VALIDATION_ERROR", message, { fields });
+    this.name = "ValidationError";
   }
 }
