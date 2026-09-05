@@ -7,6 +7,7 @@ common:
   cancel: キャンセル
   edit: 編集
   delete: 削除
+  update: 更新
   enabled: 有効
   disabled: 無効
   configured: 設定済み
@@ -108,3 +109,126 @@ serverSettings:
     description: インスタンス全体でWebhook配信を許可します。無効の場合、登録済みWebhookが有効でも外部への通知は送信されません。
     userTitle: ユーザーWebhook
     userDescription: ユーザー単位のWebhook登録・配信を許可します。外部URLへの情報送信経路になるため、必要な場合のみ有効にしてください。
+
+backup:
+  title: Backup & Restore
+  description: Kuonのデータベースとアップロード済みファイルを、移行・障害復旧用のバックアップとして保存・復元できます。
+  exportFailed: バックアップの作成に失敗しました。サーバログを確認してください。
+  backupTitle: Backup
+  backupDescription: PostgreSQLの論理バックアップ、uploads、manifestを1つのtar.gzとしてダウンロードします。.envやインフラ固有のSecretは含まれません。
+  maintenanceHint: DBとuploadsの更新を完全に止めて取得したい場合は、先にメンテナンスモードを有効にしてください。
+  creating: バックアップ作成中...
+  create: バックアップを作成
+  restoreTitle: Restore
+  restoreWarning: 現在のデータベースとアップロード済みファイルをバックアップ時点へ置き換えます。完了後は全セッションが無効化され、メンテナンスモードが有効になります。
+  restoreDescription: .env、DATABASE_URL、JWT Secret、Reverse Proxy等のインフラ設定は復元対象外です。
+  chooseFile: バックアップファイルを選択
+  restore: 復元する
+  restoreConfirmTitle: バックアップから復元しますか？
+  restoreConfirmDescription: 実行前に現在のDBを一時退避し、失敗時は可能な限り元へ戻します。続行するには RESTORE と入力してください。
+  restoring: 復元中...
+  executeRestore: 復元を実行
+  restoreFailed: 復元に失敗しました。サーバログを確認してください。
+
+serverEvents:
+  title: Server Events
+  description: Kuonサーバ内部で発生した運用イベントを確認できます。
+  refresh: 更新
+  all: すべて
+  level: Level
+  category: Category
+  eventType: Event type
+  from: From
+  to: To
+  loadFailed: イベントログの取得に失敗しました。
+  datetime: 日時
+  source: Source
+  message: Message
+  empty: イベントはありません。
+  detailTitle: Server Event Detail
+  metadata: Metadata
+  before: Before
+  after: After
+  context: Context
+
+smtp:
+  title: SMTP / Mail
+  description: Email VerificationやPassword Resetなどで利用する共通メール送信設定です。未設定でもKuonの既存機能は利用できます。
+  envReadOnly: "Source: Environment — 環境変数から設定されているため、この画面では読み取り専用です。"
+  configured: SMTPは設定済みです。
+  saved: SMTP設定を保存しました
+  saveFailed: SMTP設定の保存に失敗しました
+  testFailed: テストメールの送信に失敗しました
+  useImplicitTls: Implicit TLS / SMTPSを使用する
+  passwordConfigured: 設定済み
+  secretHidden: 秘密値は表示されません。
+  keepPassword: 空欄のまま保存すると現在のPasswordを維持します。
+  save: SMTP設定を保存
+  testTitle: テストメール
+  testDescription: 現在有効なSMTP設定を使って実際にメールを1通送信します。
+  testTo: 送信先メールアドレス
+  testSend: テスト送信
+
+security:
+  title: 認証・セキュリティ
+  description: ローカル認証、外部Identity Provider、2FAなど認証に関する設定を管理します。
+  identityProviders: Identity Providers
+  accessControl:
+    title: アクセス制御
+    description: 未ログインユーザーによる記事・タグ・ユーザー情報などの閲覧を制御します。
+    requireLogin: ログインを要求する
+    allowPublic: 公開アクセスを許可する
+  localAccount:
+    title: ID / Password
+    registrationTitle: ローカルアカウントの新規登録
+    registrationDescription: 無効にすると、新しいローカルアカウントを作成できなくなります。既存アカウントのログインや外部IdP認証には影響しません。
+    disabledWarning: 新しいユーザーは外部IdP経由でのみ作成できます。ユーザーが1人も存在しない初期セットアップ時は、この設定に関係なく登録できます。
+    verificationTitle: Email Verification
+    verificationDescription: Requiredにすると、新しく作成したローカルアカウントは確認メールのURLを開くまでログインできません。
+    verificationRequired: 現在Requiredです。確認メールの送信にはアプリ設定内のSMTP設定を利用します。
+  twoFactor:
+    title: 2FA / Security Policy
+    description: OIDC / OAuth2 / SAMLで認証した場合でも、Kuon側でTOTPを有効にしているユーザーへ追加の二段階認証を要求できます。
+    require: 要求する
+    notRequire: 要求しない
+  apiKey:
+    title: API Key
+    description: API Keyの発行と、発行済みAPI Keyによる認証を許可します。
+
+webhooks:
+  title: Webhooks
+  description: KuonのイベントをDiscord / Slack / Teams / 任意HTTP endpointへ通知できます。
+  helpTooltip: Webhook設定のヘルプ
+  policy: Webhook policy
+  enable: Webhooksを有効にする
+  allowUser: ユーザー単位Webhookを許可する
+  disabledInfo: Webhook定義は保存できますが、全体設定がOFFの間は実イベントから送信されません。
+  configured: Configured webhooks
+  new: New webhook
+  loading: Loading...
+  empty: まだWebhookは登録されていません。
+  active: Active
+  disabled: Disabled
+  edit: 編集
+  delete: 削除
+  deleteConfirm: "Webhook「{{name}}」を削除しますか？"
+  editTitle: Edit webhook
+  newTitle: New webhook
+  name: Name
+  preview: Preview
+  testSend: Test Send
+  update: Update
+  save: Save
+  recentDeliveries: Recent deliveries
+  help:
+    title: Webhook設定ヘルプ
+    urlTitle: 1. 送信先URL
+    urlDescription: Discord Incoming Webhook、Slack Incoming Webhook、Teams Workflow/Webhook、または任意のHTTP endpoint URLを指定します。
+    eventTitle: 2. Event
+    eventDescription: Webhookごとにイベントを1つ選択します。同じURLへ別イベントを送る場合はWebhook設定を分けてください。
+    templateTitle: 3. Template
+    templateDescription: 選択中のイベントに対応するDiscord / Slack / Teamsテンプレートを適用できます。適用後も自由に編集できます。
+    valuesTitle: 4. Kuon values
+    valuesDescription: 利用可能な変数は選択中のイベントに応じて変わります。JSONモードでは変数一覧からコピーできます。
+    testTitle: 5. Preview / Test Send
+    testDescription: Previewでサンプルデータを展開したJSONを確認し、Test Sendで実際の送信先へ試験通知できます。
