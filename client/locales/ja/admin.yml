@@ -1,1 +1,110 @@
 title: 管理
+
+common:
+  loading: 読み込み中...
+  loadFailed: 取得に失敗しました
+  save: 保存
+  cancel: キャンセル
+  edit: 編集
+  delete: 削除
+  enabled: 有効
+  disabled: 無効
+  configured: 設定済み
+  notConfigured: 未設定
+  allowed: 許可する
+  notAllowed: 許可しない
+
+categories:
+  article: 記事
+  comment: コメント
+  user: ユーザー
+  role: ロール
+  system: システム
+
+dashboard:
+  title: 管理トップ
+  description: Kuonインスタンスの主要な状態を確認できます。
+  consoleTitle: 管理コンソール
+  consoleDescription: 現在の権限で利用できる管理機能が左メニューに表示されています。サーバ状態や環境設定の確認にはシステム設定権限が必要です。
+  fetchingStatus: 状態を取得しています...
+  runtime:
+    title: ランタイム情報
+    loading: サーバ情報を取得しています...
+    loadFailed: サーバ情報の取得に失敗しました。
+    uptime: 稼働時間
+    database: データベース
+    connected: 接続済み
+    error: エラー
+    unknown: 不明
+    environmentVariables: 環境変数
+    sourceLabel: 環境変数
+  maintenance:
+    title: メンテナンス
+    description: 一般ユーザー向けコンテンツアクセスの停止状態です。
+    enabled: メンテナンス中
+    disabled: 通常稼働
+  authentication:
+    title: 認証
+    description: 未ログインユーザーにログインを要求する設定です。
+    enabled: ログイン必須
+    disabled: 公開アクセス可
+  localRegistration:
+    title: ローカル登録
+    description: 新しいローカルアカウントをユーザー自身が登録できるかを示します。
+    enabled: 許可
+    disabled: 停止
+  notifications:
+    title: 通知
+    description: インスタンス内通知の生成状態です。
+  webhooks:
+    title: Webhooks
+    description: インスタンス全体のWebhook配信状態です。
+
+users:
+  title: ユーザ管理
+  loadFailed: ユーザ情報の取得に失敗しました
+  total: 総ユーザ数
+  active: アクティブ
+  inactive: 非アクティブ
+  statusAndRoles: ステータス / ロール
+  username: ユーザ名
+  displayName: 表示名
+  email: メールアドレス
+  createdAt: 作成日
+  lastLoginAt: 最終ログイン
+  stopAccount: アカウント停止
+  enableAccount: アカウント有効化
+  configureRoles: ロールを設定
+  roleDialogDescription: "@{{username}} に割り当てるロールを選択してください。複数ロールのPermissionは和集合として扱われます。"
+
+roles:
+  title: ロールと権限
+  description: PermissionはKuonが定義し、ロールごとに利用可能な操作を組み合わせます。
+  add: ロールを追加
+  edit: ロールを編集
+  loadFailed: ロール情報の取得に失敗しました
+  builtin: 組み込み
+  permissionCount: "{{count}} permissions"
+  roleKey: Role key
+  roleKeyHint: 英小文字・数字・_・- を使用できます。作成後は変更できません。
+  displayName: 表示名
+  descriptionLabel: 説明
+  dependency: "{{names}} が依存"
+
+serverSettings:
+  title: アプリ設定
+  description: Kuonインスタンス全体の運用・通知・外部連携に関する設定を管理します。
+  updateFailed: 設定の更新に失敗しました
+  envReadOnly: "Source: Environment — 環境変数から設定されているため読み取り専用です。"
+  maintenance:
+    title: メンテナンスモード
+    description: 有効にすると、一般ユーザーからのコンテンツアクセスを停止します。管理者は引き続き管理画面へアクセスして解除できます。
+    warning: 現在メンテナンスモードです。一般ユーザーにはメンテナンス画面が表示されます。
+  notifications:
+    title: アプリ内通知
+    description: インスタンス全体でアプリ内通知を有効にします。無効の場合、新しい通知は生成されず、TopBarの通知ベルも表示されません。
+  webhooks:
+    title: Webhook
+    description: インスタンス全体でWebhook配信を許可します。無効の場合、登録済みWebhookが有効でも外部への通知は送信されません。
+    userTitle: ユーザーWebhook
+    userDescription: ユーザー単位のWebhook登録・配信を許可します。外部URLへの情報送信経路になるため、必要な場合のみ有効にしてください。
