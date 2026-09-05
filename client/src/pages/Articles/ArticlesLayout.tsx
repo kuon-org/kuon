@@ -11,6 +11,7 @@ import { More } from "../../components/Markdown/More";
 import { BottomBar } from "../../components/layouts/BottomBar/BottomBar";
 import { CommentJump } from "../../components/Article/Comment/CommentJump";
 import { StockButton } from "../../components/Stock/StockButton";
+import { ShareButton } from "../../components/Article/ShareButton";
 
 export const ArticleLayout = () => {
   const { articleId } = articleRoute.useParams();
@@ -69,6 +70,13 @@ export const ArticleLayout = () => {
           </Tooltip>
 
           <StockButton key={articleId} articleId={articleId} />
+          {article && (
+            <ShareButton
+              articleId={article.id}
+              title={article.title}
+              summary={article.summary}
+            />
+          )}
           <More
             username={article?.users.username ?? ""}
             articleId={articleId}
@@ -112,6 +120,13 @@ export const ArticleLayout = () => {
           mutateLike={mutateLike}
         />
         <StockButton key={articleId} articleId={articleId} />
+        {article && (
+          <ShareButton
+            articleId={article.id}
+            title={article.title}
+            summary={article.summary}
+          />
+        )}
         <More
           username={article?.users.username ?? ""}
           articleId={articleId}
