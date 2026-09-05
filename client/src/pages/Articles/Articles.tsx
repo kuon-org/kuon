@@ -1,11 +1,10 @@
 import { Avatar, Box, Paper, Typography } from "@mui/material";
-
+import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import type { Article } from "../../hooks/useArticles";
 import Markdown from "../../components/Markdown";
-import { Link } from "@tanstack/react-router";
 import { BottomUserCard } from "../../components/Article/BottomUserCard";
 import { Comment } from "../../components/Article/Comment/Comment";
-
 import { TagChip } from "../../components/common/TagChip";
 
 interface ArticlesProps {
@@ -14,8 +13,16 @@ interface ArticlesProps {
 }
 
 const Articles = ({ article, isLoading }: ArticlesProps) => {
-  if (isLoading) return <Typography>読み込み中…</Typography>;
-  if (!article) return <Typography>記事が見つかりません</Typography>;
+  const { t, i18n } = useTranslation("articles");
+
+  if (isLoading) return <Typography>{t("status.loading")}</Typography>;
+  if (!article) return <Typography>{t("status.notFound")}</Typography>;
+
+  const formatDateTime = (value: string) =>
+    new Intl.DateTimeFormat(i18n.language, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
 
   return (
     <>
@@ -31,14 +38,7 @@ const Articles = ({ article, isLoading }: ArticlesProps) => {
           bgcolor: "background.paper",
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            borderRadius: 2,
-            gap: 2,
-          }}
-        >
+        <Box sx={{ display: "flex", alignItems: "center", borderRadius: 2, gap: 2 }}>
           <Link
             to="/$username"
             params={{ username: article.users.username }}
@@ -89,14 +89,13 @@ const Articles = ({ article, isLoading }: ArticlesProps) => {
               verticalAlign: "center",
             }}
           >
-            {article.updated_at &&
-              article.updated_at !== article.created_at && (
-                <Typography variant="subtitle2" color="text.secondary">
-                  最終更新日 {new Date(article.updated_at).toLocaleString()}
-                </Typography>
-              )}
+            {article.updated_at && article.updated_at !== article.created_at && (
+              <Typography variant="subtitle2" color="text.secondary">
+                {t("dates.updatedAt", { date: formatDateTime(article.updated_at) })}
+              </Typography>
+            )}
             <Typography variant="subtitle2" color="text.secondary">
-              投稿日 {new Date(article.created_at).toLocaleString()}
+              {t("dates.createdAt", { date: formatDateTime(article.created_at) })}
             </Typography>
           </Box>
         </Box>

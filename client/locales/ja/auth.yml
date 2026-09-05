@@ -1,0 +1,99 @@
+login:
+  title: Kuon にログイン
+  localTitle: ローカルアカウントでログイン
+  idpButton: "{{provider}} でログイン"
+  identifier: メールアドレスまたはユーザーネーム
+  password: パスワード
+  submit: ログイン
+  success: ログインしました！
+  failed: 認証に失敗しました
+  emailVerificationRequired: メールアドレスの確認が必要です
+  invalidCredentials: メールアドレス、ユーザーネーム、またはパスワードが正しくありません
+  resendVerification: 確認メールを再送する
+  forgotPassword: パスワードを忘れた場合
+  createAccount: アカウント作成はこちら
+  back: ログイン画面へ戻る
+  goToLogin: ログイン画面へ
+  loginNow: ログインする
+
+twoFactor:
+  title: 二段階認証コードを入力
+  description: Google Authenticator に表示された6桁のコードを入力してください。
+  submit: 認証する
+  success: 二段階認証が完了しました！
+  invalidCode: 認証コードが正しくありません
+  sessionExpired: 認証セッションの有効期限が切れました
+
+logout:
+  success: ログアウトしました
+
+forgotPassword:
+  title: パスワードを忘れた場合
+  unavailable: このKuonではメールによるパスワード再設定を利用できません。
+  description: ローカルアカウントに登録したメールアドレスを入力してください。
+  email: メールアドレス
+  submit: 再設定メールを送信
+  requested: パスワード再設定メールを送信しました。メールをご確認ください。
+  requestFailed: 再設定メールの送信要求に失敗しました
+
+resetPassword:
+  title: パスワード再設定
+  newPassword: 新しいパスワード
+  confirmPassword: 新しいパスワード（確認）
+  submit: パスワードを再設定
+  success: パスワードを再設定しました
+  failed: パスワードの再設定に失敗しました
+  invalidUrl: 再設定URLが無効です
+  expiredUrl: 再設定URLの有効期限が切れています
+
+changePassword:
+  title: パスワード変更
+  description: ローカルアカウントの現在のパスワードを確認して、新しいパスワードへ変更します。
+  currentPassword: 現在のパスワード
+  newPassword: 新しいパスワード
+  confirmPassword: 新しいパスワード（確認）
+  submit: パスワードを変更
+  success: パスワードを変更しました
+  failed: パスワードの変更に失敗しました
+  currentPasswordInvalid: 現在のパスワードが正しくありません
+
+verifyEmail:
+  title: メールアドレスの確認
+  verifying: 確認しています...
+  sent: 登録したメールアドレス宛に確認メールを送信しました。メール内のURLを開いて確認を完了してください。
+  email: 登録メールアドレス
+  resend: 確認メールを再送
+  resendSuccess: 確認メールを再送しました
+  resendFailed: 確認メールの再送に失敗しました
+  verifySuccess: メールアドレスの確認が完了しました
+  verifyFailed: メール確認に失敗しました
+
+register:
+  title: 新規アカウント登録
+  disabled: このKuonではローカルアカウントの新規登録が無効化されています。外部IdPを利用するか、管理者にお問い合わせください。
+  initialSetup: 初期セットアップ中です。最初に作成したアカウントには管理者権限が付与されます。
+  emailVerificationRequired: 登録後、入力したメールアドレス宛に確認メールを送信します。確認完了後にログインできます。
+  usernameRulesUnavailable: ユーザー名ルールを取得できませんでした。登録時にサーバー側で検証されます。
+  username: ユーザー名
+  displayName: 表示名
+  email: メールアドレス
+  password: パスワード
+  submit: 登録する
+  success: 登録が完了しました！
+  loginLink: アカウントをお持ちですか？ログインはこちら
+  registrationFailed: アカウント登録に失敗しました
+  usernameAlreadyExists: このユーザー名は既に使用されています
+  usernameReserved: このユーザー名は予約されているため使用できません
+  emailAlreadyExists: このメールアドレスは既に使用されています
+
+validation:
+  required: "{{field}}は必須です"
+  invalidFormat: 無効な形式です
+  passwordMinLength: "パスワードは{{min}}文字以上必要です"
+  minLength: "{{min}}文字以上必要です"
+  passwordMismatch: パスワードが一致しません
+  confirmPasswordMismatch: 確認用パスワードが一致しません
+  usernameLength: "ユーザー名は{{min}}〜{{max}}文字で入力してください"
+  usernamePattern: 英数字・_・-が使用できます。先頭と末尾は英数字にしてください
+  usernameReserved: このユーザー名は予約されているため使用できません
+  usernameHint: "{{min}}〜{{max}}文字。英数字・_・-が使用できます（先頭・末尾は英数字）"

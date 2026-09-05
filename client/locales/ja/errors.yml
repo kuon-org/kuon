@@ -1,0 +1,6 @@
+UNKNOWN_ERROR: エラーが発生しました
+VALIDATION_ERROR: 入力内容を確認してください
+UNAUTHORIZED: ログインが必要です
+FORBIDDEN: この操作を行う権限がありません
+NOT_FOUND: 対象が見つかりません
+INTERNAL_SERVER_ERROR: サーバでエラーが発生しました

@@ -1,14 +1,16 @@
 // components/layouts/TopBar/TabsBar.tsx
 import { AppBar, Toolbar, Tabs, Tab } from "@mui/material";
 import { Link, useMatchRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
   stockListRoute,
   stocksDetailsRoute,
   stocksRoute,
+  userStockRoute,
 } from "../../../routes";
-import { userStockRoute } from "../../../routes";
 
 const TabsBar = () => {
+  const { t } = useTranslation("common");
   const matchRoute = useMatchRoute();
   let currentValue = "/";
 
@@ -24,13 +26,14 @@ const TabsBar = () => {
   ) {
     currentValue = "/stock-feed";
   }
+
   return (
     <AppBar
       position="sticky"
       color="default"
       sx={{
         top: 0,
-        zIndex: (t) => t.zIndex.appBar,
+        zIndex: (theme) => theme.zIndex.appBar,
         height: "56px",
       }}
     >
@@ -45,35 +48,35 @@ const TabsBar = () => {
           sx={{ minHeight: 44 }}
         >
           <Tab
-            label="ホーム"
+            label={t("navigation.home")}
             value="/"
             component={Link as any}
             to="/"
-            aria-label="Home"
+            aria-label={t("navigation.home")}
             sx={{ minHeight: 44 }}
           />
           <Tab
-            label="タイムライン"
+            label={t("navigation.timeline")}
             value="/timeline"
             component={Link as any}
             to="/timeline"
-            aria-label="Timeline"
+            aria-label={t("navigation.timeline")}
             sx={{ minHeight: 44 }}
           />
           <Tab
-            label="トレンド"
+            label={t("navigation.trend")}
             value="/trend"
             component={Link as any}
             to="/trend"
-            aria-label="Trend"
+            aria-label={t("navigation.trend")}
             sx={{ minHeight: 44 }}
           />
           <Tab
-            label="ストック"
+            label={t("navigation.stocks")}
             value="/stock-feed"
             component={Link as any}
             to="/stock-feed"
-            aria-label="Stocks Feed"
+            aria-label={t("navigation.stocks")}
             sx={{ minHeight: 44 }}
           />
         </Tabs>
@@ -83,4 +86,3 @@ const TabsBar = () => {
 };
 
 export default TabsBar;
-``;

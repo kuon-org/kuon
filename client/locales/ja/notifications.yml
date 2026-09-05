@@ -1,0 +1,17 @@
+title: 通知
+ariaLabel: 通知
+markAllRead: すべて既読
+deleteAll: すべて削除
+empty: 通知はありません
+defaultTitle: 通知
+delete: 通知を削除
+following: フォロー中
+followBack: フォローバック
+reasons:
+  followedTag: フォロー中のタグ
+  followedUser: フォロー中のユーザー
+deleteAllDialog:
+  title: 通知をすべて削除しますか？
+  description: 既読の通知を含め、現在保存されている通知がすべて削除されます。この操作は元に戻せません。
+  cancel: キャンセル
+  confirm: すべて削除

@@ -9,12 +9,14 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AuthSettingForm } from "./AuthSettingForm";
 import { OIDCManager } from "./OIDCManager";
 import { SAMLManager } from "./SAMLManager";
 import { useAdminQuery } from "../../../hooks/useAdmin";
 
 export const AuthSettings = () => {
+  const { t } = useTranslation("admin");
   const [mainTab, setMainTab] = useState(0);
   const [oauthTab, setOauthTab] = useState(0);
   const [cleanupError, setCleanupError] = useState<string | null>(null);
@@ -44,17 +46,15 @@ export const AuthSettings = () => {
     setCleanupError(null);
     try {
       await cleanupIdpRegistry(providerName);
-    } catch (error) {
-      setCleanupError(
-        error instanceof Error ? error.message : "IdPのクリーンアップに失敗しました",
-      );
+    } catch {
+      setCleanupError(t("security.idp.registry.cleanupFailed"));
     }
   };
 
   return (
     <>
       <Typography variant="h5" sx={{ mb: 3 }}>
-        認証機構設定
+        {t("security.idp.title")}
       </Typography>
       <Divider sx={{ mb: 2 }} />
 
@@ -67,13 +67,17 @@ export const AuthSettings = () => {
       </Tabs>
 
       <Box sx={{ mt: 2 }}>
-        {mainTab === 0 && <Typography>ID/Pass 設定フォーム ※準備中</Typography>}
-        {mainTab === 1 && <Typography>LDAP 設定フォーム ※準備中</Typography>}
+        {mainTab === 0 && (
+          <Typography>{t("security.idp.preparing.idPass")}</Typography>
+        )}
+        {mainTab === 1 && (
+          <Typography>{t("security.idp.preparing.ldap")}</Typography>
+        )}
         {mainTab === 2 && (
           <Box sx={{ p: 2 }}>
             <Box sx={{ p: 2 }}>
               <Typography variant="body2" sx={{ mb: 2 }}>
-                SAML 2.0 プロバイダを設定します。
+                {t("security.idp.saml.description")}
               </Typography>
               <SAMLManager />
             </Box>
@@ -82,7 +86,7 @@ export const AuthSettings = () => {
         {mainTab === 3 && (
           <Box sx={{ p: 2 }}>
             <Typography variant="body2" sx={{ mb: 2 }}>
-              汎用 OpenID Connect プロバイダを設定します。
+              {t("security.idp.oidc.description")}
             </Typography>
             <OIDCManager />
           </Box>
@@ -113,10 +117,10 @@ export const AuthSettings = () => {
         <Box sx={{ mt: 4 }}>
           <Divider sx={{ mb: 2 }} />
           <Typography variant="h6" sx={{ mb: 1 }}>
-            未使用IdP Registry
+            {t("security.idp.registry.title")}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            ENVやDB設定が存在しないIdPマスタです。ユーザーIdentityから参照されていないものだけ削除できます。
+            {t("security.idp.registry.description")}
           </Typography>
           {cleanupError && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -135,14 +139,16 @@ export const AuthSettings = () => {
                     disabled={!provider.canCleanup || cleanupIdpRegistry_isPending}
                     onClick={() => handleCleanup(provider.provider_name)}
                   >
-                    クリーンアップ
+                    {t("security.idp.registry.cleanup")}
                   </Button>
                 }
               >
                 <strong>{provider.provider_name}</strong> ({provider.provider_type})
                 {provider.userIdentityCount > 0
-                  ? ` — ${provider.userIdentityCount}件のユーザーIdentityから参照されているため削除できません。`
-                  : " — ENVまたはDB設定を外した後に残った未使用マスタです。"}
+                  ? t("security.idp.registry.inUse", {
+                      count: provider.userIdentityCount,
+                    })
+                  : t("security.idp.registry.orphaned")}
               </Alert>
             ))}
           </Stack>

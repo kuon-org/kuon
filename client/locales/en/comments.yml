@@ -1,0 +1,24 @@
+title: Comments
+
+list:
+  title: "Comments ({{count}})"
+  loadFailed: Failed to load comments.
+  empty: There are no comments on this article.
+
+editor:
+  placeholder: Write a comment...
+  loginPrompt: Sign in to leave a comment
+  login: Sign in
+  register: Create account
+  sending: Sending...
+  reply: Reply
+  submit: Comment
+  replyPlaceholder: "Reply to {{name}}..."
+
+card:
+  copyLink: Copy link
+  delete: Delete
+  deleteConfirm: Are you sure you want to delete this comment?
+  deleted: This comment has been deleted
+  cancel: Cancel
+  reply: Reply

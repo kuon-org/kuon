@@ -9,10 +9,10 @@ import {
 } from "@mui/material";
 import { useUserQuery } from "../../hooks/useUsers";
 import { Link } from "@tanstack/react-router";
-// 必要に応じてルーティング用のimportを追加
-// import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 export const Ranking = () => {
+  const { t } = useTranslation("common");
   const { ranking, rankingIsLoading } = useUserQuery();
   if (rankingIsLoading || !ranking) return null;
 
@@ -22,7 +22,7 @@ export const Ranking = () => {
         variant="subtitle2"
         sx={{ px: 2, py: 1, color: "text.secondary", fontWeight: "bold" }}
       >
-        ユーザランキング
+        {t("ranking.title")}
       </Typography>
 
       <List sx={{ p: 0 }}>
@@ -33,7 +33,6 @@ export const Ranking = () => {
             component={Link}
             to={`/${user.username}`}
           >
-            {/* 順位表示 (1, 2, 3...) */}
             <Typography
               variant="caption"
               sx={{
@@ -65,14 +64,15 @@ export const Ranking = () => {
             </ListItemAvatar>
 
             <ListItemText
-              primary={"@" + user.username}
+              primary={`@${user.username}`}
               primaryTypographyProps={{
                 fontSize: "0.9rem",
                 noWrap: true,
                 fontWeight: index < 3 ? 500 : 400,
               }}
-              // 下に「記事数 + コメント数」などを出したい場合は secondary を利用
-              secondary={`${user.contribution} contributions`}
+              secondary={t("ranking.contributions", {
+                count: user.contribution,
+              })}
               secondaryTypographyProps={{ fontSize: "0.75rem" }}
             />
           </ListItemButton>

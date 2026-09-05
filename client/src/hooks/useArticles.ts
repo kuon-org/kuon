@@ -5,11 +5,12 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import apiClient from "../api/client";
 import type { ApiError } from "../api/FetchHttpClient";
 import { getApiErrorMessage } from "../utils/errorHelpers";
 import { useNotify } from "./useNotify";
-import { useNavigate } from "@tanstack/react-router";
 
 interface Tag {
   id: string;
@@ -100,7 +101,7 @@ export interface CreateArticleData {
   summary: string;
   isPublished: boolean;
   isPrivate: boolean;
-  tagIds: string[]; // 追加
+  tagIds: string[];
 }
 
 export interface EditArticleData {
@@ -109,7 +110,7 @@ export interface EditArticleData {
   summary: string;
   isPublished: boolean;
   isPrivate: boolean;
-  tagIds: string[]; // 追加
+  tagIds: string[];
 }
 
 interface PaginatedArticles {
@@ -121,9 +122,11 @@ interface PaginatedArticles {
 }
 
 export const useArticles = (articleId?: string) => {
+  const { t } = useTranslation("articles");
   const queryClient = useQueryClient();
   const { error, success } = useNotify();
   const navigate = useNavigate();
+
   const createArticleMutation = useMutation({
     mutationFn: async (newArticle: CreateArticleData) => {
       const res = await apiClient.post("/articles/create", newArticle);
@@ -142,9 +145,10 @@ export const useArticles = (articleId?: string) => {
     },
     onError: (apiError: ApiError) => {
       console.error(apiError);
-      error(getApiErrorMessage(apiError, "記事の作成に失敗しました"));
+      error(getApiErrorMessage(apiError, t("notifications.createFailed")));
     },
   });
+
   const editArticleMutation = useMutation({
     mutationFn: async (editArticle: EditArticleData) => {
       const res = await apiClient.patch(
@@ -160,10 +164,10 @@ export const useArticles = (articleId?: string) => {
     },
     onError: (apiError: ApiError) => {
       console.error(apiError);
-      error(getApiErrorMessage(apiError, "記事の更新に失敗しました"));
+      error(getApiErrorMessage(apiError, t("notifications.updateFailed")));
     },
   });
-  // 📰 記事詳細の取得
+
   const articleQuery = useQuery({
     queryKey: ["article", articleId],
     queryFn: async () => {
@@ -171,17 +175,10 @@ export const useArticles = (articleId?: string) => {
       return data;
     },
     enabled: !!articleId,
-    staleTime: 1000 * 30, // キャッシュを30秒保持
+    staleTime: 1000 * 30,
     throwOnError: true,
   });
-  // const articlesQuery = useQuery({
-  //     queryKey: ["articles"],
-  //     queryFn: async () => {
-  //         const { data } = await apiClient.get<Articles[]>(`/articles`);
-  //         return data;
-  //     },
 
-  // })
   const articlesInfiniteQuery = useInfiniteQuery({
     queryKey: ["articles"],
     queryFn: async ({ pageParam = 1 }) => {
@@ -193,12 +190,10 @@ export const useArticles = (articleId?: string) => {
       });
       return data;
     },
-    getNextPageParam: (lastPage) => {
-      // 現在のページが総ページ数より少なければ次のページ番号を返す
-      return lastPage.currentPage < lastPage.totalPages
+    getNextPageParam: (lastPage) =>
+      lastPage.currentPage < lastPage.totalPages
         ? lastPage.currentPage + 1
-        : undefined;
-    },
+        : undefined,
     initialPageParam: 1,
   });
 
@@ -216,12 +211,10 @@ export const useArticles = (articleId?: string) => {
       );
       return data;
     },
-    getNextPageParam: (lastPage) => {
-      // 現在のページが総ページ数より少なければ次のページ番号を返す
-      return lastPage.currentPage < lastPage.totalPages
+    getNextPageParam: (lastPage) =>
+      lastPage.currentPage < lastPage.totalPages
         ? lastPage.currentPage + 1
-        : undefined;
-    },
+        : undefined,
     initialPageParam: 1,
   });
 
@@ -239,12 +232,10 @@ export const useArticles = (articleId?: string) => {
       );
       return data;
     },
-    getNextPageParam: (lastPage) => {
-      // 現在のページが総ページ数より少なければ次のページ番号を返す
-      return lastPage.currentPage < lastPage.totalPages
+    getNextPageParam: (lastPage) =>
+      lastPage.currentPage < lastPage.totalPages
         ? lastPage.currentPage + 1
-        : undefined;
-    },
+        : undefined,
     initialPageParam: 1,
   });
 
@@ -259,29 +250,26 @@ export const useArticles = (articleId?: string) => {
     enabled: !!articleId && !!queryClient.getQueryData(["authUser"]),
   });
 
-  // ❤️ 記事にいいねしたユーザー一覧と件数
   const articleLikeUserQuery = useQuery<LikeUserResponse>({
     queryKey: ["articleLikeUser", articleId],
     queryFn: async () => {
-      if (!articleId) throw new Error("記事IDが指定されていません");
+      if (!articleId) throw new Error("ARTICLE_ID_REQUIRED");
       const res = await apiClient.get(`/articles/${articleId}/likes`);
       return res.data as LikeUserResponse;
     },
     enabled: !!articleId,
   });
 
-  // ⭐ 現在のユーザーがいいねしているかどうか
   const articleIsLikedQuery = useQuery<IsLikedResponse>({
     queryKey: ["articleIsLiked", articleId],
     queryFn: async () => {
-      if (!articleId) throw new Error("記事IDが指定されていません");
+      if (!articleId) throw new Error("ARTICLE_ID_REQUIRED");
       const res = await apiClient.get(`/articles/${articleId}/islike`);
       return res.data as IsLikedResponse;
     },
     enabled: !!articleId && !!queryClient.getQueryData(["authUser"]),
   });
 
-  // 💬 いいねトグルミューテーション
   const likeMutation = useMutation({
     mutationFn: async () => {
       const { data } = await apiClient.post<{
@@ -324,7 +312,7 @@ export const useArticles = (articleId?: string) => {
       return { prevArticle, prevIsLiked };
     },
     onError: (_err, _vars, context) => {
-      error("いいねに失敗しました。");
+      error(t("notifications.likeFailed"));
       if (context?.prevArticle)
         queryClient.setQueryData(["article", articleId], context.prevArticle);
       if (context?.prevIsLiked)
@@ -334,8 +322,11 @@ export const useArticles = (articleId?: string) => {
         );
     },
     onSuccess: (data) => {
-      // 成功時に再フェッチ
-      success(data.message);
+      success(
+        data.isLike
+          ? t("notifications.liked")
+          : t("notifications.unliked"),
+      );
       queryClient.invalidateQueries({ queryKey: ["article", articleId] });
       queryClient.invalidateQueries({
         queryKey: ["articleLikeUser", articleId],
@@ -354,6 +345,7 @@ export const useArticles = (articleId?: string) => {
     },
     enabled: !!queryClient.getQueryData(["authUser"]),
   });
+
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -365,7 +357,7 @@ export const useArticles = (articleId?: string) => {
     },
     onError: (apiError: ApiError) => {
       console.error(apiError);
-      error(getApiErrorMessage(apiError, "画像アップロードに失敗しました"));
+      error(getApiErrorMessage(apiError, t("notifications.uploadFailed")));
     },
   });
 
@@ -377,25 +369,24 @@ export const useArticles = (articleId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
       queryClient.invalidateQueries({ queryKey: ["article", articleId] });
-      success("下書きを破棄して公開済みの状態に戻しました");
+      success(t("notifications.rollbackSuccess"));
     },
   });
+
   const deleteArticleMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await apiClient.delete(`/articles/${id}`);
       return res.data;
     },
     onSuccess: (_data, id) => {
-      // 🚀 公開一覧、マイ記事一覧、ゴミ箱一覧をすべて更新
       queryClient.invalidateQueries({ queryKey: ["articles"] });
       queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
       queryClient.invalidateQueries({ queryKey: ["TrashArticles"] });
-      // 詳細表示中に削除した場合のために詳細も無効化
       queryClient.invalidateQueries({ queryKey: ["article", id] });
-      success("記事を削除しました");
+      success(t("notifications.deleteSuccess"));
     },
     onError: (apiError: ApiError) => {
-      error(getApiErrorMessage(apiError, "削除に失敗しました"));
+      error(getApiErrorMessage(apiError, t("notifications.deleteFailed")));
     },
   });
 
@@ -408,7 +399,6 @@ export const useArticles = (articleId?: string) => {
     enabled: !!queryClient.getQueryData(["authUser"]),
   });
 
-  // 復元 mutation
   const restoreMutation = useMutation({
     mutationFn: async (id: string) => apiClient.post(`/articles/${id}/restore`),
     onSuccess: (_data, id) => {
@@ -416,16 +406,15 @@ export const useArticles = (articleId?: string) => {
       queryClient.invalidateQueries({ queryKey: ["UserArticles"] });
       queryClient.invalidateQueries({ queryKey: ["TrashArticles"] });
       queryClient.invalidateQueries({ queryKey: ["article", id] });
-      success("記事を復元しました");
+      success(t("notifications.restoreSuccess"));
     },
   });
 
-  // 物理削除 mutation
   const hardDeleteMutation = useMutation({
     mutationFn: async (id: string) => apiClient.delete(`/articles/${id}/hard`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["TrashArticles"] });
-      success("記事を完全に削除しました");
+      success(t("notifications.hardDeleteSuccess"));
     },
   });
 
@@ -439,24 +428,19 @@ export const useArticles = (articleId?: string) => {
   });
 
   return {
-    // 記事関連
     createArticle: createArticleMutation.mutateAsync,
     isCreating: createArticleMutation.isPending,
 
     editArticle: editArticleMutation.mutateAsync,
     isEditing: editArticleMutation.isPending,
-    // articles: articlesQuery.data,
-    // articles_isLoading: articlesQuery.isLoading,
-    // articles_isError: articlesQuery.isError,
-    /** 修正 */
+
     articles:
-      articlesInfiniteQuery.data?.pages.flatMap((page) => page.articles) ?? [], // 全ページの全記事をフラットに展開
+      articlesInfiniteQuery.data?.pages.flatMap((page) => page.articles) ?? [],
     articles_isLoading: articlesInfiniteQuery.isLoading,
     articles_isError: articlesInfiniteQuery.isError,
-    hasNextPage: articlesInfiniteQuery.hasNextPage, // 次のページがあるか
-    isFetchingNextPage: articlesInfiniteQuery.isFetchingNextPage, // 追加読み込み中か
+    hasNextPage: articlesInfiniteQuery.hasNextPage,
+    isFetchingNextPage: articlesInfiniteQuery.isFetchingNextPage,
     fetchNextPage: articlesInfiniteQuery.fetchNextPage,
-    /** */
 
     recommendArticles:
       recommendArticlesInfiniteQuery.data?.pages.flatMap(
@@ -487,18 +471,15 @@ export const useArticles = (articleId?: string) => {
     isError: articleQuery.isError,
     error: articleQuery.error,
 
-    // 個人記事一覧
     userArticles: userArticlesQuery.data,
     userArticles_isLoading: userArticlesQuery.isLoading,
 
-    // いいね関連
     likeUsers: articleLikeUserQuery.data?.like_users ?? [],
     likeCount: articleLikeUserQuery.data?.like_count ?? 0,
     isLiked: articleIsLikedQuery.data?.isLike ?? false,
     isLikePending: likeMutation.isPending,
     mutateLike: likeMutation.mutate,
 
-    // 再取得用
     refetchArticle: articleQuery.refetch,
     refetchLikeUsers: articleLikeUserQuery.refetch,
     refetchIsLiked: articleIsLikedQuery.refetch,
@@ -515,7 +496,6 @@ export const useArticles = (articleId?: string) => {
     restoreArticle: restoreMutation.mutate,
     hardDeleteArticle: hardDeleteMutation.mutate,
 
-    // スライド(Marp)取得
     marp: getMarp.data,
     marpIsLoading: getMarp.isLoading,
     marpIsError: getMarp.isError,

@@ -1,8 +1,11 @@
 import { Box, Button, Typography, Container } from "@mui/material";
 import { Link } from "@tanstack/react-router";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import { useTranslation } from "react-i18next";
 
 export const NotFoundComponent = () => {
+  const { t } = useTranslation("common");
+
   return (
     <Container maxWidth="sm">
       <Box
@@ -21,10 +24,10 @@ export const NotFoundComponent = () => {
           404
         </Typography>
         <Typography variant="h5" color="text.secondary">
-          お探しのページは見つかりませんでした。
+          {t("notFound.title")}
         </Typography>
         <Typography variant="body1" color="text.secondary" mb={2}>
-          移動または削除されたか、URLが間違っている可能性があります。
+          {t("notFound.description")}
         </Typography>
         <Button
           variant="contained"
@@ -33,7 +36,7 @@ export const NotFoundComponent = () => {
           size="large"
           disableElevation
         >
-          ホームへ戻る
+          {t("notFound.home")}
         </Button>
       </Box>
     </Container>
