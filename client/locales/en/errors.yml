@@ -1,1 +1,6 @@
 UNKNOWN_ERROR: An error occurred
+VALIDATION_ERROR: Please check your input
+UNAUTHORIZED: Sign in is required
+FORBIDDEN: You do not have permission to perform this action
+NOT_FOUND: The requested resource was not found
+INTERNAL_SERVER_ERROR: A server error occurred
