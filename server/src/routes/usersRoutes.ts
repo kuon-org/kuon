@@ -1,4 +1,5 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
+import { AppError, ValidationError } from "../errors/AppError.js";
 import { authenticateToken, type AuthRequest } from "../middlewares/auth.js";
 import { requireSiteAuthentication } from "../middlewares/siteAccess.js";
 import { UsersRepository } from "../repositories/usersRepository.js";
@@ -40,38 +41,56 @@ const attachRefreshExpiryHeaders = (_req: Request, res: Response, next: NextFunc
   next();
 };
 
-const ensureLocalRegistrationAllowed = async (_req: Request, res: Response, next: NextFunction) => {
+const ensureLocalRegistrationAllowed = async (_req: Request, _res: Response, next: NextFunction) => {
   try {
     const status = await localRegistrationService.getStatus();
     if (!status.allowed) {
-      return res.status(403).json({
-        message: "ローカルアカウントの新規登録は無効化されています",
-      });
+      return next(
+        new AppError(
+          403,
+          "LOCAL_REGISTRATION_DISABLED",
+          "Local account registration is disabled",
+        ),
+      );
     }
     next();
   } catch (error) {
     console.error("Failed to check local registration availability", error);
-    return res.status(500).json({ message: "登録設定の確認に失敗しました" });
+    return next(
+      new AppError(
+        500,
+        "REGISTRATION_STATUS_CHECK_FAILED",
+        "Failed to check registration status",
+      ),
+    );
   }
 };
 
-const ensureOwnUser = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!req.user) return res.status(401).json({ message: "未ログインです" });
+const ensureOwnUser = (req: AuthRequest, _res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return next(new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required"));
+  }
   if (req.user.userId !== String(req.params.userId)) {
-    return res.status(403).json({ message: "他のユーザーのパスワードは変更できません" });
+    return next(
+      new AppError(403, "PASSWORD_CHANGE_FORBIDDEN", "Cannot change another user's password"),
+    );
   }
   next();
 };
 
-const validateAndNormalizeUsername = (req: Request, res: Response, next: NextFunction) => {
+const validateAndNormalizeUsername = (req: Request, _res: Response, next: NextFunction) => {
   const username = req.body?.username;
-  if (typeof username !== "string" || !username.trim()) return res.status(400).json({ message: "ユーザ名は必須です" });
+  if (typeof username !== "string" || !username.trim()) {
+    return next(new ValidationError({ username: ["USERNAME_REQUIRED"] }));
+  }
 
   const normalizedUsername = normalizeUsername(username);
   if (!isValidUsernameFormat(normalizedUsername)) {
-    return res.status(400).json({ message: `ユーザ名は${USERNAME_MIN_LENGTH}〜${USERNAME_MAX_LENGTH}文字の英小文字・数字・_・-のみ使用でき、先頭と末尾は英数字にしてください` });
+    return next(new ValidationError({ username: ["USERNAME_INVALID_FORMAT"] }));
   }
-  if (isReservedUsername(normalizedUsername)) return res.status(400).json({ message: "このユーザ名は予約されているため使用できません" });
+  if (isReservedUsername(normalizedUsername)) {
+    return next(new AppError(400, "USERNAME_RESERVED", "Username is reserved"));
+  }
 
   req.body.username = normalizedUsername;
   next();
@@ -91,26 +110,34 @@ usersRouter.get("/registration-status", async (_req, res) => {
     });
   } catch (error) {
     console.error("Failed to get registration status", error);
-    res.status(500).json({ message: "登録設定の取得に失敗しました" });
+    throw new AppError(500, "REGISTRATION_STATUS_FETCH_FAILED", "Failed to fetch registration status");
   }
 });
 usersRouter.get("/email-verification/verify", async (req, res) => {
   const token = typeof req.query.token === "string" ? req.query.token : "";
-  if (!token) return res.status(400).json({ message: "確認Tokenが必要です" });
+  if (!token) throw new ValidationError({ token: ["EMAIL_VERIFICATION_TOKEN_REQUIRED"] });
 
   try {
     await emailVerificationService.verify(token);
     return res.status(200).json({ message: "メールアドレスの確認が完了しました" });
   } catch (error) {
     if (error instanceof Error && error.message === "VerificationTokenExpired") {
-      return res.status(410).json({ message: "確認URLの有効期限が切れています" });
+      throw new AppError(
+        410,
+        "EMAIL_VERIFICATION_TOKEN_EXPIRED",
+        "Email verification token has expired",
+      );
     }
-    return res.status(400).json({ message: "確認URLが無効または使用済みです" });
+    throw new AppError(
+      400,
+      "EMAIL_VERIFICATION_TOKEN_INVALID",
+      "Email verification token is invalid or already used",
+    );
   }
 });
 usersRouter.post("/email-verification/resend", async (req, res) => {
   const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
-  if (!email) return res.status(400).json({ message: "メールアドレスが必要です" });
+  if (!email) throw new ValidationError({ email: ["EMAIL_REQUIRED"] });
 
   try {
     await emailVerificationService.resend(email);
@@ -119,12 +146,13 @@ usersRouter.post("/email-verification/resend", async (req, res) => {
     });
   } catch (error) {
     if (error instanceof Error && error.message === "VerificationResendCooldown") {
-      return res.status(429).json({ message: "再送は1分後にもう一度お試しください" });
+      throw new AppError(429, "EMAIL_VERIFICATION_RESEND_RATE_LIMITED", "Verification resend rate limited");
     }
     if (error instanceof Error && error.message === "SmtpNotConfigured") {
-      return res.status(503).json({ message: "メール送信機能が設定されていません" });
+      throw new AppError(503, "EMAIL_DELIVERY_UNAVAILABLE", "Email delivery is unavailable");
     }
-    return res.status(500).json({ message: "確認メールの再送に失敗しました" });
+    console.error("Verification email resend failed", error);
+    throw new AppError(500, "EMAIL_VERIFICATION_RESEND_FAILED", "Failed to resend verification email");
   }
 });
 usersRouter.get("/users", requireSiteAuthentication, usersCtrl.getUsers);
@@ -132,13 +160,13 @@ usersRouter.get("/users/id/:userId", requireSiteAuthentication, usersCtrl.getUse
 usersRouter.get("/users/:username", requireSiteAuthentication, usersCtrl.getUserByUsername);
 usersRouter.get("/me", authenticateToken, usersCtrl.getMe);
 usersRouter.get("/permissions/me", authenticateToken, async (req: AuthRequest, res: Response) => {
+  if (!req.user) throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
   try {
-    if (!req.user) return res.status(401).json({ message: "未ログインです" });
     const permissions = await permissionService.getUserPermissions(req.user.userId);
     return res.status(200).json({ permissions });
   } catch (error) {
     console.error("Failed to get current user permissions", error);
-    return res.status(500).json({ message: "Permissionの取得に失敗しました" });
+    throw new AppError(500, "PERMISSIONS_FETCH_FAILED", "Failed to fetch permissions");
   }
 });
 usersRouter.post("/register", ensureLocalRegistrationAllowed, validateAndNormalizeUsername, usersCtrl.registerUser);
