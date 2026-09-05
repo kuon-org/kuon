@@ -24,6 +24,23 @@ notFound:
   description: It may have been moved or deleted, or the URL may be incorrect.
   home: Back to home
 
+globalError:
+  default:
+    title: Something went wrong
+    description: An unexpected error occurred while loading the application.
+  forbidden:
+    title: Access denied
+    description: You may not have permission to perform this action or access this content.
+  notFound:
+    title: Data not found
+    description: The requested resource may not exist or may have been deleted.
+  unauthorized:
+    title: Authentication error
+    description: Your session may have expired. Please sign in again.
+  retry: Try again
+  home: Back to home
+  details: "Error details (Status: {{status}})"
+
 maintenance:
   title: Kuon is currently under maintenance
   description: Kuon is currently undergoing maintenance. Please try again later.
