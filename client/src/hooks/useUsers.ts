@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../api/client";
+import type { ApiError } from "../api/FetchHttpClient";
+import { getApiErrorMessage } from "../utils/errorHelpers";
 import { useNotify } from "./useNotify";
 
 interface User {
@@ -120,10 +122,8 @@ export const useUserQuery = (username?: string, userId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pickup", userId] });
     },
-    onError: (err: any) => {
-      error(
-        err.response?.data?.message ?? "ピックアップ記事の設定に失敗しました",
-      );
+    onError: (apiError: ApiError) => {
+      error(getApiErrorMessage(apiError, "ピックアップ記事の設定に失敗しました"));
     },
   });
 
@@ -137,10 +137,8 @@ export const useUserQuery = (username?: string, userId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pickup", userId] });
     },
-    onError: (err: any) => {
-      error(
-        err.response?.data?.message ?? "ピックアップ記事の設定に失敗しました",
-      );
+    onError: (apiError: ApiError) => {
+      error(getApiErrorMessage(apiError, "ピックアップ記事の設定に失敗しました"));
     },
   });
 
