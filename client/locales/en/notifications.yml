@@ -1,1 +1,17 @@
 title: Notifications
+ariaLabel: Notifications
+markAllRead: Mark all as read
+deleteAll: Delete all
+empty: No notifications
+defaultTitle: Notification
+delete: Delete notification
+following: Following
+followBack: Follow back
+reasons:
+  followedTag: Followed tag
+  followedUser: Followed user
+deleteAllDialog:
+  title: Delete all notifications?
+  description: All currently stored notifications, including read notifications, will be deleted. This action cannot be undone.
+  cancel: Cancel
+  confirm: Delete all
