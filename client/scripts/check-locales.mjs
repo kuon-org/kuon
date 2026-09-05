@@ -6,7 +6,6 @@ import { parse } from "yaml";
 const clientRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const localesRoot = path.join(clientRoot, "locales");
 const sourceLocale = "ja";
-const strict = process.env.KUON_I18N_STRICT === "1";
 
 const flattenKeys = (value, prefix = "") => {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return [prefix];
@@ -35,14 +34,14 @@ for (const locale of localeNames) {
   const problems = [];
   const missingNamespaces = sourceNamespaces.filter((namespace) => !namespaces.includes(namespace));
   const extraNamespaces = namespaces.filter((namespace) => !sourceNamespaces.includes(namespace));
-  if (strict && missingNamespaces.length) problems.push(`missing namespaces: ${missingNamespaces.join(", ")}`);
+  if (missingNamespaces.length) problems.push(`missing namespaces: ${missingNamespaces.join(", ")}`);
   if (extraNamespaces.length) problems.push(`extra namespaces: ${extraNamespaces.join(", ")}`);
   for (const namespace of sourceNamespaces.filter((name) => namespaces.includes(name))) {
     const sourceKeys = new Set(flattenKeys(resources[sourceLocale][namespace]));
     const localeKeys = new Set(flattenKeys(resources[locale][namespace]));
     const missingKeys = [...sourceKeys].filter((key) => !localeKeys.has(key));
     const extraKeys = [...localeKeys].filter((key) => !sourceKeys.has(key));
-    if (strict && missingKeys.length) problems.push(`${namespace}: missing keys: ${missingKeys.join(", ")}`);
+    if (missingKeys.length) problems.push(`${namespace}: missing keys: ${missingKeys.join(", ")}`);
     if (extraKeys.length) problems.push(`${namespace}: extra keys: ${extraKeys.join(", ")}`);
   }
   if (problems.length) throw new Error(`Locale '${locale}' does not match '${sourceLocale}':\n- ${problems.join("\n- ")}`);
