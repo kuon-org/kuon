@@ -1,0 +1,45 @@
+title: Users
+
+profile:
+  loading: Loading...
+  notFound: User not found
+  contribution: Contribution
+  posts: Posts
+  following: Following
+  followers: Followers
+  edit: Edit profile
+  follow: Follow
+  followingButton: Following
+
+followers:
+  title: Followers
+  empty: No followers
+
+following:
+  title: Following
+  empty: Not following anyone
+
+followingTags:
+  title: "Followed tags ({{count}})"
+  empty: No followed tags
+  loadError: Failed to load tags
+  viewAll: View all
+  pageTitle: Followed tags
+  discoverTitle: Find tags to follow
+  discoverAction: Browse tags
+
+articles:
+  title: Published articles
+  loadError: Failed to load articles.
+  empty: No articles have been published yet.
+
+pickup:
+  title: Featured articles
+  configure: Configure featured articles
+  emptyHint: Feature articles you want to highlight :)
+  configFailed: Failed to update featured articles
+
+notifications:
+  followed: Followed user
+  unfollowed: Unfollowed user
+  followFailed: Failed to follow user

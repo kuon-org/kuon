@@ -1,0 +1,99 @@
+login:
+  title: Sign in to Kuon
+  localTitle: Sign in with a local account
+  idpButton: "Sign in with {{provider}}"
+  identifier: Email address or username
+  password: Password
+  submit: Sign in
+  success: Signed in!
+  failed: Authentication failed
+  emailVerificationRequired: Email verification is required
+  invalidCredentials: The email address, username, or password is incorrect
+  resendVerification: Resend verification email
+  forgotPassword: Forgot your password?
+  createAccount: Create an account
+  back: Back to sign in
+  goToLogin: Go to sign in
+  loginNow: Sign in now
+
+twoFactor:
+  title: Enter your two-factor authentication code
+  description: Enter the 6-digit code shown in Google Authenticator.
+  submit: Verify
+  success: Two-factor authentication completed!
+  invalidCode: The authentication code is incorrect
+  sessionExpired: The authentication session has expired
+
+logout:
+  success: Signed out
+
+forgotPassword:
+  title: Forgot your password?
+  unavailable: Password reset by email is not available on this Kuon instance.
+  description: Enter the email address registered with your local account.
+  email: Email address
+  submit: Send reset email
+  requested: A password reset email has been sent. Please check your inbox.
+  requestFailed: Failed to request a password reset email
+
+resetPassword:
+  title: Reset password
+  newPassword: New password
+  confirmPassword: Confirm new password
+  submit: Reset password
+  success: Password reset successfully
+  failed: Failed to reset password
+  invalidUrl: The reset URL is invalid
+  expiredUrl: The reset URL has expired
+
+changePassword:
+  title: Change password
+  description: Verify your current local-account password and choose a new password.
+  currentPassword: Current password
+  newPassword: New password
+  confirmPassword: Confirm new password
+  submit: Change password
+  success: Password changed successfully
+  failed: Failed to change password
+  currentPasswordInvalid: The current password is incorrect
+
+verifyEmail:
+  title: Verify email address
+  verifying: Verifying...
+  sent: A verification email has been sent to your registered email address. Open the URL in the email to complete verification.
+  email: Registered email address
+  resend: Resend verification email
+  resendSuccess: Verification email resent
+  resendFailed: Failed to resend the verification email
+  verifySuccess: Email address verified successfully
+  verifyFailed: Email verification failed
+
+register:
+  title: Create account
+  disabled: Local account registration is disabled on this Kuon instance. Use an external IdP or contact the administrator.
+  initialSetup: Initial setup is in progress. The first account created will receive administrator privileges.
+  emailVerificationRequired: A verification email will be sent after registration. You can sign in after verification is complete.
+  usernameRulesUnavailable: Username rules could not be loaded. The server will validate them during registration.
+  username: Username
+  displayName: Display name
+  email: Email address
+  password: Password
+  submit: Register
+  success: Registration completed!
+  loginLink: Already have an account? Sign in here
+  registrationFailed: Account registration failed
+  usernameAlreadyExists: This username is already in use
+  usernameReserved: This username is reserved and cannot be used
+  emailAlreadyExists: This email address is already in use
+
+validation:
+  required: "{{field}} is required"
+  invalidFormat: Invalid format
+  passwordMinLength: "Password must be at least {{min}} characters"
+  minLength: "Must be at least {{min}} characters"
+  passwordMismatch: Passwords do not match
+  confirmPasswordMismatch: Confirmation password does not match
+  usernameLength: "Username must be between {{min}} and {{max}} characters"
+  usernamePattern: Letters, numbers, _ and - are allowed. The first and last characters must be alphanumeric.
+  usernameReserved: This username is reserved and cannot be used
+  usernameHint: "{{min}}–{{max}} characters. Letters, numbers, _ and - are allowed (first and last characters must be alphanumeric)"

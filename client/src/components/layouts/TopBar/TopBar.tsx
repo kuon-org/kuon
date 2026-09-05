@@ -22,17 +22,19 @@ import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { adminRoute } from "../../../routes";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { KuonLogo } from "../../Logo/Kuon";
 
 const TopBar = () => {
+  const { t } = useTranslation("common");
   const { user } = useAuthQuery();
   const { permissions } = useAdminPermissions(!!user);
   const { data: publicSettings } = usePublicServerSettings();
   const [searchValue, setSearchValue] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const navigate = useNavigate();
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: FormEvent) => {
     e.preventDefault();
     if (!searchValue.trim()) return;
     navigate({ to: "/search", search: { q: searchValue, page: 1 } });
@@ -82,6 +84,7 @@ const TopBar = () => {
           <IconButton
             onClick={() => setShowSearch((prev) => !prev)}
             sx={{ color: "primary.contrastText" }}
+            aria-label={t("search.placeholder")}
           >
             {showSearch ? <CloseIcon /> : <SearchIcon />}
           </IconButton>
@@ -116,7 +119,7 @@ const TopBar = () => {
                   color: "primary.contrastText",
                   fontSize: "0.875rem",
                 }}
-                placeholder="キーワードを入力"
+                placeholder={t("search.placeholder")}
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
               />
@@ -140,7 +143,7 @@ const TopBar = () => {
               {canCreateArticle && (
                 <NavButton
                   path="/drafts/new"
-                  message="記事を作成"
+                  message={t("article.create")}
                   Icon={<EditIcon />}
                   variant="contained"
                   color="secondary"
@@ -151,13 +154,13 @@ const TopBar = () => {
             <>
               <NavButton
                 path="/login"
-                message="ログイン"
+                message={t("account.login")}
                 variant="outlined"
                 color="inherit"
               />
               <NavButton
                 path="/register"
-                message="アカウント登録"
+                message={t("account.register")}
                 variant="contained"
                 color="secondary"
               />
@@ -185,7 +188,7 @@ const TopBar = () => {
             <InputBase
               autoFocus
               fullWidth
-              placeholder="キーワードを入力"
+              placeholder={t("search.placeholder")}
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               sx={{

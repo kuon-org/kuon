@@ -8,6 +8,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import {
   usePublishWebhooks,
   type PublishWebhookOption,
@@ -38,6 +39,7 @@ const providerLabel: Record<PublishWebhookOption["provider"], string> = {
 };
 
 export const PublishWebhookSettings = ({ disabled = false }: { disabled?: boolean }) => {
+  const { t } = useTranslation("articles");
   const { data: options = [], isLoading } = usePublishWebhooks();
   const initial = useMemo(() => getPublishWebhookPreference(), []);
   const [notify, setNotify] = useState(initial.notify);
@@ -67,27 +69,13 @@ export const PublishWebhookSettings = ({ disabled = false }: { disabled?: boolea
 
   return (
     <Box sx={{ mt: 3 }}>
-      <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-        Webhook通知
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        公開時に選択した通知先へ記事情報を送信します。この設定はブラウザに保存されます。
-      </Typography>
+      <Typography variant="subtitle2" sx={{ mb: 0.5 }}>{t("editor.webhook.title")}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{t("editor.webhook.description")}</Typography>
       <FormControlLabel
-        control={
-          <Switch
-            checked={notify}
-            disabled={disabled || options.length === 0}
-            onChange={(_, checked) => changeNotify(checked)}
-          />
-        }
-        label="Webhookで通知する"
+        control={<Switch checked={notify} disabled={disabled || options.length === 0} onChange={(_, checked) => changeNotify(checked)} />}
+        label={t("editor.webhook.enable")}
       />
-      {options.length === 0 && !isLoading && (
-        <Alert severity="info" sx={{ mt: 1 }}>
-          利用可能なWebhook通知先がありません。管理者がWebhookを有効化・設定すると選択できます。
-        </Alert>
-      )}
+      {options.length === 0 && !isLoading && <Alert severity="info" sx={{ mt: 1 }}>{t("editor.webhook.noTargets")}</Alert>}
       {notify && options.length > 0 && (
         <Autocomplete
           multiple
@@ -97,21 +85,10 @@ export const PublishWebhookSettings = ({ disabled = false }: { disabled?: boolea
           getOptionLabel={(option) => `${option.name} (${providerLabel[option.provider]})`}
           isOptionEqualToValue={(option, value) => option.id === value.id}
           onChange={(_, values) => changeTargets(values)}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="通知先"
-              placeholder="通知先チャネルを選択"
-              helperText="複数選択できます"
-            />
-          )}
+          renderInput={(params) => <TextField {...params} label={t("editor.webhook.targets")} placeholder={t("editor.webhook.targetPlaceholder")} helperText={t("editor.webhook.multiple")} />}
         />
       )}
-      {notify && options.length > 0 && selected.length === 0 && (
-        <Alert severity="warning" sx={{ mt: 1 }}>
-          通知がONですが通知先が選択されていません。このままでは通知されません。
-        </Alert>
-      )}
+      {notify && options.length > 0 && selected.length === 0 && <Alert severity="warning" sx={{ mt: 1 }}>{t("editor.webhook.noSelection")}</Alert>}
     </Box>
   );
 };

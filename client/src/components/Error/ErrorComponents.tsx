@@ -17,6 +17,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import LockPersonIcon from "@mui/icons-material/LockPerson";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
+import { useTranslation } from "react-i18next";
 import {
   getErrorStatus,
   isForbidden,
@@ -25,44 +26,39 @@ import {
 } from "../../utils/errorHelpers";
 
 export const GlobalErrorComponent = ({ error, reset }: ErrorComponentProps) => {
+  const { t } = useTranslation("common");
   const router = useRouter();
   const status = getErrorStatus(error);
 
   const handleRetry = () => {
-    // 状態をリセットして現在のルートを再検証
     reset();
     router.invalidate();
   };
 
-  // デフォルト設定
-  let title = "問題が発生しました";
-  let description =
-    "アプリケーションの読み込み中に予期しないエラーが発生しました。";
+  let title = t("globalError.default.title");
+  let description = t("globalError.default.description");
   let icon = (
     <WarningAmberIcon sx={{ fontSize: 60, color: "error.main", mb: 2 }} />
   );
   let showRetry = true;
 
-  // ステータスに応じた表示の切り替え
   if (isForbidden(error)) {
-    title = "アクセス権限がありません";
-    description = "この操作を行う権限がないか、閲覧が制限されています。";
+    title = t("globalError.forbidden.title");
+    description = t("globalError.forbidden.description");
     icon = (
       <LockPersonIcon sx={{ fontSize: 60, color: "warning.main", mb: 2 }} />
     );
-    showRetry = false; // 権限エラーはリトライしても解決しないことが多いため
+    showRetry = false;
   } else if (isNotFound(error)) {
-    title = "データが見つかりませんでした";
-    description =
-      "リクエストされたリソースは存在しないか、削除された可能性があります。";
+    title = t("globalError.notFound.title");
+    description = t("globalError.notFound.description");
     icon = (
       <SearchOffIcon sx={{ fontSize: 60, color: "text.secondary", mb: 2 }} />
     );
     showRetry = false;
   } else if (isUnauthorized(error)) {
-    title = "認証エラー";
-    description =
-      "セッションが切れた可能性があります。再度ログインしてください。";
+    title = t("globalError.unauthorized.title");
+    description = t("globalError.unauthorized.description");
     showRetry = false;
   }
 
@@ -89,11 +85,11 @@ export const GlobalErrorComponent = ({ error, reset }: ErrorComponentProps) => {
               size="large"
               onClick={handleRetry}
             >
-              再試行する
+              {t("globalError.retry")}
             </Button>
           )}
           <Button variant="contained" component={Link} to="/" size="large">
-            トップへ戻る
+            {t("globalError.home")}
           </Button>
         </Box>
 
@@ -105,7 +101,7 @@ export const GlobalErrorComponent = ({ error, reset }: ErrorComponentProps) => {
                 color="error"
                 sx={{ fontWeight: "bold" }}
               >
-                エラーの詳細情報 (Status: {status ?? "Unknown"})
+                {t("globalError.details", { status: status ?? "Unknown" })}
               </Typography>
             </AccordionSummary>
             <AccordionDetails

@@ -1,4 +1,5 @@
 import type { ApiError } from "../../api/FetchHttpClient";
+import i18n from "../../i18n";
 
 export const isApiError = (error: unknown): error is ApiError => {
   if (!error || typeof error !== "object") return false;
@@ -18,7 +19,13 @@ export const getApiErrorMessage = (
   messagesByCode: Record<string, string> = {},
 ): string => {
   const code = getErrorCode(error);
-  return code ? messagesByCode[code] ?? fallback : fallback;
+  if (!code) return fallback;
+  if (messagesByCode[code]) return messagesByCode[code];
+
+  return i18n.t(code, {
+    ns: "errors",
+    defaultValue: fallback,
+  });
 };
 
 export const isForbidden = (error: unknown) => getErrorStatus(error) === 403;

@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import CloseIcon from "@mui/icons-material/Close";
+import { useTranslation } from "react-i18next";
 import {
   useNotifications,
   type NotificationReason,
@@ -29,12 +30,8 @@ interface NotificationBellProps {
   enabled: boolean;
 }
 
-const reasonLabels: Record<NotificationReason, string> = {
-  followed_tag: "フォロー中のタグ",
-  followed_user: "フォロー中のユーザー",
-};
-
 export const NotificationBell = ({ enabled }: NotificationBellProps) => {
+  const { t, i18n } = useTranslation("notifications");
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const {
@@ -48,6 +45,11 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
     followBack,
     isFollowBackPending,
   } = useNotifications(enabled);
+
+  const reasonLabels: Record<NotificationReason, string> = {
+    followed_tag: t("reasons.followedTag"),
+    followed_user: t("reasons.followedUser"),
+  };
 
   const handleNotificationClick = async (
     notificationId: string,
@@ -89,7 +91,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
   return (
     <>
       <IconButton
-        aria-label="通知"
+        aria-label={t("ariaLabel")}
         onClick={(event) => setAnchorEl(event.currentTarget)}
         sx={{ color: "primary.contrastText" }}
       >
@@ -119,13 +121,13 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
           }}
         >
           <Typography variant="subtitle1" fontWeight={700}>
-            通知
+            {t("title")}
           </Typography>
           {notifications.length > 0 && (
             <Box sx={{ display: "flex", gap: 0.5 }}>
               {unreadCount > 0 ? (
                 <Button size="small" onClick={() => void markAllRead()}>
-                  すべて既読
+                  {t("markAllRead")}
                 </Button>
               ) : (
                 <Button
@@ -133,7 +135,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
                   color="error"
                   onClick={() => setDeleteAllOpen(true)}
                 >
-                  すべて削除
+                  {t("deleteAll")}
                 </Button>
               )}
             </Box>
@@ -148,7 +150,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
         ) : notifications.length === 0 ? (
           <Box sx={{ px: 2, py: 4, textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">
-              通知はありません
+              {t("empty")}
             </Typography>
           </Box>
         ) : (
@@ -203,7 +205,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
 
                   <Box sx={{ minWidth: 0, flex: 1 }}>
                     <Typography variant="body1">
-                      {notification.title ?? "通知"}
+                      {notification.title ?? t("defaultTitle")}
                     </Typography>
                     {notification.message && (
                       <Typography variant="body2" color="text.secondary">
@@ -233,7 +235,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
                     {notification.action?.type === "follow_back" && (
                       <Box sx={{ mt: 1 }}>
                         {notification.action.isFollowing ? (
-                          <Chip size="small" label="フォロー中" />
+                          <Chip size="small" label={t("following")} />
                         ) : (
                           <Button
                             size="small"
@@ -247,7 +249,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
                               )
                             }
                           >
-                            フォローバック
+                            {t("followBack")}
                           </Button>
                         )}
                       </Box>
@@ -259,15 +261,18 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
                         color="text.secondary"
                         sx={{ display: "block", mt: 0.75 }}
                       >
-                        {new Date(notification.created_at).toLocaleString()}
+                        {new Intl.DateTimeFormat(i18n.language, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(new Date(notification.created_at))}
                       </Typography>
                     )}
                   </Box>
 
-                  <Tooltip title="通知を削除">
+                  <Tooltip title={t("delete")}>
                     <IconButton
                       size="small"
-                      aria-label="通知を削除"
+                      aria-label={t("delete")}
                       onClick={(event) =>
                         void handleDelete(event, notification.id)
                       }
@@ -285,16 +290,18 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
       </Popover>
 
       <Dialog open={deleteAllOpen} onClose={() => setDeleteAllOpen(false)}>
-        <DialogTitle>通知をすべて削除しますか？</DialogTitle>
+        <DialogTitle>{t("deleteAllDialog.title")}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            既読の通知を含め、現在保存されている通知がすべて削除されます。この操作は元に戻せません。
+            {t("deleteAllDialog.description")}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteAllOpen(false)}>キャンセル</Button>
+          <Button onClick={() => setDeleteAllOpen(false)}>
+            {t("deleteAllDialog.cancel")}
+          </Button>
           <Button color="error" onClick={() => void handleDeleteAll()}>
-            すべて削除
+            {t("deleteAllDialog.confirm")}
           </Button>
         </DialogActions>
       </Dialog>

@@ -13,6 +13,7 @@ import {
   Divider,
 } from "@mui/material";
 import { Visibility, VisibilityOff, ContentCopy } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 import { useNotify } from "../../../hooks/useNotify";
 
 interface TemplateFormProps {
@@ -34,13 +35,14 @@ export const OAuth2TemplateForm = ({
   updateIdpConf,
   toggleActive,
 }: TemplateFormProps) => {
+  const { t } = useTranslation("admin");
   const [showSecret, setShowSecret] = useState(false);
   const [copied, setCopied] = useState(false);
   const { success } = useNotify();
   const handleCopy = () => {
     navigator.clipboard.writeText(initialData.redirect_uri);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1500); // コピー後の表示をちょっと出す
+    setTimeout(() => setCopied(false), 1500);
   };
   const form = useForm({
     defaultValues: {
@@ -49,14 +51,14 @@ export const OAuth2TemplateForm = ({
     },
     onSubmit: async ({ value }) => {
       await updateIdpConf({ provider_name, config: value });
-      success("更新しました");
+      success(t("security.idp.form.updated"));
     },
   });
 
   return (
     <Box>
       <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-        {provider_name} の設定
+        {t("security.idp.form.providerSettings", { provider: provider_name })}
       </Typography>
       <Divider />
       <Paper
@@ -70,10 +72,12 @@ export const OAuth2TemplateForm = ({
       >
         <Box>
           <Typography variant="subtitle1" fontWeight="bold">
-            プロバイダ状態: {isActive ? "有効" : "無効"}
+            {t("security.idp.form.providerState", {
+              state: isActive ? t("common.enabled") : t("common.disabled"),
+            })}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            このOAuth2プロバイダ経由のログインを許可します
+            {t("security.idp.form.loginAllowed", { type: "OAuth2" })}
           </Typography>
         </Box>
         <Switch
@@ -84,11 +88,11 @@ export const OAuth2TemplateForm = ({
       </Paper>
       <Box mt={2}>
         <TextField
-          label="コールバックURL"
+          label={t("security.idp.form.callbackUrl")}
           value={initialData.redirect_uri}
           fullWidth
           InputProps={{
-            readOnly: true, // ここが読み取り専用
+            readOnly: true,
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton onClick={handleCopy}>
@@ -97,10 +101,10 @@ export const OAuth2TemplateForm = ({
               </InputAdornment>
             ),
           }}
-          helperText={copied ? "コピーしました！" : ""}
+          helperText={copied ? t("security.idp.form.copied") : ""}
         />
         <Typography variant="caption" color="gray">
-          OAuthプロバイダー側の設定で利用してください
+          {t("security.idp.form.callbackHint")}
         </Typography>
       </Box>
       <form
@@ -115,7 +119,7 @@ export const OAuth2TemplateForm = ({
           {(field) => (
             <TextField
               fullWidth
-              label="クライアントID"
+              label={t("security.idp.form.clientId")}
               margin="normal"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
@@ -128,7 +132,7 @@ export const OAuth2TemplateForm = ({
           {(field) => (
             <TextField
               fullWidth
-              label="クライアントシークレット"
+              label={t("security.idp.form.clientSecret")}
               margin="normal"
               type={showSecret ? "text" : "password"}
               value={field.state.value}
@@ -162,7 +166,7 @@ export const OAuth2TemplateForm = ({
               sx={{ mt: 3, mb: 2 }}
               disabled={!canSubmit}
             >
-              {isSubmitting ? <CircularProgress size={24} /> : "更新"}
+              {isSubmitting ? <CircularProgress size={24} /> : t("common.update")}
             </Button>
           )}
         </form.Subscribe>

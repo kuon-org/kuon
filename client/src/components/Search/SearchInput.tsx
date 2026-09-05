@@ -14,8 +14,10 @@ import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import TagIcon from "@mui/icons-material/Tag";
 import PersonIcon from "@mui/icons-material/Person";
 import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 export const AdvancedSearchBar = ({ initialValue = "" }) => {
+  const { t } = useTranslation("articles");
   const [value, setValue] = useState(initialValue);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
@@ -45,7 +47,7 @@ export const AdvancedSearchBar = ({ initialValue = "" }) => {
     >
       <InputBase
         sx={{ ml: 1, flex: 1 }}
-        placeholder="タイトル、本文、接頭辞で検索..."
+        placeholder={t("search.placeholder")}
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
@@ -67,26 +69,22 @@ export const AdvancedSearchBar = ({ initialValue = "" }) => {
           <ListItemIcon>
             <TagIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>タグ (tag:)</ListItemText>
+          <ListItemText>{t("search.filters.tag")}</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => insertPrefix("user:")}>
           <ListItemIcon>
             <PersonIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>ユーザー (user:)</ListItemText>
+          <ListItemText>{t("search.filters.user")}</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => insertPrefix("title:")}>
-          <ListItemText sx={{ ml: 4 }}>タイトル指定 (title:)</ListItemText>
+          <ListItemText sx={{ ml: 4 }}>{t("search.filters.title")}</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => insertPrefix("created:>=")}>
-          <ListItemText sx={{ ml: 4 }}>
-            {"記事作成日 (created:>=2026/01/01)"}
-          </ListItemText>
+          <ListItemText sx={{ ml: 4 }}>{t("search.filters.created")}</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => insertPrefix("updated:>=")}>
-          <ListItemText sx={{ ml: 4 }}>
-            {"記事更新日 (updated:>=2026/01/01)"}
-          </ListItemText>
+          <ListItemText sx={{ ml: 4 }}>{t("search.filters.updated")}</ListItemText>
         </MenuItem>
       </Menu>
     </Paper>

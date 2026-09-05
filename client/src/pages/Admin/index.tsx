@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
   adminBackupRestoreRoute,
   adminRoleManagementRoute,
@@ -35,6 +36,7 @@ interface AdminNavSection {
 }
 
 export const AdminIndex = () => {
+  const { t } = useTranslation("admin");
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthQuery();
@@ -43,42 +45,42 @@ export const AdminIndex = () => {
 
   const sections: AdminNavSection[] = [
     {
-      items: [{ path: adminTopRoute.to, label: "管理トップ", visible: true }],
+      items: [{ path: adminTopRoute.to, label: t("dashboard.title"), visible: true }],
     },
     {
-      label: "設定",
+      label: t("serverSettings.title"),
       items: [
-        { path: adminServerSettingsRoute.to, label: "アプリ設定", visible: can("system.settings.manage") },
+        { path: adminServerSettingsRoute.to, label: t("serverSettings.title"), visible: can("system.settings.manage") },
       ],
     },
     {
-      label: "認証・セキュリティ",
+      label: t("security.title"),
       items: [
         {
           path: adminSecurityRoute.to,
-          label: "ID / Password・Identity Providers",
+          label: t("security.identityProviders"),
           visible: can("system.idp.manage") || can("system.settings.manage"),
         },
       ],
     },
     {
-      label: "ユーザー・権限",
+      label: t("users.title"),
       items: [
-        { path: adminUserManagementRoute.to, label: "ユーザー", visible: can("user.read") },
-        { path: adminRoleManagementRoute.to, label: "ロールと権限", visible: can("role.read") },
+        { path: adminUserManagementRoute.to, label: t("users.title"), visible: can("user.read") },
+        { path: adminRoleManagementRoute.to, label: t("roles.title"), visible: can("role.read") },
       ],
     },
     {
-      label: "連携",
+      label: t("webhooks.title"),
       items: [
-        { path: adminWebhooksRoute.to, label: "Webhooks", visible: can("system.webhook.manage") },
+        { path: adminWebhooksRoute.to, label: t("webhooks.title"), visible: can("system.webhook.manage") },
       ],
     },
     {
-      label: "運用",
+      label: t("serverEvents.title"),
       items: [
-        { path: adminBackupRestoreRoute.to, label: "Backup & Restore", visible: can("system.backup.execute") },
-        { path: adminServerEventsRoute.to, label: "Server Events", visible: can("eventlog.read") },
+        { path: adminBackupRestoreRoute.to, label: t("backup.title"), visible: can("system.backup.execute") },
+        { path: adminServerEventsRoute.to, label: t("serverEvents.title"), visible: can("eventlog.read") },
       ],
     },
   ]

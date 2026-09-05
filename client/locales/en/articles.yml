@@ -1,0 +1,190 @@
+title: Articles
+
+status:
+  loading: Loading…
+  notFound: Article not found
+
+dates:
+  updatedAt: "Last updated {{date}}"
+  createdAt: "Published {{date}}"
+
+share:
+  tooltip: Share
+  ariaLabel: Share article
+  failed: Failed to share the article
+  copied: Share link copied
+  copyFailed: Failed to copy the share link
+
+pickup:
+  title: Configure featured articles
+  fetchFailed: Failed to load articles
+  picked: Featured
+  notSet: Not set
+  loadMore: Load more
+  allLoaded: All articles are displayed
+  noPublishedArticles: There are no published articles
+  done: Done
+
+feed:
+  loadFailed: Failed to load articles
+  empty: No articles
+  loadingMore: Loading...
+  loadMore: Load more
+  trends: Trends
+  timeline: Timeline
+  recommended: Recommended articles
+  trendingArticles: Trending articles
+  viewTrends: View trends
+  recommendationHint: Follow tags or like articles to see recommendations here
+
+search:
+  title: Advanced search
+  results: "Search results for “{{query}}”"
+  enterKeyword: Enter a search keyword
+  noResults: No matching articles were found.
+  noResultsHint: Try another keyword or use filters such as tags.
+  placeholder: Search by title, body, or prefix...
+  filters:
+    tag: Tag (tag:)
+    user: User (user:)
+    title: Title (title:)
+    created: Created date (created:>=2026/01/01)
+    updated: Updated date (updated:>=2026/01/01)
+
+editor:
+  title: Write article
+  cancel: Cancel
+  close: Close
+  saveDraft: Save draft
+  publishSettings: Publishing settings
+  titleField: Title
+  tags: Tags
+  tagPlaceholder: Press Enter to add
+  selectExistingTag: Select an existing tag
+  noTagCreatePermission: You do not have permission to create new tags
+  summary: Summary
+  settingsTitle: Publishing settings
+  visibilityTitle: Visibility
+  public: "🌐 Public (shown in lists)"
+  unlisted: "🔗 Unlisted (only people with the URL)"
+  private: "🔒 Private (only you)"
+  back: Back
+  sending: Sending...
+  savePrivate: Save as private
+  savePublic: Save and publish
+  saveUnlisted: Save as unlisted
+  draftSaved: Draft saved.
+  published: Article published
+  saveFailed: Failed to save. Check your network connection.
+  permissionDenied: You do not have permission to edit this article
+  webhook:
+    title: Webhook notifications
+    description: Send article information to selected destinations when publishing. This setting is stored in your browser.
+    enable: Send webhook notification
+    noTargets: No webhook destinations are available. Destinations become available when an administrator enables and configures webhooks.
+    targets: Destinations
+    targetPlaceholder: Select destination channels
+    multiple: You can select multiple destinations
+    noSelection: Webhook notifications are enabled, but no destination is selected. Nothing will be sent.
+
+notifications:
+  createFailed: Failed to create the article
+  updateFailed: Failed to update the article
+  likeFailed: Failed to like the article.
+  liked: Article liked
+  unliked: Like removed
+  uploadFailed: Failed to upload the image
+  rollbackSuccess: Draft changes were discarded and the published version was restored
+  deleteSuccess: Article deleted
+  deleteFailed: Failed to delete the article
+  restoreSuccess: Article restored
+  hardDeleteSuccess: Article permanently deleted
+
+stock:
+  title: Stock
+  listTitle: Stock lists
+  all: All stock
+  newList: Create a new list
+  latest: Recent stock lists
+  loadMore: Load more
+  allLoaded: All lists are displayed
+  notFound: Stock list not found.
+  noDescription: No description.
+  noBio: No bio.
+  articleCount: "{{count}} articles"
+  articleCountLong: "{{count}} articles"
+  createdAt: "Created: {{date}}"
+  author: Author
+  follow: Follow
+  following: Following
+  stock: Stock
+  unstock: Remove from stock
+  saveTo: Save to...
+  settings: Stock list settings
+  searchResult: "Showing articles matching “{{query}}”"
+  searchPlaceholder: Search within this list...
+  searchTag: Tag (tag:)
+  searchUser: User (user:)
+  searchTitle: Title (title:)
+  searchCreated: Created date (created:>=2026/01/01)
+  searchUpdated: Updated date (updated:>=2026/01/01)
+  create:
+    title: Create stock list
+    name: Stock list name
+    namePlaceholder: "e.g. Read later, Engineering ideas"
+    required: Required
+    optional: Optional
+    visibility: Visibility
+    private: "🔒 Private"
+    limited: "🔗 Unlisted"
+    public: "🌐 Public"
+    tags: Tags
+    tagSearch: Search and add tags...
+    selectExistingTag: Select an existing tag
+    noTagCreatePermission: You do not have permission to create new tags
+    description: Description
+    descriptionPlaceholder: Describe this list
+    cancel: Cancel
+    creating: Creating...
+    create: Create
+  edit:
+    title: Edit stock list
+    newTitle: Create a new stock list
+    delete: Delete this list
+    deleteConfirm: Are you sure you want to delete this stock list?
+    name: List name
+    namePlaceholder: "e.g. Read later"
+    visibility: Visibility
+    tags: Tags (optional)
+    description: Description
+    autoSave: Auto-save
+    autoSaveDescription: Automatically add items to this list when stocking an article
+    cancel: Cancel
+    creating: Creating...
+    updating: Updating...
+    save: Save list
+
+trash:
+  title: Trash
+  description: Articles here are not published. Restore them or delete them permanently.
+  loading: Loading...
+  untitled: Untitled article
+  deletedAt: "Deleted: {{date}}"
+  restore: Restore
+  hardDelete: Delete permanently
+  hardDeleteConfirm: Permanently delete this article?
+  empty: Trash is empty
+
+drafts:
+  title: Drafts
+  unpublishedOnly: Show unpublished drafts only
+  published: Published
+  updatedAt: "Last updated: {{date}}"
+  untitled: Untitled
+  emptyBody: No content
+  edit: Edit
+  rollback: Discard draft changes
+  delete: Delete
+  empty: No drafts
+  rollbackConfirm: "Discard changes to “{{title}}” and restore the published version?"
+  deleteConfirm: "Delete “{{title}}”? It will be moved to Trash."

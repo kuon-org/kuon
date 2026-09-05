@@ -20,6 +20,7 @@ import {
   Divider,
 } from "@mui/material";
 import { ExpandMore as ExpandMoreIcon, ContentCopy } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 
 interface SAMLFormProps {
   provider_name: string;
@@ -40,6 +41,7 @@ export const SAMLForm = ({
   updateIdpConf,
   toggleActive,
 }: SAMLFormProps) => {
+  const { t } = useTranslation("admin");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -56,9 +58,8 @@ export const SAMLForm = ({
       issuer: initialData.issuer || "",
       entry_point: initialData.entry_point || "",
       cert: initialData.cert || "",
-      // --- 高度な設定項目 ---
       clockSkewSeconds: initialData.clockSkewSeconds || 0,
-      requestIdExpirationMs: initialData.requestIdExpirationMs || 28800000, // 8時間
+      requestIdExpirationMs: initialData.requestIdExpirationMs || 28800000,
       wantAssertionsSigned: initialData.wantAssertionsSigned ?? true,
       wantAuthnResponseSigned: initialData.wantAuthnResponseSigned ?? false,
       disableRequestedAuthnContext:
@@ -67,7 +68,6 @@ export const SAMLForm = ({
         initialData.identifier_format ||
         "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
       signature_algorithm: initialData.signature_algorithm || "sha256",
-      // --- 属性マッピング ---
       mapping: {
         id: initialData.mapping?.id || "nameID",
         username: initialData.mapping?.username || "email",
@@ -86,7 +86,7 @@ export const SAMLForm = ({
   return (
     <Box>
       <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-        {provider_name} の設定
+        {t("security.idp.form.providerSettings", { provider: provider_name })}
       </Typography>
       <Divider />
       <Paper
@@ -100,10 +100,12 @@ export const SAMLForm = ({
       >
         <Box>
           <Typography variant="subtitle1" fontWeight="bold">
-            プロバイダ状態: {isActive ? "有効" : "無効"}
+            {t("security.idp.form.providerState", {
+              state: isActive ? t("common.enabled") : t("common.disabled"),
+            })}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            このSAMLプロバイダ経由のログインを許可します
+            {t("security.idp.form.loginAllowed", { type: "SAML" })}
           </Typography>
         </Box>
         <Switch
@@ -122,16 +124,17 @@ export const SAMLForm = ({
         autoComplete="off"
       >
         <Grid container spacing={3}>
-          {/* 基本設定セクション */}
           <Grid size={12}>
             <Typography variant="h6" gutterBottom>
-              基本設定 (Service Provider)
+              {t("security.idp.saml.basicSettings")}
             </Typography>
             <TextField
               label="ACS URL (Assertion Consumer Service)"
               fullWidth
               size="small"
-              value={initialData.redirect_uri || "保存後に生成されます"}
+              value={
+                initialData.redirect_uri || t("security.idp.saml.generatedAfterSave")
+              }
               disabled
               InputProps={{
                 endAdornment: (
@@ -145,7 +148,7 @@ export const SAMLForm = ({
                   </InputAdornment>
                 ),
               }}
-              helperText="IdP側に登録するコールバックURLです"
+              helperText={t("security.idp.saml.acsHint")}
             />
           </Grid>
 
@@ -158,7 +161,7 @@ export const SAMLForm = ({
                   size="small"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  helperText="本アプリケーションの識別子（通常はメタデータのURLやドメイン）"
+                  helperText={t("security.idp.saml.issuerHint")}
                 />
               )}
             </form.Field>
@@ -166,7 +169,7 @@ export const SAMLForm = ({
 
           <Grid size={12}>
             <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-              IdP設定 (Identity Provider)
+              {t("security.idp.saml.idpSettings")}
             </Typography>
             <form.Field name="entry_point">
               {(field) => (
@@ -205,12 +208,11 @@ export const SAMLForm = ({
             </form.Field>
           </Grid>
 
-          {/* 詳細設定アコーディオン */}
           <Grid size={12}>
             <Accordion variant="outlined" sx={{ mt: 1 }}>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="subtitle2" fontWeight="bold">
-                  高度な設定 (Clock Skew / セキュリティ)
+                  {t("security.idp.saml.advancedSettings")}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -219,7 +221,7 @@ export const SAMLForm = ({
                     <form.Field name="clockSkewSeconds">
                       {(field) => (
                         <TextField
-                          label="Clock Skew (秒)"
+                          label={t("security.idp.saml.clockSkew")}
                           type="number"
                           fullWidth
                           size="small"
@@ -227,7 +229,7 @@ export const SAMLForm = ({
                           onChange={(e) =>
                             field.handleChange(Number(e.target.value))
                           }
-                          helperText="IdPとの許容される時刻のズレ"
+                          helperText={t("security.idp.saml.clockSkewHint")}
                         />
                       )}
                     </form.Field>
@@ -244,7 +246,7 @@ export const SAMLForm = ({
                           onChange={(e) =>
                             field.handleChange(Number(e.target.value))
                           }
-                          helperText="SAMLリクエストの有効期限"
+                          helperText={t("security.idp.saml.expirationHint")}
                         />
                       )}
                     </form.Field>
@@ -263,11 +265,7 @@ export const SAMLForm = ({
                                 }
                               />
                             }
-                            label={
-                              <Typography variant="body2">
-                                アサーションの署名を必須とする
-                              </Typography>
-                            }
+                            label={t("security.idp.saml.requireAssertionSignature")}
                           />
                         )}
                       </form.Field>
@@ -282,11 +280,7 @@ export const SAMLForm = ({
                                 }
                               />
                             }
-                            label={
-                              <Typography variant="body2">
-                                レスポンス全体の署名を必須とする
-                              </Typography>
-                            }
+                            label={t("security.idp.saml.requireResponseSignature")}
                           />
                         )}
                       </form.Field>
@@ -301,12 +295,7 @@ export const SAMLForm = ({
                                 }
                               />
                             }
-                            label={
-                              <Typography variant="body2">
-                                RequestedAuthnContext を無効化する (Azure
-                                AD等の互換用)
-                              </Typography>
-                            }
+                            label={t("security.idp.saml.disableRequestedAuthnContext")}
                           />
                         )}
                       </form.Field>
@@ -318,7 +307,7 @@ export const SAMLForm = ({
                       {(field) => (
                         <TextField
                           select
-                          label="署名アルゴリズム"
+                          label={t("security.idp.saml.signatureAlgorithm")}
                           fullWidth
                           size="small"
                           value={field.state.value}
@@ -326,7 +315,9 @@ export const SAMLForm = ({
                         >
                           <MenuItem value="sha256">SHA-256</MenuItem>
                           <MenuItem value="sha512">SHA-512</MenuItem>
-                          <MenuItem value="sha1">SHA-1 (非推奨)</MenuItem>
+                          <MenuItem value="sha1">
+                            {t("security.idp.saml.sha1Deprecated")}
+                          </MenuItem>
                         </TextField>
                       )}
                     </form.Field>
@@ -349,12 +340,11 @@ export const SAMLForm = ({
             </Accordion>
           </Grid>
 
-          {/* 属性マッピングアコーディオン */}
           <Grid size={12}>
             <Accordion variant="outlined">
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="subtitle2" fontWeight="bold">
-                  属性マッピング設定
+                  {t("security.idp.saml.attributeMapping")}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -415,7 +405,11 @@ export const SAMLForm = ({
               sx={{ mt: 4, py: 1.5 }}
               disabled={!canSubmit}
             >
-              {isSubmitting ? <CircularProgress size={24} /> : "SAML設定を保存"}
+              {isSubmitting ? (
+                <CircularProgress size={24} />
+              ) : (
+                t("security.idp.saml.save")
+              )}
             </Button>
           )}
         </form.Subscribe>

@@ -1,0 +1,24 @@
+title: コメント
+
+list:
+  title: "コメント ({{count}})"
+  loadFailed: コメントの読み込みに失敗しました。
+  empty: この記事にコメントはありません。
+
+editor:
+  placeholder: コメントを入力...
+  loginPrompt: ログインしてコメントを残しましょう
+  login: ログイン
+  register: アカウント登録
+  sending: 送信中...
+  reply: 返信する
+  submit: コメントする
+  replyPlaceholder: "{{name}} さんに返信..."
+
+card:
+  copyLink: リンクをコピー
+  delete: 削除
+  deleteConfirm: このコメントを削除してもよろしいですか？
+  deleted: このコメントは削除されました
+  cancel: キャンセル
+  reply: 返信

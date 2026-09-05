@@ -8,6 +8,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import {
   type IdpConnectivityResult,
   useAdminQuery,
@@ -22,6 +23,7 @@ interface AuthSettingFormProps {
 }
 
 export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
+  const { t } = useTranslation("admin");
   const {
     idpConf,
     idpConf_isLoading,
@@ -50,10 +52,8 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
     setTestResult(null);
     try {
       setTestResult(await testIdpConnectivity(provider_name));
-    } catch (error) {
-      setTestError(
-        error instanceof Error ? error.message : "疎通確認に失敗しました",
-      );
+    } catch {
+      setTestError(t("security.idp.connectivity.failed"));
     }
   };
 
@@ -68,14 +68,14 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
           {testIdpConnectivity_isPending ? (
             <>
               <CircularProgress size={16} sx={{ mr: 1 }} />
-              確認中...
+              {t("security.idp.connectivity.checking")}
             </>
           ) : (
-            "疎通確認"
+            t("security.idp.connectivity.check")
           )}
         </Button>
         <Typography variant="body2" color="text.secondary">
-          現在有効な設定を使って外部IdPへの到達性を確認します。
+          {t("security.idp.connectivity.description")}
         </Typography>
       </Stack>
 
@@ -84,8 +84,8 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
         <Alert severity={testResult.success ? "success" : "warning"}>
           <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
             {testResult.success
-              ? "疎通確認に成功しました"
-              : "確認が必要な項目があります"}
+              ? t("security.idp.connectivity.success")
+              : t("security.idp.connectivity.warning")}
           </Typography>
           {testResult.checks.map((check) => (
             <Typography key={check.name} variant="body2">
@@ -103,12 +103,13 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
     return (
       <Box>
         <Alert severity="info" sx={{ mb: 2 }}>
-          Source: Environment — このIdentity
-          Providerは環境変数から設定されているため読み取り専用です。
+          {t("security.idp.readOnly")}
         </Alert>
         {connectivitySection}
         <Typography variant="subtitle2" sx={{ mb: 1 }}>
-          有効状態: {isActive ? "有効" : "無効"}
+          {t("security.idp.activeState", {
+            state: isActive ? t("common.enabled") : t("common.disabled"),
+          })}
         </Typography>
         <Box
           component="pre"
