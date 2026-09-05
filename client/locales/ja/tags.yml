@@ -35,3 +35,9 @@ edit:
   success: タグを更新しました
   uploadError: 画像のアップロードに失敗しました
   permissionDenied: 権限がありません
+
+notifications:
+  followed: フォローしました
+  unfollowed: フォロー解除しました
+  saveFailed: タグの保存に失敗しました
+  uploadFailed: 画像アップロードに失敗しました

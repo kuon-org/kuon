@@ -37,3 +37,9 @@ pickup:
   title: ピックアップ記事
   configure: ピックアップ記事を設定する
   emptyHint: あなたがアピールしたい記事を設定してみましょう :)
+  configFailed: ピックアップ記事の設定に失敗しました
+
+notifications:
+  followed: フォローしました
+  unfollowed: フォロー解除しました
+  followFailed: フォローに失敗しました
