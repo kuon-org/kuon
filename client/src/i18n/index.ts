@@ -3,7 +3,7 @@ import { initReactI18next } from "react-i18next";
 import { localeLoaders, supportedLocales, type SupportedLocale } from "./localeLoaders";
 
 export const defaultLocale: SupportedLocale = "ja";
-export const enabledLocales: SupportedLocale[] = [defaultLocale];
+export const enabledLocales: SupportedLocale[] = ["ja", "en"];
 export const localeStorageKey = "kuon.locale";
 
 const isEnabledLocale = (locale: string): locale is SupportedLocale =>
