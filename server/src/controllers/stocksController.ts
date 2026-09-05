@@ -1,165 +1,142 @@
 import { Request, Response } from "express";
+import { AppError } from "../errors/AppError.js";
 import { StocksService } from "../services/stocksService.js";
 import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
 
 export class StocksController {
   constructor(private stockService: StocksService) {}
 
-  /**
-   * 【新】公開ストックリスト一覧を取得 (GET /stocks/lists)
-   */
+  private requireUser(req: AuthRequest) {
+    if (!isAuthenticated(req)) {
+      throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
+    }
+    return req.user;
+  }
+
   getPublicStockLists = async (req: Request, res: Response) => {
     try {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 12);
-
       const result = await this.stockService.getPublicStockLists(page, limit);
       res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      console.error("Public stock list fetch failed", error);
+      throw new AppError(500, "STOCK_LIST_FETCH_FAILED", "Failed to fetch stock lists");
     }
   };
 
-  /**
-   * ユーザーのストックリスト一覧を取得
-   * クエリパラメータ articleId がある場合は、その記事が含まれているかのフラグを付与
-   */
   getMyStockLists = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req))
-      return res.status(401).json({ message: "未ログインです" });
-
+    const user = this.requireUser(req);
     try {
       const articleId = req.query.articleId as string;
-      const lists = await this.stockService.getUserStockLists(
-        req.user.userId,
-        articleId,
-      );
+      const lists = await this.stockService.getUserStockLists(user.userId, articleId);
       res.json(lists);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      console.error("User stock list fetch failed", error);
+      throw new AppError(500, "STOCK_LIST_FETCH_FAILED", "Failed to fetch stock lists");
     }
   };
 
-  /**
-   * ストックリストの新規作成
-   */
   createStockList = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req))
-      return res.status(401).json({ message: "未ログインです" });
-
+    const user = this.requireUser(req);
     try {
-      const newList = await this.stockService.createStockList(
-        req.user.userId,
-        req.body,
-      );
+      const newList = await this.stockService.createStockList(user.userId, req.body);
       res.status(201).json(newList);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      console.error("Stock list creation failed", error);
+      throw new AppError(500, "STOCK_LIST_CREATE_FAILED", "Failed to create stock list");
     }
   };
 
-  /**
-   * リストへの記事追加/削除のトグル
-   */
   toggleArticleInList = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req))
-      return res.status(401).json({ message: "未ログインです" });
-
+    const user = this.requireUser(req);
     try {
       const listId = String(req.params.listId);
       const { articleId } = req.body;
       const result = await this.stockService.toggleArticleInStock(
-        req.user.userId,
+        user.userId,
         listId,
         articleId,
       );
       res.json(result);
-    } catch (error: any) {
-      let status = 500;
-      if (error.message === "StockListNotFound or Unauthorized") status = 403;
-      res.status(status).json({ message: error.message });
+    } catch (error) {
+      if (error instanceof Error && error.message === "StockListNotFound or Unauthorized") {
+        throw new AppError(403, "STOCK_LIST_ACCESS_DENIED", "Stock list access denied");
+      }
+      console.error("Stock list article update failed", error);
+      throw new AppError(500, "STOCK_LIST_UPDATE_FAILED", "Failed to update stock list");
     }
   };
-  toggleDefaultStock = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req))
-      return res.status(401).json({ message: "未ログインです" });
 
+  toggleDefaultStock = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
       const { articleId } = req.body;
-      const result = await this.stockService.toggleDefaultStock(
-        req.user.userId,
-        articleId,
-      );
+      const result = await this.stockService.toggleDefaultStock(user.userId, articleId);
       res.json(result);
-    } catch (error: any) {
-      if (error.message === "DefaultListNotFound") {
-        return res
-          .status(404)
-          .json({ message: "デフォルトリストが設定されていません" });
+    } catch (error) {
+      if (error instanceof Error && error.message === "DefaultListNotFound") {
+        throw new AppError(404, "DEFAULT_STOCK_LIST_NOT_FOUND", "Default stock list not found");
       }
-      res.status(500).json({ message: error.message });
+      console.error("Default stock update failed", error);
+      throw new AppError(500, "STOCK_LIST_UPDATE_FAILED", "Failed to update stock list");
     }
   };
 
   getIsLiked = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
       const isLiked = await this.stockService.getIsLiked(
         String(req.params.listId),
-        req.user.userId,
+        user.userId,
       );
       res.json({ isLiked });
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      console.error("Stock list like state fetch failed", error);
+      throw new AppError(500, "STOCK_LIKE_STATE_FETCH_FAILED", "Failed to fetch stock like state");
     }
   };
 
   toggleLike = async (req: AuthRequest, res: Response) => {
+    const user = this.requireUser(req);
     try {
-      if (!isAuthenticated(req))
-        return res.status(401).json({ message: "未ログインです" });
       const result = await this.stockService.toggleLike(
         String(req.params.listId),
-        req.user.userId,
+        user.userId,
       );
       res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      console.error("Stock list like update failed", error);
+      throw new AppError(500, "STOCK_LIKE_UPDATE_FAILED", "Failed to update stock like state");
     }
   };
 
   getMyAllStockListDetail = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req))
-      return res.status(401).json({ message: "未ログインです" });
-
+    const user = this.requireUser(req);
     try {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 20);
       const q = req.query.q as string;
       const lists = await this.stockService.getMyAllStockListDetail(
-        req.user.userId,
+        user.userId,
         page,
         limit,
         q,
       );
       res.json(lists);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      console.error("Stock list detail fetch failed", error);
+      throw new AppError(500, "STOCK_LIST_FETCH_FAILED", "Failed to fetch stock lists");
     }
   };
 
-  /**
-   * リスト詳細（記事一覧）の取得
-   */
   getStockListDetail = async (req: AuthRequest, res: Response) => {
     try {
       const listId = String(req.params.listId);
-      const userId = (req as AuthRequest).user?.userId;
+      const userId = req.user?.userId;
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 20);
-
-      const q = req.query.q as string; // 検索クエリ文字列を取得
+      const q = req.query.q as string;
       const list = await this.stockService.getStockListDetail(
         listId,
         userId,
@@ -168,47 +145,39 @@ export class StocksController {
         q,
       );
       res.json(list);
-    } catch (error: any) {
-      let status = 500;
-      if (error.message === "StockListNotFound") status = 404;
-      if (error.message === "Forbidden") status = 403;
-      res.status(status).json({ message: error.message });
+    } catch (error) {
+      if (error instanceof Error && error.message === "StockListNotFound") {
+        throw new AppError(404, "STOCK_LIST_NOT_FOUND", "Stock list not found");
+      }
+      if (error instanceof Error && error.message === "Forbidden") {
+        throw new AppError(403, "STOCK_LIST_ACCESS_DENIED", "Stock list access denied");
+      }
+      console.error("Stock list detail fetch failed", error);
+      throw new AppError(500, "STOCK_LIST_FETCH_FAILED", "Failed to fetch stock list");
     }
   };
 
-  /**
-   * リストの更新
-   */
   updateStockList = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req))
-      return res.status(401).json({ message: "未ログインです" });
-
+    const user = this.requireUser(req);
     try {
       const listId = String(req.params.listId);
-      const updated = await this.stockService.updateStockList(
-        listId,
-        req.user.userId,
-        req.body,
-      );
+      const updated = await this.stockService.updateStockList(listId, user.userId, req.body);
       res.json(updated);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      console.error("Stock list update failed", error);
+      throw new AppError(500, "STOCK_LIST_UPDATE_FAILED", "Failed to update stock list");
     }
   };
 
-  /**
-   * リストの削除
-   */
   deleteStockList = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req))
-      return res.status(401).json({ message: "未ログインです" });
-
+    const user = this.requireUser(req);
     try {
       const listId = String(req.params.listId);
-      await this.stockService.deleteStockList(listId, req.user.userId);
+      await this.stockService.deleteStockList(listId, user.userId);
       res.status(204).send();
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+    } catch (error) {
+      console.error("Stock list deletion failed", error);
+      throw new AppError(500, "STOCK_LIST_DELETE_FAILED", "Failed to delete stock list");
     }
   };
 }

@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import { AppError, ValidationError } from "../errors/AppError.js";
 import {
   type AuthRequest,
   isAuthenticated,
@@ -7,24 +8,31 @@ import { notificationService } from "../services/notificationService.js";
 import { notificationStreamService } from "../services/notificationStreamService.js";
 
 export class NotificationController {
+  private requireUser(req: AuthRequest) {
+    if (!isAuthenticated(req)) {
+      throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
+    }
+    return req.user;
+  }
+
   list = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
+    const user = this.requireUser(req);
     const limit = Number(req.query.limit ?? 20);
-    res.json(await notificationService.list(req.user.userId, limit));
+    res.json(await notificationService.list(user.userId, limit));
   };
 
   unreadCount = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
-    res.json(await notificationService.unreadCount(req.user.userId));
+    const user = this.requireUser(req);
+    res.json(await notificationService.unreadCount(user.userId));
   };
 
   getPreferences = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
-    res.json(await notificationService.getPreferences(req.user.userId));
+    const user = this.requireUser(req);
+    res.json(await notificationService.getPreferences(user.userId));
   };
 
   updatePreferences = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
+    const user = this.requireUser(req);
     const {
       notifyOnArticleComment,
       notifyOnCommentReply,
@@ -32,60 +40,61 @@ export class NotificationController {
       notifyOnFollowedUserArticle,
       notifyOnUserFollow,
     } = req.body;
-    const values = [
+    const fields: Record<string, string[]> = {};
+    const values = {
       notifyOnArticleComment,
       notifyOnCommentReply,
       notifyOnFollowedTagArticle,
       notifyOnFollowedUserArticle,
       notifyOnUserFollow,
-    ];
-    if (values.some((value) => typeof value !== "boolean")) {
-      return res.status(400).json({ message: "通知設定はbooleanで指定してください" });
+    };
+    for (const [key, value] of Object.entries(values)) {
+      if (typeof value !== "boolean") fields[key] = ["BOOLEAN_REQUIRED"];
     }
+    if (Object.keys(fields).length > 0) throw new ValidationError(fields);
+
     res.json(
-      await notificationService.updatePreferences(req.user.userId, {
-        notifyOnArticleComment,
-        notifyOnCommentReply,
-        notifyOnFollowedTagArticle,
-        notifyOnFollowedUserArticle,
-        notifyOnUserFollow,
-      }),
+      await notificationService.updatePreferences(user.userId, values),
     );
   };
 
   markRead = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
+    const user = this.requireUser(req);
     const notificationId = String(req.params.notificationId);
-    await notificationService.markRead(req.user.userId, notificationId);
+    await notificationService.markRead(user.userId, notificationId);
     res.status(204).send();
   };
 
   markAllRead = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
-    await notificationService.markAllRead(req.user.userId);
+    const user = this.requireUser(req);
+    await notificationService.markAllRead(user.userId);
     res.status(204).send();
   };
 
   deleteOne = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
+    const user = this.requireUser(req);
     const notificationId = String(req.params.notificationId);
-    await notificationService.deleteOne(req.user.userId, notificationId);
+    await notificationService.deleteOne(user.userId, notificationId);
     res.status(204).send();
   };
 
   deleteAll = async (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
-    await notificationService.deleteAll(req.user.userId);
+    const user = this.requireUser(req);
+    await notificationService.deleteAll(user.userId);
     res.status(204).send();
   };
 
   stream = (req: AuthRequest, res: Response) => {
-    if (!isAuthenticated(req)) return res.status(401).json({ message: "認証が必要です" });
+    const user = this.requireUser(req);
     if (!notificationService.isEnabled()) {
-      return res.status(503).json({ message: "アプリ内通知は無効です" });
+      throw new AppError(
+        503,
+        "NOTIFICATIONS_DISABLED",
+        "In-app notifications are disabled",
+      );
     }
 
-    const userId = req.user.userId;
+    const userId = user.userId;
     res.status(200);
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache, no-transform");

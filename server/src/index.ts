@@ -24,6 +24,7 @@ import serverSettingsRouter from "./routes/serverSettingsRouter.js";
 import notificationRouter from "./routes/notificationRouter.js";
 import serverEventRouter from "./routes/serverEventRouter.js";
 import { requireSiteAuthentication } from "./middlewares/siteAccess.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
 import { serverSettingsService } from "./services/serverSettingsService.js";
 import { runtimeMaintenanceGate } from "./services/runtimeMaintenanceService.js";
 import path from "node:path";
@@ -103,6 +104,8 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(distPath));
   app.get("{/*path}", (_req, res) => res.sendFile(path.join(distPath, "index.html")));
 }
+
+app.use(errorHandler);
 
 async function main() {
   await connectDatabaseWithRetry();

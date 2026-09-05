@@ -1,5 +1,6 @@
 // src/controllers/authController.ts
-import { Request, Response } from "express";
+import { Response } from "express";
+import { AppError, ValidationError } from "../errors/AppError.js";
 import { AuthService, type ExternalAuthResult } from "../services/authService.js";
 import { AuthRequest } from "../middlewares/auth.js";
 import {
@@ -28,9 +29,9 @@ export class AuthController {
         req.user?.userId,
       );
       res.redirect(url);
-    } catch (err) {
-      console.error("Auth URL generation failed:", err);
-      res.status(500).json({ error: "Auth URL generation failed" });
+    } catch (error) {
+      console.error("Auth URL generation failed:", error);
+      throw new AppError(500, "AUTH_URL_GENERATION_FAILED", "Auth URL generation failed");
     }
   };
 
@@ -84,37 +85,45 @@ export class AuthController {
       );
       res.clearCookie("pending_2fa_token", getCookieOptions(0));
       return res.redirect(frontendUrl());
-    } catch (err: any) {
-      console.error("Auth Callback Error:", err.message);
-      return res
-        .status(500)
-        .json({ error: "Authentication failed", details: err.message });
+    } catch (error) {
+      console.error("Auth Callback Error:", error);
+      throw new AppError(500, "EXTERNAL_AUTH_FAILED", "External authentication failed");
     }
   };
 
   selectAvatar = async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
+    }
+    const { avatarId } = req.body;
+    if (typeof avatarId !== "string" || !avatarId) {
+      throw new ValidationError({ avatarId: ["AVATAR_ID_REQUIRED"] });
+    }
     try {
-      const { avatarId } = req.body;
-      if (!req.user?.userId) return res.status(401).send();
-      await this.service.switchAvatar(req.user.userId, avatarId);
+      await this.service.switchAvatar(userId, avatarId);
       res.json({ success: true });
-    } catch (err) {
-      res.status(500).json({ error: "Failed to switch avatar" });
+    } catch (error) {
+      console.error("Avatar switch failed", error);
+      throw new AppError(500, "AVATAR_SWITCH_FAILED", "Failed to switch avatar");
     }
   };
 
   unlinkProvider = async (req: AuthRequest, res: Response) => {
+    const provider = String(req.params.provider);
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
+    }
     try {
-      const provider = String(req.params.provider);
-      const userId = req.user?.userId;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
       await this.service.unlinkService(userId, provider);
       res.json({
         success: true,
         message: `${provider} の連携を解除しました。`,
       });
-    } catch (err: any) {
-      res.status(500).json({ error: "連携解除に失敗しました。" });
+    } catch (error) {
+      console.error("Provider unlink failed", error);
+      throw new AppError(500, "IDENTITY_PROVIDER_UNLINK_FAILED", "Failed to unlink identity provider");
     }
   };
 }

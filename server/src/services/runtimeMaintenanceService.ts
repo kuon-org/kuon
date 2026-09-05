@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { AppError } from "../errors/AppError.js";
 import { eventLogger } from "./eventLogger.js";
 
 const RUNTIME_MAINTENANCE_CODE = "RUNTIME_MAINTENANCE";
@@ -50,7 +51,7 @@ export const runtimeMaintenanceService = new RuntimeMaintenanceService();
  */
 export const runtimeMaintenanceGate = (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ) => {
   if (!runtimeMaintenanceService.isLocked()) return next();
@@ -65,8 +66,11 @@ export const runtimeMaintenanceGate = (
 
   if (!guardedPath) return next();
 
-  return res.status(503).json({
-    code: RUNTIME_MAINTENANCE_CODE,
-    message: "Kuon restore is currently in progress",
-  });
+  return next(
+    new AppError(
+      503,
+      RUNTIME_MAINTENANCE_CODE,
+      "Kuon restore is currently in progress",
+    ),
+  );
 };

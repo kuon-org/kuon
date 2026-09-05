@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../api/client";
+import type { ApiError } from "../api/FetchHttpClient";
+import { getApiErrorMessage } from "../utils/errorHelpers";
 import { useNotify } from "./useNotify";
 import { useAuthQuery } from "./useAuth";
 
@@ -79,8 +81,8 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
       queryClient.invalidateQueries({ queryKey: ["tags"] });
       queryClient.invalidateQueries({ queryKey: ["tag", slug] });
     },
-    onError: (err: any) => {
-      error(err.response?.data?.message ?? "タグの保存に失敗しました");
+    onError: (apiError: ApiError) => {
+      error(getApiErrorMessage(apiError, "タグの保存に失敗しました"));
     },
   });
 
@@ -142,8 +144,8 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
       );
       return res.data as { url: string };
     },
-    onError: (err: any) => {
-      error(err.response?.data.message ?? "画像アップロードに失敗しました");
+    onError: (apiError: ApiError) => {
+      error(getApiErrorMessage(apiError, "画像アップロードに失敗しました"));
     },
   });
 

@@ -3,7 +3,8 @@ import { Alert, Box, Button, CircularProgress, Container, TextField, Typography 
 import { useMutation } from "@tanstack/react-query";
 import { NavButton } from "../../components/common/NavButton";
 import apiClient from "../../api/client";
-import type { HttpError } from "../../api/FetchHttpClient";
+import type { ApiError } from "../../api/FetchHttpClient";
+import { getApiErrorMessage } from "../../utils/errorHelpers";
 
 const ResetPassword = () => {
   const token = useMemo(() => new URLSearchParams(window.location.search).get("token") ?? "", []);
@@ -24,8 +25,13 @@ const ResetPassword = () => {
       setCompleted(true);
       setMessage(data.message);
     },
-    onError: (error: HttpError<{ message?: string }>) => {
-      setMessage(error.response?.data?.message ?? "パスワードの再設定に失敗しました");
+    onError: (error: ApiError) => {
+      setMessage(
+        getApiErrorMessage(error, "パスワードの再設定に失敗しました", {
+          PASSWORD_RESET_TOKEN_INVALID: "再設定URLが無効です",
+          PASSWORD_RESET_TOKEN_EXPIRED: "再設定URLの有効期限が切れています",
+        }),
+      );
     },
   });
 

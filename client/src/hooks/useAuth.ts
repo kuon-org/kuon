@@ -1,10 +1,11 @@
 // src/hooks/useAuth.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../api/client";
-import type { HttpError } from "../api/FetchHttpClient";
+import type { ApiError } from "../api/FetchHttpClient";
 import { useState } from "react";
 import authClient from "../api/authClient";
 import { useNotify } from "./useNotify";
+import { getApiErrorMessage } from "../utils/errorHelpers";
 
 export interface AuthUser {
   id: string;
@@ -141,8 +142,12 @@ export const useAuthQuery = () => {
         await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       }
     },
-    onError: (error: HttpError) => {
-      setServerError(error.response?.data?.message);
+    onError: (apiError: ApiError) => {
+      setServerError(
+        getApiErrorMessage(apiError, "認証に失敗しました", {
+          EMAIL_VERIFICATION_REQUIRED: "メールアドレスの確認が必要です",
+        }),
+      );
     },
   });
   const loginVerify2FA = useMutation({
@@ -159,8 +164,8 @@ export const useAuthQuery = () => {
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       sessionStorage.removeItem("pendingEmail");
     },
-    onError: (err: HttpError) => {
-      error(err.response?.data?.message || "認証コードが正しくありません");
+    onError: (apiError: ApiError) => {
+      error(getApiErrorMessage(apiError, "認証コードが正しくありません"));
     },
   });
 
@@ -197,8 +202,8 @@ export const useAuthQuery = () => {
       // ログイン情報を再取得
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
-    onError: (err: HttpError) => {
-      error(err.response?.data?.message || "認証コードの検証に失敗しました");
+    onError: (apiError: ApiError) => {
+      error(getApiErrorMessage(apiError, "認証コードの検証に失敗しました"));
     },
   });
 
@@ -242,8 +247,8 @@ export const useAuthQuery = () => {
       setSuccessMessage(data.message || "プロフィールを更新しました！");
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
-    onError: (error: HttpError) => {
-      setServerError(error.response?.data?.message);
+    onError: (apiError: ApiError) => {
+      setServerError(getApiErrorMessage(apiError, "プロフィールの更新に失敗しました"));
     },
   });
 
@@ -258,8 +263,13 @@ export const useAuthQuery = () => {
       setSuccessMessage(data.message || "ユーザ名を更新しました！");
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
-    onError: (error: HttpError) => {
-      setServerError(error.response?.data?.message);
+    onError: (apiError: ApiError) => {
+      setServerError(
+        getApiErrorMessage(apiError, "ユーザ名の更新に失敗しました", {
+          USERNAME_ALREADY_EXISTS: "このユーザ名は既に使用されています",
+          USERNAME_RESERVED: "このユーザ名は使用できません",
+        }),
+      );
     },
   });
 
@@ -310,10 +320,8 @@ export const useAuthQuery = () => {
       await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
       success("連携を解除しました");
     },
-    onError: (err: HttpError) => {
-      const message =
-        (err.response?.data as any)?.error || "解除に失敗しました";
-      error(message);
+    onError: (apiError: ApiError) => {
+      error(getApiErrorMessage(apiError, "解除に失敗しました"));
     },
   });
   const uploadImageMutation = useMutation({
@@ -329,9 +337,9 @@ export const useAuthQuery = () => {
       await queryClient.invalidateQueries({ queryKey: ["userAvatars"] });
       success("画像をアップロードしました。ページリロードで反映されます。");
     },
-    onError: (err: any) => {
-      console.error(err);
-      error(err.response?.data?.message ?? "画像アップロードに失敗しました");
+    onError: (apiError: ApiError) => {
+      console.error(apiError);
+      error(getApiErrorMessage(apiError, "画像アップロードに失敗しました"));
     },
   });
 
@@ -396,8 +404,8 @@ export const useAuthQuery = () => {
         "APIキーを作成しました。一度しか表示されないため、必ず控えてください。",
       );
     },
-    onError: (err: HttpError) => {
-      error(err.response?.data.message || "APIキーの作成に失敗しました");
+    onError: (apiError: ApiError) => {
+      error(getApiErrorMessage(apiError, "APIキーの作成に失敗しました"));
     },
   });
 
@@ -413,8 +421,8 @@ export const useAuthQuery = () => {
       queryClient.invalidateQueries({ queryKey: ["user-api-keys"] });
       success("APIキーを失効させました");
     },
-    onError: (err: HttpError) => {
-      error(err.response?.data.message || "APIキーの削除に失敗しました");
+    onError: (apiError: ApiError) => {
+      error(getApiErrorMessage(apiError, "APIキーの削除に失敗しました"));
     },
   });
 
