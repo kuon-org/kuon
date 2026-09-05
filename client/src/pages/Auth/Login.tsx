@@ -17,8 +17,9 @@ import { useLocalRegistrationStatus } from "../../hooks/useLocalRegistrationStat
 import Loading from "../../components/common/Loading/Loading";
 import { useNavigate } from "@tanstack/react-router";
 import apiClient from "../../api/client";
-import type { HttpError } from "../../api/FetchHttpClient";
+import type { ApiError } from "../../api/FetchHttpClient";
 import { useNotify } from "../../hooks/useNotify";
+import { getApiErrorMessage } from "../../utils/errorHelpers";
 
 const Login: React.FC = () => {
   const { activeIdp, activeIdp_isLoading } = useAuthQuery();
@@ -55,11 +56,14 @@ const Login: React.FC = () => {
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       navigate({ to: "/" });
     },
-    onError: (error: HttpError) => {
-      setServerError(error.response?.data?.message || "認証に失敗しました");
-      setNeedsEmailVerification(
-        error.response?.data?.code === "EMAIL_VERIFICATION_REQUIRED",
+    onError: (error: ApiError) => {
+      setServerError(
+        getApiErrorMessage(error, "認証に失敗しました", {
+          EMAIL_VERIFICATION_REQUIRED: "メールアドレスの確認が必要です",
+          INVALID_CREDENTIALS: "メールアドレス、ユーザーネーム、またはパスワードが正しくありません",
+        }),
       );
+      setNeedsEmailVerification(error.code === "EMAIL_VERIFICATION_REQUIRED");
     },
   });
 
