@@ -1,1 +1,18 @@
 title: 記事
+
+share:
+  tooltip: 共有
+  ariaLabel: 記事を共有
+  failed: 記事の共有に失敗しました
+  copied: 共有リンクをコピーしました
+  copyFailed: 共有リンクのコピーに失敗しました
+
+pickup:
+  title: ピックアップ記事の設定
+  fetchFailed: 記事の取得に失敗しました
+  picked: ピックアップ中
+  notSet: 未設定
+  loadMore: もっと読み込む
+  allLoaded: すべての記事を表示しました
+  noPublishedArticles: 公開されている記事がありません
+  done: 完了
