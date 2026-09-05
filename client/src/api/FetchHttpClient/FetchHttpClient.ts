@@ -1,6 +1,6 @@
 import type {
+  ApiError,
   HttpClient,
-  HttpError,
   HttpResponse,
   RequestConfig,
   ResponseType,
@@ -138,23 +138,17 @@ export class FetchHttpClient implements HttpClient {
       }
 
       const errorData = await parseResponse<any>(res, requestConfig?.responseType);
+      const normalizedError = normalizeApiError(res.status, errorData);
 
       if (
         res.status === 503 &&
-        ["MAINTENANCE_MODE", "RUNTIME_MAINTENANCE"].includes(errorData?.code) &&
+        ["MAINTENANCE_MODE", "RUNTIME_MAINTENANCE"].includes(normalizedError.code) &&
         typeof window !== "undefined"
       ) {
         window.dispatchEvent(new Event(MAINTENANCE_MODE_EVENT));
       }
 
-      const error: HttpError = {
-        response: {
-          status: res.status,
-          data: errorData,
-        },
-      };
-
-      throw error;
+      throw normalizedError;
     }
 
     return {
@@ -180,6 +174,51 @@ export class FetchHttpClient implements HttpClient {
     }
 
     return headers;
+  }
+}
+
+function normalizeApiError(status: number, data: any): ApiError {
+  const standardError = data?.error;
+  const code =
+    standardError?.code ??
+    data?.code ??
+    getDefaultErrorCode(status);
+  const message =
+    standardError?.message ??
+    data?.message ??
+    (typeof data?.error === "string" ? data.error : undefined);
+  const details = standardError?.details ?? data?.details;
+
+  return {
+    status,
+    code,
+    message,
+    details,
+    response: {
+      status,
+      data,
+    },
+  };
+}
+
+function getDefaultErrorCode(status: number): string {
+  switch (status) {
+    case 400:
+      return "BAD_REQUEST";
+    case 401:
+      return "AUTHENTICATION_REQUIRED";
+    case 403:
+      return "PERMISSION_DENIED";
+    case 404:
+      return "NOT_FOUND";
+    case 409:
+      return "CONFLICT";
+    case 429:
+      return "RATE_LIMITED";
+    case 503:
+      return "SERVICE_UNAVAILABLE";
+    default:
+      return status >= 500 ? "INTERNAL_ERROR" : "REQUEST_FAILED";
   }
 }
 
