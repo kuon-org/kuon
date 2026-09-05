@@ -24,6 +24,9 @@ twoFactor:
   invalidCode: The authentication code is incorrect
   sessionExpired: The authentication session has expired
 
+logout:
+  success: Signed out
+
 forgotPassword:
   title: Forgot your password?
   unavailable: Password reset by email is not available on this Kuon instance.
