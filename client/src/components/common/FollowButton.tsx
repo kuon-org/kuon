@@ -3,8 +3,8 @@ import { useUserQuery } from "../../hooks/useUsers";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { useCallback } from "react";
 import { useNotify } from "../../hooks/useNotify";
+import { useTranslation } from "react-i18next";
 
-// シンプルなフォローボタン例
 export const FollowButton = ({
   followeeId,
   username,
@@ -16,13 +16,17 @@ export const FollowButton = ({
     useUserQuery(username);
   const { user } = useAuthQuery();
   const { error } = useNotify();
+  const { t } = useTranslation("common");
   const isAuth = !!user;
+
   const handleClick = useCallback(() => {
-    if (!isAuth) return error("ログインしてください。");
+    if (!isAuth) return error(t("errors.loginRequired"));
     follow(followeeId);
-  }, [isAuth, error]);
-  if (isFollowingError) error("サーバエラー");
-  if (isFollowingLoading) return <>読み込み中</>;
+  }, [isAuth, error, follow, followeeId, t]);
+
+  if (isFollowingError) error(t("errors.server"));
+  if (isFollowingLoading) return <>{t("loading")}</>;
+
   return (
     <Button
       variant={isFollowing?.isFollow ? "outlined" : "contained"}
@@ -34,7 +38,7 @@ export const FollowButton = ({
         textTransform: "none",
       }}
     >
-      {isFollowing?.isFollow ? "フォロー中" : "フォロー"}
+      {isFollowing?.isFollow ? t("follow.following") : t("follow.follow")}
     </Button>
   );
 };
