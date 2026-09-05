@@ -37,9 +37,9 @@ pickup:
   title: Featured articles
   configure: Configure featured articles
   emptyHint: Feature articles you want to highlight :)
+  configFailed: Failed to update featured articles
 
 notifications:
   followed: Followed user
   unfollowed: Unfollowed user
   followFailed: Failed to follow user
-  pickupFailed: Failed to update featured articles
