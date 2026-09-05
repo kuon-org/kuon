@@ -14,6 +14,7 @@ menu:
 common:
   update: 更新する
   updating: 更新中...
+  cancel: キャンセル
   required: "{{field}}を入力してください。"
   maxLength: "{{max}}文字以内で入力してください。"
 
@@ -28,6 +29,14 @@ account:
   unlinkConfirm: "{{provider}} との連携を解除しますか？"
   unlink: "{{provider}} との連携を解除する"
   link: "{{provider}} と連携する"
+
+avatarUpload:
+  title: プロフィール画像アップロード
+  chooseFile: ファイルを選択
+  notSelected: 選択されていません
+  selectRequired: ファイルを選択してください。
+  uploading: アップロード中...
+  submit: 新しい画像を送信する
 
 profile:
   title: 公開用プロフィール
@@ -63,6 +72,80 @@ uploads:
   uploadedAt: "アップロード: {{date}}"
   size: "サイズ: {{size}} KB"
   copyUrl: 画像URLをコピー
+
+apiKeys:
+  title: APIキー設定
+  create: 新しいキーを発行
+  info: APIキーを使用すると、外部アプリケーション（VSCode拡張機能など）から本システムにアクセスできます。キーの取り扱いには十分注意してください。
+  columns:
+    name: 名前
+    prefix: プレフィックス
+    expiresAt: 有効期限
+    lastUsedAt: 最終利用
+  empty: 有効なAPIキーはありません
+  neverExpires: 無期限
+  neverUsed: 未利用
+  revoke: 失効させる
+  revokeConfirm: このAPIキーを失効させますか？この操作は取り消せません。
+  dialog:
+    title: APIキーの新規発行
+    name: 名前
+    namePlaceholder: "例: VSCode Extension"
+    expiresAt: 有効期限
+    days: "{{count}}日間"
+    issue: 発行する
+  generated:
+    title: APIキーが生成されました
+    warning: このキーはセキュリティ上の理由により、二度と表示されません。今すぐコピーして安全な場所に保管してください。
+    saved: 保存しました
+
+webhooks:
+  title: Webhooks
+  description: 自分の記事へのコメント・いいねなどを外部サービスへ通知できます。
+  unavailable: ユーザーWebhookは現在利用できません。管理者がWebhooksとユーザーWebhookを有効にすると設定できます。
+  metadataLoading: Webhook情報を読み込み中...
+  configured: 登録済みWebhook
+  loading: 読み込み中...
+  empty: まだWebhookは登録されていません。
+  new: 新しいWebhook
+  edit: Webhookを編集
+  active: 有効
+  disabled: 無効
+  editAction: 編集
+  deleteAction: 削除
+  deleteConfirm: "Webhook「{{name}}」を削除しますか？"
+  name: 名前
+  url: Webhook URL
+  save: 変更を保存
+  create: Webhookを作成
+  preview: プレビュー
+  testSend: テスト送信
+  event: イベント
+  applyTemplate: テンプレートを適用...
+  headers: ヘッダー
+  addHeader: ヘッダーを追加
+  headerName: 名前
+  headerValue: 値
+  secretValue: シークレット値
+  secret: シークレット
+  builder: ビジュアルビルダー
+  jsonHint: 選択したイベントで利用可能なKuon variableを使用できます
+  deliveryLogs: 配信ログ
+  noDeliveries: 配信履歴はありません。
+  failed: 失敗
+  variables: 利用可能な変数
+  copyVariable: "{{label}} — クリックでコピー"
+  payloadStructure: ペイロード構造
+  property: プロパティ
+  item: アイテム
+  nodeTypes:
+    variable: Kuon値
+    text: テキスト
+    number: 数値
+    boolean: 真偽値
+    null: Null
+    object: オブジェクト {}
+    array: 配列 []
 
 notifications:
   title: 通知
