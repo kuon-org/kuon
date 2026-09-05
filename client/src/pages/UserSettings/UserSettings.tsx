@@ -1,80 +1,35 @@
-import {
-  Box,
-  Container,
-  List,
-  ListItemButton,
-  ListItemText,
-  Typography,
-} from "@mui/material";
+import { Box, Container, List, ListItemButton, ListItemText, Typography } from "@mui/material";
 import { Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import {
-  accountSettingRoute,
-  apiKeySettingsRoute,
-  passwordSettingRoute,
-  publicProfileRoute,
-  securityRoute,
-  uploadedImagesRoute,
-  user2faSettingRoute,
-  userNotificationsRoute,
-  userWebhooksRoute,
-} from "../../routes";
+import { accountSettingRoute, apiKeySettingsRoute, passwordSettingRoute, publicProfileRoute, securityRoute, uploadedImagesRoute, user2faSettingRoute, userNotificationsRoute, userWebhooksRoute } from "../../routes";
+import { useTranslation } from "react-i18next";
+
 export const UserSettings = () => {
+  const { t } = useTranslation("settings");
   const navigate = useNavigate();
   const location = useLocation();
   const isSelected = (path: string) => location.pathname === path;
+  const items = [
+    [accountSettingRoute.to, "menu.account"],
+    [publicProfileRoute.to, "menu.profile"],
+    [userNotificationsRoute.to, "menu.notifications"],
+    [securityRoute.to, "menu.security"],
+    [passwordSettingRoute.to, "menu.password"],
+    [user2faSettingRoute.to, "menu.twoFactor"],
+    [apiKeySettingsRoute.to, "menu.apiKeys"],
+    [userWebhooksRoute.to, "menu.webhooks"],
+    [uploadedImagesRoute.to, "menu.uploads"],
+  ] as const;
 
   return (
-    <Container
-      sx={{
-        mt: 2,
-        display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        gap: { xs: 4, md: 12 },
-        alignItems: { xs: "center", md: "flex-start" },
-      }}
-    >
-      <Box
-        sx={{
-          width: { xs: "100%", sm: "360px" },
-          minWidth: { xs: "100%", sm: "360px" },
-          minHeight: "400px",
-          display: "flex",
-          flexDirection: "column",
-          p: 2,
-          mx: "auto",
-        }}
-      >
-        <Typography variant="subtitle1" mb={2}>
-          設定
-        </Typography>
+    <Container sx={{ mt: 2, display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 4, md: 12 }, alignItems: { xs: "center", md: "flex-start" } }}>
+      <Box sx={{ width: { xs: "100%", sm: "360px" }, minWidth: { xs: "100%", sm: "360px" }, minHeight: "400px", display: "flex", flexDirection: "column", p: 2, mx: "auto" }}>
+        <Typography variant="subtitle1" mb={2}>{t("title")}</Typography>
         <List>
-          <ListItemButton onClick={() => navigate({ to: accountSettingRoute.to })} selected={isSelected(accountSettingRoute.to)}>
-            <ListItemText>アカウント</ListItemText>
-          </ListItemButton>
-          <ListItemButton onClick={() => navigate({ to: publicProfileRoute.to })} selected={isSelected(publicProfileRoute.to)}>
-            <ListItemText>公開用プロフィール</ListItemText>
-          </ListItemButton>
-          <ListItemButton onClick={() => navigate({ to: userNotificationsRoute.to })} selected={isSelected(userNotificationsRoute.to)}>
-            <ListItemText>通知</ListItemText>
-          </ListItemButton>
-          <ListItemButton onClick={() => navigate({ to: securityRoute.to })} selected={isSelected(securityRoute.to)}>
-            <ListItemText>セキュリティ</ListItemText>
-          </ListItemButton>
-          <ListItemButton onClick={() => navigate({ to: passwordSettingRoute.to })} selected={isSelected(passwordSettingRoute.to)}>
-            <ListItemText>パスワード変更</ListItemText>
-          </ListItemButton>
-          <ListItemButton onClick={() => navigate({ to: user2faSettingRoute.to })} selected={isSelected(user2faSettingRoute.to)}>
-            <ListItemText>二段階認証</ListItemText>
-          </ListItemButton>
-          <ListItemButton onClick={() => navigate({ to: apiKeySettingsRoute.to })} selected={isSelected(apiKeySettingsRoute.to)}>
-            <ListItemText>APIキー設定</ListItemText>
-          </ListItemButton>
-          <ListItemButton onClick={() => navigate({ to: userWebhooksRoute.to })} selected={isSelected(userWebhooksRoute.to)}>
-            <ListItemText>Webhooks</ListItemText>
-          </ListItemButton>
-          <ListItemButton onClick={() => navigate({ to: uploadedImagesRoute.to })} selected={isSelected(uploadedImagesRoute.to)}>
-            <ListItemText>アップロードしたファイル</ListItemText>
-          </ListItemButton>
+          {items.map(([to, key]) => (
+            <ListItemButton key={to} onClick={() => navigate({ to })} selected={isSelected(to)}>
+              <ListItemText>{t(key)}</ListItemText>
+            </ListItemButton>
+          ))}
         </List>
       </Box>
       <Outlet />

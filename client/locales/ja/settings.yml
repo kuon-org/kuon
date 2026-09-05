@@ -1,1 +1,85 @@
 title: 設定
+
+menu:
+  account: アカウント
+  profile: 公開用プロフィール
+  notifications: 通知
+  security: セキュリティ
+  password: パスワード変更
+  twoFactor: 二段階認証
+  apiKeys: APIキー設定
+  webhooks: Webhooks
+  uploads: アップロードしたファイル
+
+common:
+  update: 更新する
+  updating: 更新中...
+  required: "{{field}}を入力してください。"
+  maxLength: "{{max}}文字以内で入力してください。"
+
+account:
+  title: アカウント
+  avatar: 使用するアイコン
+  changeImage: 画像を変更
+  uploadImage: "＋ 画像を\nアップロード"
+  username: ユーザ名
+  usernameField: ユーザー名
+  externalServices: 外部サービス
+  unlinkConfirm: "{{provider}} との連携を解除しますか？"
+  unlink: "{{provider}} との連携を解除する"
+  link: "{{provider}} と連携する"
+
+profile:
+  title: 公開用プロフィール
+  displayName: 表示名
+  bio: 自己紹介
+  bioMaxLength: "自己紹介は{{max}}文字以内で入力してください。"
+
+security:
+  title: セキュリティ
+  logoutAll: すべてログアウト
+  unknownDevice: 不明なデバイス
+  currentSession: 現在のセッション
+  createdAt: "作成: {{date}}"
+  lastUsedAt: "最終利用: {{date}}"
+  currentSessionCannotRevoke: 現在のセッションは無効化できません
+  revoke: 無効化
+
+twoFactor:
+  title: 二段階認証の設定
+  enabled: 二段階認証は現在有効です。
+  reconfigureHint: 新しい端末で設定したい場合は、一度無効化してください。
+  disable: 無効化する
+  enable: 二段階認証を有効化する
+  scanQr: 下のQRコードをGoogle Authenticatorでスキャンしてください
+  enterCode: アプリに表示された6桁のコードを入力してください
+  code: 認証コード
+  register: 登録する
+
+uploads:
+  title: アップロードしたファイル
+  loading: 読み込み中...
+  empty: 画像はまだアップロードされていません
+  uploadedAt: "アップロード: {{date}}"
+  size: "サイズ: {{size}} KB"
+  copyUrl: 画像URLをコピー
+
+notifications:
+  title: 通知
+  description: Kuon内で受け取る通知の種類を設定します。
+  dedupeInfo: 同じ記事が複数の条件に該当した場合でも、通知は1件にまとめて表示されます。
+  articleComment:
+    label: 記事へのコメント
+    description: 自分の記事にコメントが投稿されたときに通知します。
+  commentReply:
+    label: コメントへの返信
+    description: 自分のコメントに返信が投稿されたときに通知します。
+  followedTagArticle:
+    label: フォロー中タグの新着記事
+    description: フォローしているタグが付いた記事が公開されたときに通知します。
+  followedUserArticle:
+    label: フォロー中ユーザーの新着記事
+    description: フォローしているユーザーが記事を公開したときに通知します。
+  userFollow:
+    label: ユーザーからのフォロー
+    description: ほかのユーザーからフォローされたときに通知します。
