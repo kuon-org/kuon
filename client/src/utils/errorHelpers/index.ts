@@ -6,9 +6,6 @@ export const isApiError = (error: unknown): error is ApiError => {
   return typeof candidate.status === "number" && typeof candidate.code === "string";
 };
 
-/** @deprecated Use isApiError. */
-export const isHttpError = isApiError;
-
 export const getErrorStatus = (error: unknown): number | undefined =>
   isApiError(error) ? error.status : undefined;
 
