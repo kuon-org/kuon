@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import { AppError, ValidationError } from "../errors/AppError.js";
 import type { AuthRequest } from "../middlewares/auth.js";
 import { serverEventService } from "../services/serverEventService.js";
 import type { ServerEventCategory, ServerEventLevel } from "../repositories/serverEventRepository.js";
@@ -17,12 +18,14 @@ export class ServerEventController {
     const category = typeof req.query.category === "string" ? req.query.category : undefined;
     const eventType = typeof req.query.eventType === "string" ? req.query.eventType : undefined;
 
+    const fields: Record<string, string[]> = {};
     if (level && !["info", "warning", "error"].includes(level)) {
-      return res.status(400).json({ message: "不正なlevelです" });
+      fields.level = ["SERVER_EVENT_LEVEL_INVALID"];
     }
     if (category && !["system", "audit"].includes(category)) {
-      return res.status(400).json({ message: "不正なcategoryです" });
+      fields.category = ["SERVER_EVENT_CATEGORY_INVALID"];
     }
+    if (Object.keys(fields).length > 0) throw new ValidationError(fields);
 
     res.json(
       await serverEventService.list({
@@ -42,9 +45,10 @@ export class ServerEventController {
       res.json(await serverEventService.detail(String(req.params.eventId)));
     } catch (error) {
       if (error instanceof Error && error.message === "ServerEventNotFound") {
-        return res.status(404).json({ message: "イベントログが見つかりません" });
+        throw new AppError(404, "SERVER_EVENT_NOT_FOUND", "Server event not found");
       }
-      throw error;
+      console.error("Server event fetch failed", error);
+      throw new AppError(500, "SERVER_EVENT_FETCH_FAILED", "Failed to fetch server event");
     }
   };
 }
