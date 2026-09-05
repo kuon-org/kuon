@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Paper, Box, Typography, Divider, Button } from "@mui/material";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { ZoomableContent } from "../../components/common/ZoomableContent";
@@ -8,7 +9,7 @@ const mimeToExt: Record<string, string> = { "image/png": "png", "image/jpeg": "j
 export const UploadedImages = () => {
   const { t, i18n } = useTranslation("settings");
   const { uploadedImages, uploadedImages_isLoading } = useAuthQuery();
-  const shell = (content: React.ReactNode) => <Paper sx={{ mx: "auto", flex: 1, p: 3, maxWidth: { md: "450px", lg: "600px" } }}>{content}</Paper>;
+  const shell = (content: ReactNode) => <Paper sx={{ mx: "auto", flex: 1, p: 3, maxWidth: { md: "450px", lg: "600px" } }}>{content}</Paper>;
   if (uploadedImages_isLoading) return shell(<Typography>{t("uploads.loading")}</Typography>);
   if (!uploadedImages || uploadedImages.length === 0) return shell(<Typography>{t("uploads.empty")}</Typography>);
   const handleCopy = (src: string) => navigator.clipboard.writeText(`![](${src})`);
