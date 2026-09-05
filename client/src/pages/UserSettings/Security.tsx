@@ -17,7 +17,7 @@ export const Security = () => {
   const { t, i18n } = useTranslation("settings");
   const { sessionDevice, sessionDeviceIsLoading, logoutAll, logoutAllIsPending, logoutSession, logoutSessionIsPending } = useAuthQuery();
   if (sessionDeviceIsLoading) return <Loading />;
-  const formatDate = (value: string) => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(value));
+  const formatDate = (value: string | Date) => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(value));
   const sorted = [...(sessionDevice ?? [])].sort((a, b) => new Date(b.last_used_at ?? 0).getTime() - new Date(a.last_used_at ?? 0).getTime());
 
   return (
