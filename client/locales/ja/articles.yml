@@ -24,3 +24,78 @@ pickup:
   allLoaded: すべての記事を表示しました
   noPublishedArticles: 公開されている記事がありません
   done: 完了
+
+stock:
+  title: ストック
+  listTitle: ストックリスト
+  all: すべてのストック
+  newList: 新しいリストを作成
+  latest: 新着ストックリスト
+  loadMore: もっと見る
+  allLoaded: すべてのリストを表示しました
+  notFound: リストが見つかりませんでした。
+  noDescription: 説明はありません。
+  noBio: 自己紹介はありません。
+  articleCount: "{{count}} 記事"
+  articleCountLong: "{{count}} 件の記事"
+  createdAt: "作成日: {{date}}"
+  author: 作成者
+  follow: フォロー
+  following: フォロー中
+  stock: ストック
+  unstock: ストック解除
+  saveTo: 保存先...
+  settings: ストックリストの設定
+  searchResult: "「{{query}}」の条件に一致する記事を表示中"
+  searchPlaceholder: リスト内を詳細検索...
+  searchTag: タグ (tag:)
+  searchUser: ユーザー (user:)
+  searchTitle: タイトル指定 (title:)
+  searchCreated: 記事作成日 (created:>=2026/01/01)
+  searchUpdated: 記事更新日 (updated:>=2026/01/01)
+  create:
+    title: ストックリストを作成する
+    name: ストックリストの名前
+    namePlaceholder: "例: 後で読む、技術ネタ"
+    required: 必須
+    optional: 任意
+    visibility: 公開範囲
+    private: "🔒 非公開"
+    limited: "🔗 限定公開"
+    public: "🌐 公開"
+    tags: タグの設定
+    tagSearch: タグを検索して追加...
+    selectExistingTag: 既存タグから選択
+    noTagCreatePermission: 新しいタグを作成する権限がありません
+    description: 概要
+    descriptionPlaceholder: どのようなリストか説明を入力
+    cancel: キャンセル
+    creating: 作成中...
+    create: 作成
+  edit:
+    title: ストックリストを編集
+    newTitle: 新しいストックリストを作成
+    delete: このリストを削除
+    deleteConfirm: 本当にこのストックリストを削除しますか？
+    name: リスト名
+    namePlaceholder: "例: 後で読む"
+    visibility: 公開範囲
+    tags: タグ（任意）
+    description: 概要
+    autoSave: 自動保存
+    autoSaveDescription: ストックリスト追加時に自動でこのリストに追加する
+    cancel: キャンセル
+    creating: 作成中...
+    updating: 更新中...
+    save: リストを保存する
+
+trash:
+  title: ゴミ箱
+  description: ここにある記事は公開されません。復元するか、完全に削除してください。
+  loading: 読み込み中...
+  untitled: 無題の記事
+  deletedAt: "削除日: {{date}}"
+  restore: 復元
+  hardDelete: 完全削除
+  hardDeleteConfirm: 完全に削除しますか？
+  empty: ゴミ箱は空です
