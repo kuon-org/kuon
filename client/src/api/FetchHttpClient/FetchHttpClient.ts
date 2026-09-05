@@ -1,5 +1,6 @@
 import type {
   ApiError,
+  ApiErrorPayload,
   HttpClient,
   HttpResponse,
   RequestConfig,
@@ -137,18 +138,17 @@ export class FetchHttpClient implements HttpClient {
         }
       }
 
-      const errorData = await parseResponse<any>(res, requestConfig?.responseType);
-      const normalizedError = normalizeApiError(res.status, errorData);
+      const apiError = await parseApiError(res);
 
       if (
-        res.status === 503 &&
-        ["MAINTENANCE_MODE", "RUNTIME_MAINTENANCE"].includes(normalizedError.code) &&
+        apiError.status === 503 &&
+        ["MAINTENANCE_MODE", "RUNTIME_MAINTENANCE"].includes(apiError.code) &&
         typeof window !== "undefined"
       ) {
         window.dispatchEvent(new Event(MAINTENANCE_MODE_EVENT));
       }
 
-      throw normalizedError;
+      throw apiError;
     }
 
     return {
@@ -177,29 +177,32 @@ export class FetchHttpClient implements HttpClient {
   }
 }
 
-function normalizeApiError(status: number, data: any): ApiError {
-  const standardError = data?.error;
-  const code = standardError?.code ?? data?.code ?? getDefaultErrorCode(status);
-  const message =
-    standardError?.message ??
-    data?.message ??
-    (typeof data?.error === "string" ? data.error : undefined);
-  const details = standardError?.details ?? data?.details;
-  const responseData =
-    standardError && typeof standardError === "object"
-      ? { ...data, code, message, details }
-      : data;
-
-  return {
-    status,
-    code,
-    message,
-    details,
-    response: {
-      status,
-      data: responseData,
-    },
+async function parseApiError(res: Response): Promise<ApiError> {
+  const fallback: ApiError = {
+    status: res.status,
+    code: getDefaultErrorCode(res.status),
   };
+
+  try {
+    const payload = (await res.json()) as unknown;
+    if (!isApiErrorPayload(payload)) return fallback;
+
+    return {
+      status: res.status,
+      code: payload.error.code,
+      message: payload.error.message,
+      details: payload.error.details,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function isApiErrorPayload(value: unknown): value is ApiErrorPayload {
+  if (!value || typeof value !== "object") return false;
+  const error = (value as { error?: unknown }).error;
+  if (!error || typeof error !== "object") return false;
+  return typeof (error as { code?: unknown }).code === "string";
 }
 
 function getDefaultErrorCode(status: number): string {
