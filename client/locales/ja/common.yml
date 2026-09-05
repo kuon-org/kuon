@@ -59,6 +59,7 @@ language:
   label: 言語
   options:
     ja: 日本語
+    en: English
 
 userMenu:
   myPage: マイページ
@@ -71,3 +72,23 @@ userMenu:
   logout: ログアウト
   loggingOut: ログアウト中...
   back: ユーザーメニューへ戻る
+
+navigation:
+  home: ホーム
+  timeline: タイムライン
+  trend: トレンド
+  stocks: ストック
+
+search:
+  placeholder: キーワードを入力
+
+account:
+  login: ログイン
+  register: アカウント登録
+
+article:
+  create: 記事を作成
+
+ranking:
+  title: ユーザランキング
+  contributions: "{{count}} contributions"
