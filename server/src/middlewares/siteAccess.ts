@@ -2,6 +2,7 @@ import type { NextFunction, Response } from "express";
 import { ServerSettingKey } from "../constants/serverSettings.js";
 import { UsersRepository } from "../repositories/usersRepository.js";
 import { serverSettingsService } from "../services/serverSettingsService.js";
+import { AppError } from "../errors/AppError.js";
 import {
   authenticateToken,
   optionalAuth,
@@ -10,11 +11,12 @@ import {
 
 const usersRepository = new UsersRepository();
 
-const maintenanceResponse = (res: Response) =>
-  res.status(503).json({
-    code: "MAINTENANCE_MODE",
-    message: "Kuon is currently under maintenance",
-  });
+const maintenanceError = () =>
+  new AppError(
+    503,
+    "MAINTENANCE_MODE",
+    "Kuon is currently under maintenance",
+  );
 
 /**
  * 通常コンテンツ向けのアクセスゲート。
@@ -32,14 +34,14 @@ export const requireSiteAuthentication = (
 ) => {
   if (serverSettingsService.isEnabled(ServerSettingKey.MaintenanceMode)) {
     return optionalAuth(req, res, async () => {
-      if (!req.user) return maintenanceResponse(res);
+      if (!req.user) return next(maintenanceError());
 
       try {
         const role = await usersRepository.getUserRole(req.user.userId);
-        if (role?.roles?.name !== "admin") return maintenanceResponse(res);
+        if (role?.roles?.name !== "admin") return next(maintenanceError());
         return next();
       } catch {
-        return maintenanceResponse(res);
+        return next(maintenanceError());
       }
     });
   }
