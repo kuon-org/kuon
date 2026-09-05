@@ -1,28 +1,24 @@
-import type { HttpError } from "../../api/FetchHttpClient";
+import type { ApiError } from "../../api/FetchHttpClient";
 
-/**
- * HttpErrorかどうかを判定する
- */
-export const isHttpError = (error: any): error is HttpError => {
-  return error && typeof error === "object" && "response" in error;
+export const isApiError = (error: unknown): error is ApiError => {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as Partial<ApiError>;
+  return typeof candidate.status === "number" && typeof candidate.code === "string";
 };
 
-/**
- * エラーオブジェクトからステータスコードを取得する
- */
-export const getErrorStatus = (error: any): number | undefined => {
-  if (isHttpError(error)) {
-    return error.response?.status;
-  }
-  // その他の形式（標準のエラーオブジェクトにstatusが含まれる場合など）
-  if (error?.status) return error.status;
-  return undefined;
-};
+/** @deprecated Use isApiError. */
+export const isHttpError = isApiError;
 
-export const isForbidden = (error: any) => getErrorStatus(error) === 403;
-export const isUnauthorized = (error: any) => getErrorStatus(error) === 401;
-export const isNotFound = (error: any) => getErrorStatus(error) === 404;
-export const isServerError = (error: any) => {
+export const getErrorStatus = (error: unknown): number | undefined =>
+  isApiError(error) ? error.status : undefined;
+
+export const getErrorCode = (error: unknown): string | undefined =>
+  isApiError(error) ? error.code : undefined;
+
+export const isForbidden = (error: unknown) => getErrorStatus(error) === 403;
+export const isUnauthorized = (error: unknown) => getErrorStatus(error) === 401;
+export const isNotFound = (error: unknown) => getErrorStatus(error) === 404;
+export const isServerError = (error: unknown) => {
   const status = getErrorStatus(error);
-  return status ? status >= 500 : false;
+  return status !== undefined && status >= 500;
 };
