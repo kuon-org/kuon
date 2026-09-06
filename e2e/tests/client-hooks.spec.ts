@@ -81,10 +81,10 @@ test.describe("Client Hook regression", () => {
     test(`${route} renders without runtime errors`, async ({ browser }) => {
       const context = await login(browser);
       const page = await context.newPage();
-      const pageErrors: Error[] = [];
+      const pageErrors: string[] = [];
 
       page.on("pageerror", (error) => {
-        pageErrors.push(error);
+        pageErrors.push(error.message);
       });
 
       const response = await page.goto(route);
@@ -94,10 +94,9 @@ test.describe("Client Hook regression", () => {
       await expect(page.locator("#root")).not.toBeEmpty();
       await page.waitForTimeout(300);
 
-      expect(
-        pageErrors.map((error) => error.message),
-        `${route} should not throw browser runtime errors`,
-      ).toEqual([]);
+      expect(pageErrors, `${route} should not throw browser runtime errors`).toEqual(
+        [],
+      );
 
       await context.close();
     });
