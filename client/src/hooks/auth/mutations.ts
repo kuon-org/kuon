@@ -51,7 +51,7 @@ export const useVerifyLogin2FA = () => {
   const queryClient = useQueryClient();
   const { error, success } = useNotify();
   return useMutation({
-    mutationFn: ({ email, token }: { email: string; token: string }) => verifyLogin2FA(email, token),
+    mutationFn: verifyLogin2FA,
     onSuccess: async () => {
       success(i18n.t("auth:twoFactor.success"));
       await queryClient.invalidateQueries({ queryKey: authKeys.user });
