@@ -16,6 +16,16 @@ Playwrightを利用したKuonのE2Eテストです。
 
 UI表示が重要な箇所はブラウザで確認し、認可境界はAPIを直接呼び出してHTTP statusも検証します。
 
+## Client Hook regression E2E
+
+`tests/client-hooks.spec.ts`ではClient Hook / TanStack Query構成の回帰を確認します。
+
+- 記事一覧を表示しただけでは`/api/stocks/mylists?articleId=...`を発火しないこと
+- Client Hook移行で影響範囲の大きかった主要画面がruntime errorなく表示できること
+- User Settings / Admin Settings / Webhook / Server EventsなどのQuery Hookが画面mount時に正常に動作すること
+
+Hookの内部実装そのものではなく、実際にブラウザから画面を開いたときのimport解決やQuery mountを含めて確認する回帰テストです。
+
 ## 実行前提
 
 Kuonのclient/serverを起動した状態で実行します。Playwrightの既定baseURLは`http://localhost:5050`です。
