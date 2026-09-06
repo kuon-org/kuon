@@ -2,17 +2,15 @@ import { lazy, Suspense } from "react";
 import {
   createRoute,
   isRedirect,
-  // notFound,
   redirect,
 } from "@tanstack/react-router";
 import { layoutWithTopRoute, plainLayoutRoute } from "./__root";
 import Loading from "../components/common/Loading/Loading";
 import queryClient from "../utils/queryClient";
-import apiClient from "../api/client";
-import type { Article } from "../hooks/useArticles";
+import { fetchArticle } from "../api/articles";
+import { articleKeys } from "../hooks/articles";
 import { asUUID } from "../utils/uuid";
 
-// 遅延ローディング対応
 const New = lazy(() =>
   import("../pages/Editor/New").then((mod) => ({ default: mod.New })),
 );
@@ -38,9 +36,6 @@ const Trash = lazy(() =>
 
 const LoadingFallback = () => <Loading />;
 
-/**
- * 新規記事作成
- */
 export const articleCreateRoute = createRoute({
   getParentRoute: () => plainLayoutRoute,
   path: "drafts/new",
@@ -56,9 +51,6 @@ export const articleCreateRoute = createRoute({
   },
 });
 
-/**
- * 記事編集
- */
 export const articleEditRoute = createRoute({
   getParentRoute: () => plainLayoutRoute,
   path: "drafts/$articleId/edit",
@@ -74,9 +66,6 @@ export const articleEditRoute = createRoute({
   },
 });
 
-/**
- * ドラフト一覧
- */
 export const draftsRoute = createRoute({
   getParentRoute: () => layoutWithTopRoute,
   path: "drafts",
@@ -92,9 +81,6 @@ export const draftsRoute = createRoute({
   },
 });
 
-/**
- * ゴミ箱
- */
 export const trashRoute = createRoute({
   getParentRoute: () => layoutWithTopRoute,
   path: "trash",
@@ -110,31 +96,18 @@ export const trashRoute = createRoute({
   },
 });
 
-/**
- * 記事詳細（親ルート）
- */
 export const articleRoute = createRoute({
   getParentRoute: () => layoutWithTopRoute,
   path: "$username/$articleId",
   loader: async ({ params }) => {
     try {
-      // 1. UUID形式チェック
       const validatedId = asUUID(params.articleId);
-
-      // 2. APIフェッチ
       const article = await queryClient.ensureQueryData({
-        queryKey: ["article", validatedId],
-        queryFn: async () => {
-          const { data } = await apiClient.get<Article>(
-            `/articles/${validatedId}`,
-          );
-          return data;
-        },
+        queryKey: articleKeys.detail(validatedId),
+        queryFn: () => fetchArticle(validatedId),
       });
 
-      // 3. ユーザー名チェック
       if (article.users.username !== params.username) {
-        // ここで投げられる redirect を catch で見逃さないようにする
         throw redirect({
           to: "/$username/$articleId",
           params: {
@@ -148,20 +121,13 @@ export const articleRoute = createRoute({
       return { article };
     } catch (error) {
       console.log("Article Route:", error);
-      // 重要：リダイレクトの場合はそのまま再スローして遷移させる
       if (isRedirect(error)) {
         throw error;
       }
-
-      // それ以外（asUUIDのエラー、APIの404等）は NotFoundComponent を表示
-      // throw notFound();
     }
   },
 });
 
-/**
- * 記事詳細（インデックス）
- */
 export const articleIndexRoute = createRoute({
   getParentRoute: () => articleRoute,
   path: "/",
@@ -177,9 +143,6 @@ export const articleIndexRoute = createRoute({
   },
 });
 
-/**
- * 記事のLiker一覧
- */
 export const articleLikerRoute = createRoute({
   getParentRoute: () => articleRoute,
   path: "liker",

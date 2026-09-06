@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuthQuery } from "../../../hooks/useAuth";
+import { useAuthUserQuery, useLogout } from "../../../hooks/auth";
 import {
   Avatar,
   Menu,
@@ -36,7 +36,9 @@ type MenuView = "main" | "theme" | "language";
 
 export const UserIcon = () => {
   const { t } = useTranslation("common");
-  const { user, logout, logout_isPending } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
+  const logout = useLogout();
+  const user = authUserQuery.data;
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuView, setMenuView] = useState<MenuView>("main");
   const navigate = useNavigate();
@@ -50,9 +52,9 @@ export const UserIcon = () => {
     setMenuView("main");
   };
 
-  const handleLogout = async () => {
-    logout(undefined, {
-      onSuccess: async () => {
+  const handleLogout = () => {
+    logout.mutate(undefined, {
+      onSuccess: () => {
         navigate({ to: "/" });
       },
     });
@@ -60,7 +62,7 @@ export const UserIcon = () => {
   };
 
   const handleMyPage = () => {
-    if (user && user.username) {
+    if (user?.username) {
       navigate({ to: "/$username", params: { username: user.username } });
     } else {
       navigate({ to: "/login" });
@@ -90,7 +92,7 @@ export const UserIcon = () => {
     <>
       <IconButton onClick={handleOpenMenu} sx={{ p: 0 }}>
         <Avatar
-          src={user?.avatar_url}
+          src={user?.avatar_url ?? undefined}
           alt={user?.display_name}
           sx={{ width: 32, height: 32, bgcolor: "grey.200" }}
         />
@@ -139,7 +141,7 @@ export const UserIcon = () => {
             </MenuItem>
             <MenuItem onClick={handleLogout}>
               <LogoutIcon sx={{ mr: 1 }} />
-              {logout_isPending ? t("userMenu.loggingOut") : t("userMenu.logout")}
+              {logout.isPending ? t("userMenu.loggingOut") : t("userMenu.logout")}
             </MenuItem>
           </Box>
         ) : (

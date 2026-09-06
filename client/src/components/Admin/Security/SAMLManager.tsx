@@ -20,18 +20,15 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { AuthSettingForm } from "./AuthSettingForm";
-import { useAdminQuery } from "../../../hooks/useAdmin";
+import { useDeleteIdpConfig, useIdpListQuery, useUpdateIdpConfig } from "../../../hooks/admin";
 import { useNotify } from "../../../hooks/useNotify";
 
 export const SAMLManager = () => {
   const { t } = useTranslation("admin");
-  const {
-    allIdps,
-    allIdps_isLoading,
-    refetchIdpList,
-    updateIdpConf,
-    deleteIdpConf,
-  } = useAdminQuery();
+  const idpListQuery = useIdpListQuery();
+  const updateIdpConfig = useUpdateIdpConfig();
+  const deleteIdpConfig = useDeleteIdpConfig();
+  const allIdps = idpListQuery.data;
   const [selectedProvider, setSelectedProvider] = useState<string>("");
   const [newSuffix, setNewSuffix] = useState("");
   const [isAdding, setIsAdding] = useState(false);
@@ -61,7 +58,7 @@ export const SAMLManager = () => {
         error(t("security.idp.manager.duplicate"));
         return;
       }
-      await updateIdpConf({
+      await updateIdpConfig.mutateAsync({
         provider_name: newName,
         provider_type: "SAML",
         config: {
@@ -70,7 +67,7 @@ export const SAMLManager = () => {
           cert: "",
         },
       });
-      await refetchIdpList();
+      await idpListQuery.refetch();
       setSelectedProvider(newName);
       setNewSuffix("");
     } catch (error_) {
@@ -85,11 +82,11 @@ export const SAMLManager = () => {
     if (deleteConfirmText !== "delete me" || !selectedProvider) return;
     setIsDeleting(true);
     try {
-      await deleteIdpConf(selectedProvider);
+      await deleteIdpConfig.mutateAsync(selectedProvider);
       setSelectedProvider("");
       setOpenDeleteModal(false);
       setDeleteConfirmText("");
-      await refetchIdpList();
+      await idpListQuery.refetch();
     } catch {
       error(t("security.idp.manager.deleteFailed"));
     } finally {
@@ -97,7 +94,7 @@ export const SAMLManager = () => {
     }
   };
 
-  if (allIdps_isLoading) return <CircularProgress />;
+  if (idpListQuery.isLoading) return <CircularProgress />;
 
   return (
     <Box>

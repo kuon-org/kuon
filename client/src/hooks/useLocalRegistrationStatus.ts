@@ -1,21 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import apiClient from "../api/client";
+import { fetchLocalRegistrationStatus, type LocalRegistrationStatus } from "../api/public-settings";
 
-export interface LocalRegistrationStatus {
-  localAccountRegistrationAllowed: boolean;
-  initialSetup: boolean;
-  emailVerificationRequired: boolean;
-}
+export type { LocalRegistrationStatus } from "../api/public-settings";
 
 export const useLocalRegistrationStatus = () =>
-  useQuery({
+  useQuery<LocalRegistrationStatus>({
     queryKey: ["localRegistrationStatus"],
-    queryFn: async () => {
-      const { data } = await apiClient.get<LocalRegistrationStatus>(
-        "/registration-status",
-      );
-      return data;
-    },
+    queryFn: fetchLocalRegistrationStatus,
     staleTime: 60_000,
     retry: false,
   });

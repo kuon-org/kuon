@@ -2,7 +2,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { CircularProgress, IconButton } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useAuthUserQuery } from "../../hooks/auth";
 import { useNotify } from "../../hooks/useNotify";
 
 interface LikeButtonProps {
@@ -18,8 +18,8 @@ export const LikeButton = ({
   mutateLike,
 }: LikeButtonProps) => {
   const { t } = useTranslation("common");
-  const { user } = useAuthQuery();
-  const isAuth = !!user;
+  const authUserQuery = useAuthUserQuery();
+  const isAuth = !!authUserQuery.data;
   const { error } = useNotify();
   const handleClick = () => {
     if (!isAuth) return error(t("errors.loginRequired"));

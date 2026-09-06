@@ -1,5 +1,5 @@
 import { Box, Typography } from "@mui/material";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useAuthUserQuery } from "../../hooks/auth";
 import { UserCard } from "../common/UserCard";
 import { FollowButton } from "../common/FollowButton";
 
@@ -16,7 +16,8 @@ interface UserListProps {
 }
 
 export const UserList = ({ users }: UserListProps) => {
-  const { user: authUser } = useAuthQuery(); // ← ログイン状態を取得
+  const authUserQuery = useAuthUserQuery();
+  const authUser = authUserQuery.data;
   return (
     <Box
       sx={{
@@ -29,7 +30,6 @@ export const UserList = ({ users }: UserListProps) => {
     >
       {users.length !== 0 ? (
         users.map((user) => {
-          // 自分自身のカードにはフォローボタンを表示しない
           const showFollowButton = authUser && authUser.id !== user.id;
 
           return (
@@ -40,7 +40,6 @@ export const UserList = ({ users }: UserListProps) => {
               display_name={user.display_name}
               bio={user.bio ?? ""}
             >
-              {/* 👇 ログイン時のみフォローボタンを表示 */}
               {showFollowButton && (
                 <FollowButton followeeId={user.id} username={user.username} />
               )}
