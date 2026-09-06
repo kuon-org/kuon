@@ -2,7 +2,7 @@ import { Box, Button, Divider, Paper, Typography } from "@mui/material";
 import LoadingSkelton from "../../components/common/Loading/LoadingSkelton";
 import { useUserQuery } from "../../hooks/useUsers";
 import { ArticleCard } from "../../components/Article/ArticleCard";
-import type { Article } from "../../hooks/useArticles";
+import type { Article } from "../../hooks/articles";
 import { useState } from "react";
 import { PickupArticleDialog } from "../../components/Article/PickupArticleDialog";
 import PushPinIcon from "@mui/icons-material/PushPin";
