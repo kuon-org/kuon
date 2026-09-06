@@ -3,11 +3,11 @@ import {
   createStockList,
   deleteStockList,
   likeStockList,
-  StockListPayload,
   toggleArticleStock,
   toggleDefaultStock,
   updateStockList,
 } from "../../api/stocks";
+import type { StockListPayload } from "../../api/stocks";
 import { useNotify } from "../useNotify";
 import { stockKeys } from "./keys";
 
