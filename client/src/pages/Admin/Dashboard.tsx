@@ -1,6 +1,6 @@
 import { Box, Chip, Divider, Paper, Typography } from "@mui/material";
 import { useAdminStatusQuery, useServerSettingsQuery } from "../../hooks/useAdmin";
-import { useAdminPermissions } from "../../hooks/useRoles";
+import { useMyPermissionsQuery } from "../../hooks/roles";
 import { useTranslation } from "react-i18next";
 
 const getBooleanSetting = (settings: { key: string; value: string }[] | undefined, key: string, defaultValue = false) => {
@@ -39,7 +39,8 @@ const formatUptime = (seconds: number) => {
 
 export const Dashboard = () => {
   const { t } = useTranslation("admin");
-  const { permissions } = useAdminPermissions();
+  const permissionsQuery = useMyPermissionsQuery();
+  const permissions = permissionsQuery.data?.permissions ?? [];
   const canReadSystemStatus = permissions.includes("system.settings.manage");
   const { settings, settings_isLoading } = useServerSettingsQuery(canReadSystemStatus);
   const { status, status_isLoading, status_isError } = useAdminStatusQuery(canReadSystemStatus);
