@@ -4,7 +4,7 @@ import apiClient from "../api/client";
 import type { ApiError } from "../api/FetchHttpClient";
 import { getApiErrorMessage } from "../utils/errorHelpers";
 import { useNotify } from "./useNotify";
-import { useAuthQuery } from "./useAuth";
+import { useAuthUserQuery } from "./auth";
 
 export interface Tag {
   id: string;
@@ -53,7 +53,8 @@ export const useTagsQuery = (slug?: string, userId?: string, page?: number) => {
   const { t } = useTranslation("tags");
   const queryClient = useQueryClient();
   const { notify, error } = useNotify();
-  const { user } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
+  const user = authUserQuery.data;
   const tagsQuery = useQuery<Tags[]>({
     queryKey: ["tags"],
     queryFn: async () => {
