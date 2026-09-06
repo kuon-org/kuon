@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  fetchPublishWebhookOptions,
   fetchWebhook,
   fetchWebhookDeliveries,
   fetchWebhookMetadata,
@@ -32,4 +33,11 @@ export const useWebhookDeliveriesQuery = (scope: WebhookScope, id?: string) =>
     queryKey: webhookKeys.deliveries(scope, id),
     queryFn: () => fetchWebhookDeliveries(scope, id!),
     enabled: !!id,
+  });
+
+export const usePublishWebhookOptionsQuery = () =>
+  useQuery({
+    queryKey: webhookKeys.publishOptions(),
+    queryFn: fetchPublishWebhookOptions,
+    staleTime: 30_000,
   });
