@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Paper, Box, Typography, Divider, Button } from "@mui/material";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useAuthUserQuery, useUploadedImagesQuery } from "../../hooks/auth";
 import { ZoomableContent } from "../../components/common/ZoomableContent";
 import { useTranslation } from "react-i18next";
 
@@ -8,9 +8,11 @@ const mimeToExt: Record<string, string> = { "image/png": "png", "image/jpeg": "j
 
 export const UploadedImages = () => {
   const { t, i18n } = useTranslation("settings");
-  const { uploadedImages, uploadedImages_isLoading } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
+  const uploadedImagesQuery = useUploadedImagesQuery(!!authUserQuery.data);
+  const uploadedImages = uploadedImagesQuery.data;
   const shell = (content: ReactNode) => <Paper sx={{ mx: "auto", flex: 1, p: 3, maxWidth: { md: "450px", lg: "600px" } }}>{content}</Paper>;
-  if (uploadedImages_isLoading) return shell(<Typography>{t("uploads.loading")}</Typography>);
+  if (uploadedImagesQuery.isLoading) return shell(<Typography>{t("uploads.loading")}</Typography>);
   if (!uploadedImages || uploadedImages.length === 0) return shell(<Typography>{t("uploads.empty")}</Typography>);
   const handleCopy = (src: string) => navigator.clipboard.writeText(`![](${src})`);
   const formatDate = (value: string | Date) => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(value));

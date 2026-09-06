@@ -1,15 +1,13 @@
-import ArticleEditor from "../../components/Editor"
-import { useArticles } from "../../hooks/useArticles";
-
-
+import ArticleEditor from "../../components/Editor";
+import { useCreateArticle } from "../../hooks/articles";
 
 export const New = () => {
-    const { createArticle, isCreating } = useArticles();
-    
-    return (
-        <ArticleEditor
-            mutate={createArticle}
-            isFetching={isCreating}
-        />
-    )
-}
+  const createArticle = useCreateArticle();
+
+  return (
+    <ArticleEditor
+      mutate={createArticle.mutateAsync}
+      isFetching={createArticle.isPending}
+    />
+  );
+};

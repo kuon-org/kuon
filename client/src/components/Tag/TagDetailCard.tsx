@@ -7,9 +7,9 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import { useTagsQuery, type Tag } from "../../hooks/useTags";
-import { useAuthQuery } from "../../hooks/useAuth";
-import { useAdminPermissions } from "../../hooks/useRoles";
+import { type Tag, useTagFollowStateQuery, useToggleTagFollow } from "../../hooks/tags";
+import { useAuthUserQuery } from "../../hooks/auth";
+import { useMyPermissionsQuery } from "../../hooks/roles";
 import { MoreHButton } from "../common/MoreHbutton";
 import Loading from "../common/Loading/Loading";
 import { useNavigate } from "@tanstack/react-router";
@@ -20,38 +20,31 @@ interface TagDetailCardProps {
   tag: Tag;
   slug: string;
 }
+
 export const TagDetailCard = ({ tag, slug }: TagDetailCardProps) => {
   const { t } = useTranslation("tags");
   const navigate = useNavigate();
-  const { user } = useAuthQuery();
-  const { permissions } = useAdminPermissions(!!user);
-  const { isFollowing, isFollowingIsError, isFollowingIsLoading, followTag } =
-    useTagsQuery(slug);
+  const authUserQuery = useAuthUserQuery();
+  const user = authUserQuery.data;
+  const permissionsQuery = useMyPermissionsQuery(!!user);
+  const permissions = permissionsQuery.data?.permissions ?? [];
+  const followState = useTagFollowStateQuery(slug, !!user);
+  const toggleFollow = useToggleTagFollow(slug);
   const canManageTag = permissions.includes("tag.manage");
 
-  if (isFollowingIsLoading) return <Loading />;
-  if (isFollowingIsError) return <>{t("detail.loadError")}</>;
+  if (followState.isLoading) return <Loading />;
+  if (followState.isError) return <>{t("detail.loadError")}</>;
   if (!tag) return <>{t("detail.notFound", { slug })}</>;
 
   const handleEdit = () => {
     navigate({ to: tagEditRoute.to, params: { slug } });
   };
+
   return (
-    <Paper
-      sx={{
-        width: { xs: "100%", sm: "360px" },
-        maxWidth: { xs: "100%", sm: "360px" },
-        minHeight: "400px",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <Paper sx={{ width: { xs: "100%", sm: "360px" }, maxWidth: { xs: "100%", sm: "360px" }, minHeight: "400px", display: "flex", flexDirection: "column" }}>
       {canManageTag && (
         <Box sx={{ display: "flex", justifyContent: "end" }}>
-          <MoreHButton
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            transformOrigin={{ vertical: "top", horizontal: "right" }}
-          >
+          <MoreHButton anchorOrigin={{ vertical: "bottom", horizontal: "right" }} transformOrigin={{ vertical: "top", horizontal: "right" }}>
             <MenuItem onClick={handleEdit}>{t("detail.edit")}</MenuItem>
           </MoreHButton>
         </Box>
@@ -73,8 +66,8 @@ export const TagDetailCard = ({ tag, slug }: TagDetailCardProps) => {
       </Box>
       {user && (
         <Box sx={{ display: "flex", mt: 4, mx: "auto" }}>
-          <Button variant={isFollowing?.isFollow ? "outlined" : "contained"} onClick={() => followTag(slug)}>
-            {isFollowing.isFollow ? t("detail.following") : t("detail.follow")}
+          <Button variant={followState.data?.isFollow ? "outlined" : "contained"} onClick={() => toggleFollow.mutate(slug)}>
+            {followState.data?.isFollow ? t("detail.following") : t("detail.follow")}
           </Button>
         </Box>
       )}

@@ -192,6 +192,28 @@ pnpm format
 
 ---
 
+# Client API / TanStack Query Hooks
+
+Client側でAPI通信やTanStack Query Hookを追加・変更する場合は、[Client API / TanStack Query Hooks](./client-hooks.md)の規約に従ってください。
+
+基本構成は以下です。
+
+```text
+Component
+  ↓
+TanStack Query Hook
+  ↓
+API function
+  ↓
+FetchHttpClient
+  ↓
+Server
+```
+
+Query Keyはドメインごとに一元管理し、Query / Mutationを用途別に分割します。必要のないQueryをまとめてmountするComposite Hookは原則として作成せず、Component側から必要なHookだけを利用してください。
+
+---
+
 # データベース開発
 
 データベースに変更を加える場合は、SQLを先に変更します。
@@ -529,6 +551,7 @@ lock中は`runtimeMaintenanceGate`によってDBや永続データへ触れる�
 - 秘密情報をGitへコミットしない
 - Issueに対応する変更はIssue番号を含むブランチで作業する
 - 変更はPull Requestを通して`develop`へ取り込む
+- Client側のAPI通信 / TanStack Query Hookは`docs/client-hooks.md`の標準構成に従う
 - 共通Service / Middlewareが存在する処理は独自実装せず、既存の共通基盤を優先して利用する
 - 再利用を意図した共通基盤を追加した場合は`docs/development.md`へ利用方法を追記する
 

@@ -22,9 +22,16 @@ import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
 import {
-  useNotifications,
+  useDeleteAllNotifications,
+  useDeleteNotification,
+  useFollowBack,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotificationsQuery,
+  useNotificationStream,
+  useUnreadNotificationCountQuery,
   type NotificationReason,
-} from "../../../hooks/useNotifications";
+} from "../../../hooks/notifications";
 
 interface NotificationBellProps {
   enabled: boolean;
@@ -34,17 +41,17 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
   const { t, i18n } = useTranslation("notifications");
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
-  const {
-    notifications,
-    unreadCount,
-    isLoading,
-    markRead,
-    markAllRead,
-    deleteNotification,
-    deleteAll,
-    followBack,
-    isFollowBackPending,
-  } = useNotifications(enabled);
+  const notificationsQuery = useNotificationsQuery(enabled);
+  const unreadCountQuery = useUnreadNotificationCountQuery(enabled);
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
+  const deleteNotification = useDeleteNotification();
+  const deleteAll = useDeleteAllNotifications();
+  const followBack = useFollowBack();
+  useNotificationStream(enabled);
+
+  const notifications = notificationsQuery.data ?? [];
+  const unreadCount = unreadCountQuery.data ?? 0;
 
   const reasonLabels: Record<NotificationReason, string> = {
     followed_tag: t("reasons.followedTag"),
@@ -55,7 +62,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
     notificationId: string,
     href: string | null,
   ) => {
-    await markRead(notificationId);
+    await markRead.mutateAsync(notificationId);
     setAnchorEl(null);
 
     if (href) {
@@ -69,8 +76,8 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
     targetUserId: string,
   ) => {
     event.stopPropagation();
-    await followBack(targetUserId);
-    await markRead(notificationId);
+    await followBack.mutateAsync(targetUserId);
+    await markRead.mutateAsync(notificationId);
   };
 
   const handleDelete = async (
@@ -78,11 +85,11 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
     notificationId: string,
   ) => {
     event.stopPropagation();
-    await deleteNotification(notificationId);
+    await deleteNotification.mutateAsync(notificationId);
   };
 
   const handleDeleteAll = async () => {
-    await deleteAll();
+    await deleteAll.mutateAsync();
     setDeleteAllOpen(false);
   };
 
@@ -126,7 +133,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
           {notifications.length > 0 && (
             <Box sx={{ display: "flex", gap: 0.5 }}>
               {unreadCount > 0 ? (
-                <Button size="small" onClick={() => void markAllRead()}>
+                <Button size="small" onClick={() => void markAllRead.mutateAsync()}>
                   {t("markAllRead")}
                 </Button>
               ) : (
@@ -143,7 +150,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
         </Box>
         <Divider />
 
-        {isLoading ? (
+        {notificationsQuery.isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress size={24} />
           </Box>
@@ -240,7 +247,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
                           <Button
                             size="small"
                             variant="outlined"
-                            disabled={isFollowBackPending}
+                            disabled={followBack.isPending}
                             onClick={(event) =>
                               void handleFollowBack(
                                 event,

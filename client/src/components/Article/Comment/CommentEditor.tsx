@@ -2,8 +2,8 @@ import { useState, useRef } from "react";
 import { Box, Button, Stack, Paper, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import FastEditor, { type FastEditorRef } from "../../Editor/FastEditor";
-import { useComments } from "../../../hooks/useComments";
-import { useAuthQuery } from "../../../hooks/useAuth";
+import { useCreateComment } from "../../../hooks/comments";
+import { useAuthUserQuery } from "../../../hooks/auth";
 import { NavButton } from "../../common/NavButton";
 
 interface CommentEditorProps {
@@ -22,8 +22,9 @@ export const CommentEditor = ({
   const { t } = useTranslation("comments");
   const [content, setContent] = useState("");
   const editorRef = useRef<FastEditorRef>(null);
-  const { postComment, isPosting } = useComments(articleId);
-  const { user } = useAuthQuery();
+  const createComment = useCreateComment(articleId);
+  const authUserQuery = useAuthUserQuery();
+  const user = authUserQuery.data;
   const resolvedPlaceholder = placeholder ?? t("editor.placeholder");
 
   if (!user) {
@@ -41,7 +42,7 @@ export const CommentEditor = ({
   const handlePost = () => {
     if (!content.trim()) return;
 
-    postComment(
+    createComment.mutate(
       { body: content, parent_comment_id: parentCommentId },
       {
         onSuccess: () => {
@@ -85,11 +86,11 @@ export const CommentEditor = ({
         <Stack direction="row" justifyContent="flex-end" alignItems="center">
           <Button
             variant="contained"
-            disabled={!content.trim() || isPosting}
+            disabled={!content.trim() || createComment.isPending}
             onClick={handlePost}
             sx={{ borderRadius: "20px", px: 3, textTransform: "none", fontWeight: "bold" }}
           >
-            {isPosting ? t("editor.sending") : parentCommentId ? t("editor.reply") : t("editor.submit")}
+            {createComment.isPending ? t("editor.sending") : parentCommentId ? t("editor.reply") : t("editor.submit")}
           </Button>
         </Stack>
       </Stack>

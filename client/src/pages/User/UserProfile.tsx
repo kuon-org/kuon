@@ -1,5 +1,5 @@
 import { userRoute } from "../../routes";
-import { useUserQuery } from "../../hooks/useUsers";
+import { useUserQuery } from "../../hooks/users";
 import { Box, Container } from "@mui/material";
 import { UserDetailCard } from "../../components/User/UserDetailCard";
 import { Outlet } from "@tanstack/react-router";
@@ -9,9 +9,10 @@ import { useTranslation } from "react-i18next";
 const UserProfile = () => {
   const { t } = useTranslation("users");
   const { username } = userRoute.useParams();
-  const { user, isLoading } = useUserQuery(username);
+  const userQuery = useUserQuery(username);
+  const user = userQuery.data;
 
-  if (isLoading) return <div>{t("profile.loading")}</div>;
+  if (userQuery.isLoading) return <div>{t("profile.loading")}</div>;
   if (!user) return <>{t("profile.notFound")}</>;
   return (
     <Container

@@ -1,7 +1,7 @@
 import { Box, Divider, Typography, Stack, CircularProgress } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { CommentCard } from "./CommentCard";
-import { useComments } from "../../../hooks/useComments";
+import { useCommentsQuery } from "../../../hooks/comments";
 import { CommentEditor } from "./CommentEditor";
 
 interface CommentProps {
@@ -10,9 +10,10 @@ interface CommentProps {
 
 export const Comment = ({ articleId }: CommentProps) => {
   const { t } = useTranslation("comments");
-  const { comments, isLoading, isError } = useComments(articleId);
+  const commentsQuery = useCommentsQuery(articleId);
+  const comments = commentsQuery.data ?? [];
 
-  if (isLoading) {
+  if (commentsQuery.isLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress size={24} />
@@ -20,7 +21,7 @@ export const Comment = ({ articleId }: CommentProps) => {
     );
   }
 
-  if (isError) {
+  if (commentsQuery.isError) {
     return <Typography color="error">{t("list.loadFailed")}</Typography>;
   }
 

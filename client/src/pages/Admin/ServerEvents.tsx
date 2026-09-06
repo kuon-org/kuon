@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert, Box, Button, Chip, CircularProgress, Dialog, DialogContent, DialogTitle, MenuItem, Pagination, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { useServerEvents, type ServerEvent, type ServerEventCategory, type ServerEventLevel } from "../../hooks/useServerEvents";
+import { useServerEventsQuery, type ServerEvent, type ServerEventCategory, type ServerEventLevel } from "../../hooks/server-events";
 import { useTranslation } from "react-i18next";
 
 const levelColor = (level: ServerEventLevel): "default" | "info" | "warning" | "error" => level === "error" ? "error" : level === "warning" ? "warning" : "info";
@@ -16,7 +16,7 @@ export const ServerEvents = () => {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [selected, setSelected] = useState<ServerEvent | null>(null);
-  const query = useServerEvents({ page, limit: 50, level, category, eventType, from: from ? new Date(from).toISOString() : undefined, to: to ? new Date(to).toISOString() : undefined });
+  const query = useServerEventsQuery({ page, limit: 50, level, category, eventType, from: from ? new Date(from).toISOString() : undefined, to: to ? new Date(to).toISOString() : undefined });
   const formatDate = (value: string) => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
   return <Box sx={{ width: "100%", minWidth: 0 }}>

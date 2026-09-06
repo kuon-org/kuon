@@ -13,7 +13,7 @@ import TextSnippetIcon from "@mui/icons-material/TextSnippet";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { StyledListHeader } from "../common/StyledListHeader";
-import { useArticles } from "../../hooks/useArticles";
+import { useDeleteArticle } from "../../hooks/articles";
 import { useState } from "react";
 import ListIcon from "@mui/icons-material/List";
 import PresentToAllIcon from "@mui/icons-material/PresentToAll";
@@ -35,7 +35,6 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
     setOpenToc(newOpen);
   };
 
-  // メニュークリック時にダイアログを開く
   const handleOpenMarp = () => {
     setOpenMarp(true);
   };
@@ -47,7 +46,6 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
     </MenuItem>
   );
 
-  // 2. プレゼンメニュー項目の定義
   const MarpMenuItem = (
     <MenuItem onClick={handleOpenMarp}>
       <PresentToAllIcon sx={{ mr: 1 }} />
@@ -56,7 +54,7 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
   );
 
   const navigate = useNavigate();
-  const { deleteArticle } = useArticles();
+  const deleteArticle = useDeleteArticle();
 
   const handleEdit = () => {
     navigate({
@@ -67,7 +65,7 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
 
   const handleDelete = () => {
     if (window.confirm(`「この記事をゴミ箱へ移動します。`)) {
-      deleteArticle(articleId);
+      deleteArticle.mutate(articleId);
       navigate({ to: "/" });
     }
   };
@@ -119,7 +117,6 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
     </SwipeableDrawer>
   );
 
-  // --- 自分の記事ではない場合 ---
   if (!isOwned)
     return (
       <Box>
@@ -148,21 +145,13 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
             <TextSnippetIcon sx={{ mr: 1 }} />
             Markdownで本文を見る
           </MenuItem>
-
-          {/* 表示オプションにMarpを追加 */}
           {articleId && MarpMenuItem}
         </MoreHButton>
         {tocDrawer}
-        {/* 3. ダイアログを配置 */}
-        <MarpSlideDialog
-          articleId={articleId}
-          open={openMarp}
-          onClose={() => setOpenMarp(false)}
-        />
+        <MarpSlideDialog articleId={articleId} open={openMarp} onClose={() => setOpenMarp(false)} />
       </Box>
     );
 
-  // --- 自分の記事の場合 ---
   return (
     <Box>
       <MoreHButton>
@@ -196,8 +185,6 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
           <TextSnippetIcon sx={{ mr: 1 }} />
           Markdownで本文を見る
         </MenuItem>
-
-        {/* 表示オプションにMarpを追加 */}
         {articleId && MarpMenuItem}
         <StyledListHeader>記事の削除</StyledListHeader>
         <MenuItem onClick={handleDelete}>
@@ -206,12 +193,7 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
         </MenuItem>
       </MoreHButton>
       {tocDrawer}
-      {/* 3. ダイアログを配置 */}
-      <MarpSlideDialog
-        articleId={articleId}
-        open={openMarp}
-        onClose={() => setOpenMarp(false)}
-      />
+      <MarpSlideDialog articleId={articleId} open={openMarp} onClose={() => setOpenMarp(false)} />
     </Box>
   );
 };

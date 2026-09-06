@@ -9,12 +9,8 @@ import { Box, useMediaQuery, Tabs, Tab } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import MarkdownPage from "../Markdown";
 import { useDebounce } from "use-debounce";
-// import * as prettier from "prettier/standalone";
-// import * as prettierPluginMarkdown from "prettier/plugins/markdown";
-// import * as prettierPluginEstree from "prettier/plugins/estree";
 import { useKey } from "../../hooks/useKey";
-import { useArticles } from "../../hooks/useArticles";
-// import FastEditor, { type FastEditorRef } from "./FastEditor";
+import { useUploadArticleImage } from "../../hooks/articles";
 import FastEditor, {
   type FastEditorRef,
 } from "./FastEditorWithDrawio_Experimental";
@@ -26,18 +22,6 @@ interface MarkdownEditorProps {
   setText: Dispatch<SetStateAction<string>>;
   setIsEdited: Dispatch<SetStateAction<boolean>>;
 }
-
-// async function prettifyMarkdown(text: string): Promise<string> {
-//   try {
-//     return await prettier.format(text, {
-//       parser: "markdown",
-//       plugins: [prettierPluginMarkdown, prettierPluginEstree],
-//     });
-//   } catch (e) {
-//     console.error("Markdown formatting failed:", e);
-//     return text;
-//   }
-// }
 
 export default function MarkdownEditor({
   text,
@@ -52,12 +36,12 @@ export default function MarkdownEditor({
 
   const [debouncedText] = useDebounce(text, 300);
   const [isSync, setIsSync] = useState(true);
-  const [tab, setTab] = useState(0); // モバイル用
+  const [tab, setTab] = useState(0);
   const [viewMode, setViewMode] = useState<"split" | "editor" | "preview">(
     "split",
   );
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { uploadImage } = useArticles();
+  const uploadImage = useUploadArticleImage();
   const [isDrawioOpen, setIsDrawioOpen] = useState(false);
   const [drawioEditTarget, setDrawioEditTarget] = useState<{
     original: string;
@@ -66,8 +50,6 @@ export default function MarkdownEditor({
 
   const handleEditDrawio = useCallback(
     (base64: string) => {
-      // 実際にtext内にある「```drawio」から「```」までのブロックを探す
-      // 改行コード（\r\n か \n）の違いを吸収するために正規表現を使います
       const regex = new RegExp(
         `\`\`\`drawio\\s*[\\s\\S]*?${base64.substring(0, 20)}[\\s\\S]*?\`\`\``,
       );
@@ -75,12 +57,11 @@ export default function MarkdownEditor({
 
       if (match) {
         setDrawioEditTarget({
-          original: match[0], // 見つかったブロック丸ごと（置換用）
-          data: base64, // 純粋なBase64データ（エディタ送信用）
+          original: match[0],
+          data: base64,
         });
         setIsDrawioOpen(true);
       } else {
-        // 万が一見つからない場合は、データだけ持ってエディタを開く
         setDrawioEditTarget({
           original: "",
           data: base64,
@@ -94,23 +75,22 @@ export default function MarkdownEditor({
   const handleDrawioSave = (newBase64: string) => {
     const newBlock = `\`\`\`drawio\n${newBase64}\n\`\`\``;
 
-    // originalが空でない場合は置換、空なら挿入
     if (drawioEditTarget && drawioEditTarget.original) {
       const updatedText = text.replace(drawioEditTarget.original, newBlock);
       setText(updatedText);
       setDrawioEditTarget(null);
     } else {
-      // 挿入位置を制御するためにexecCommandを使用
       document.execCommand("insertText", false, `\n${newBlock}\n`);
     }
     setIsEdited(true);
   };
+
   const processImageUpload = async (file: File): Promise<string> => {
     if (!file.type.startsWith("image/")) {
       alert("画像ファイルのみアップロードできます");
       throw new Error("Invalid file type");
     }
-    const { url } = await uploadImage(file);
+    const { url } = await uploadImage.mutateAsync(file);
     setIsEdited(true);
     return url;
   };
@@ -225,14 +205,6 @@ export default function MarkdownEditor({
     }
   };
 
-  // useKey(
-  //   "F",
-  //   async () => {
-  //     const formatted = await prettifyMarkdown(text);
-  //     setText(formatted);
-  //   },
-  //   { altKey: true, shiftKey: true, preventDefault: true },
-  // );
   useKey(
     "Enter",
     () => {
@@ -240,6 +212,7 @@ export default function MarkdownEditor({
     },
     { ctrlKey: true, preventDefault: true },
   );
+
   return (
     <Box
       onDrop={handleDrop}
@@ -307,7 +280,6 @@ export default function MarkdownEditor({
       )}
 
       <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* エディタ */}
         {(viewMode === "editor" || viewMode === "split") &&
           (tab === 0 || !isSmall) && (
             <Box
@@ -330,7 +302,6 @@ export default function MarkdownEditor({
             </Box>
           )}
 
-        {/* プレビュー */}
         {(viewMode === "preview" || viewMode === "split") &&
           (tab === 1 || !isSmall) && (
             <Box
@@ -354,7 +325,7 @@ export default function MarkdownEditor({
         open={isDrawioOpen}
         onClose={() => {
           setIsDrawioOpen(false);
-          setDrawioEditTarget(null); // ついでにクリア推奨
+          setDrawioEditTarget(null);
         }}
         onSave={handleDrawioSave}
         initialData={drawioEditTarget?.data}

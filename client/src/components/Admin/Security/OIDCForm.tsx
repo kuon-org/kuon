@@ -24,7 +24,7 @@ import {
   ContentCopy,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
-import { useAdminQuery } from "../../../hooks/useAdmin";
+import { fetchIdpDiscovery } from "../../../hooks/admin";
 import { useNotify } from "../../../hooks/useNotify";
 
 interface OIDCFormProps {
@@ -47,7 +47,6 @@ export const OIDCForm = ({
 }: OIDCFormProps) => {
   const { t } = useTranslation("admin");
   const [showSecret, setShowSecret] = useState(false);
-  const { fetchDiscovery } = useAdminQuery(provider_name);
   const [copied, setCopied] = useState(false);
   const { success, error } = useNotify();
   const handleCopy = () => {
@@ -81,7 +80,7 @@ export const OIDCForm = ({
     const host = form.getFieldValue("issuer_host");
     if (!host) return error(t("security.idp.oidc.issuerRequired"));
     try {
-      const data = await fetchDiscovery(host);
+      const data = await fetchIdpDiscovery(host);
       form.setFieldValue("auth_url", data.auth_url || "");
       form.setFieldValue("token_url", data.token_url || "");
       form.setFieldValue("user_info_url", data.user_info_url || "");

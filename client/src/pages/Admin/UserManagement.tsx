@@ -29,8 +29,8 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
-import { useAdminQuery } from "../../hooks/useAdmin";
-import { useAdminPermissions, useRoleManagement } from "../../hooks/useRoles";
+import { useAdminUsersQuery, useToggleAdminUserActive } from "../../hooks/admin";
+import { useAssignRoles, useMyPermissionsQuery, useRolesQuery } from "../../hooks/roles";
 import Loading from "../../components/common/Loading/Loading";
 import { userProfileIndexRoute } from "../../routes";
 import { useTranslation } from "react-i18next";
@@ -43,10 +43,15 @@ interface ManagedRole {
 
 export const UserManagement = () => {
   const { t, i18n } = useTranslation("admin");
-  const { users, users_isLoading, users_isError, user_toggle_active } = useAdminQuery();
-  const { permissions } = useAdminPermissions();
+  const usersQuery = useAdminUsersQuery();
+  const toggleUserActive = useToggleAdminUserActive();
+  const users = usersQuery.data;
+  const permissionsQuery = useMyPermissionsQuery();
+  const permissions = permissionsQuery.data?.permissions ?? [];
   const canAssignRoles = permissions.includes("role.assign");
-  const { roles, assignRoles, assignRoles_isPending } = useRoleManagement(canAssignRoles);
+  const rolesQuery = useRolesQuery(canAssignRoles);
+  const assignRoles = useAssignRoles();
+  const roles = rolesQuery.data ?? [];
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
@@ -54,7 +59,7 @@ export const UserManagement = () => {
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, user: any) => { setAnchorEl(event.currentTarget); setSelectedUser(user); };
   const handleMenuClose = () => setAnchorEl(null);
-  const handleToggleActive = () => { if (!selectedUser) return; user_toggle_active(selectedUser.id); handleMenuClose(); };
+  const handleToggleActive = () => { if (!selectedUser) return; toggleUserActive.mutate(selectedUser.id); handleMenuClose(); };
   const openRoleDialog = () => {
     if (!selectedUser) return;
     const currentRoles = (selectedUser.roles ?? []) as ManagedRole[];
@@ -64,16 +69,16 @@ export const UserManagement = () => {
   };
   const saveRoles = async () => {
     if (!selectedUser) return;
-    await assignRoles({ userId: selectedUser.id, roleIds: selectedRoleIds });
+    await assignRoles.mutateAsync({ userId: selectedUser.id, roleIds: selectedRoleIds });
     setRoleDialogOpen(false);
     setSelectedUser(null);
   };
 
-  if (users_isLoading) return <Loading />;
-  if (users_isError || !users) return <>{t("users.loadFailed")}</>;
+  if (usersQuery.isLoading) return <Loading />;
+  if (usersQuery.isError || !users) return <>{t("users.loadFailed")}</>;
 
   const totalCount = users.length;
-  const activeCount = users.filter((user: any) => user.is_active).length;
+  const activeCount = users.filter((user) => user.is_active).length;
   const inactiveCount = totalCount - activeCount;
   const dateFormatter = new Intl.DateTimeFormat(i18n.language, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 
@@ -143,7 +148,7 @@ export const UserManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRoleDialogOpen(false)}>{t("common.cancel")}</Button>
-          <Button variant="contained" disabled={assignRoles_isPending || selectedRoleIds.length === 0} onClick={() => void saveRoles()}>{t("common.save")}</Button>
+          <Button variant="contained" disabled={assignRoles.isPending || selectedRoleIds.length === 0} onClick={() => void saveRoles()}>{t("common.save")}</Button>
         </DialogActions>
       </Dialog>
     </>

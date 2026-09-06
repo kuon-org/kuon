@@ -1,20 +1,24 @@
 import { Avatar, Button, Card, CardContent, Stack, Typography } from "@mui/material";
 import { useNavigate } from "@tanstack/react-router";
-import { useAuthQuery } from "../../hooks/useAuth";
-import { useTagsQuery } from "../../hooks/useTags";
+import { useAuthUserQuery } from "../../hooks/auth";
+import { useTagFollowStateQuery, useToggleTagFollow } from "../../hooks/tags";
 import Loading from "../common/Loading/Loading";
 import { tagProfileRoute } from "../../routes";
 import { useTranslation } from "react-i18next";
+
 type Tag = { id: string; name: string; slug: string; avatar_url: string | null; description: string | null; };
 type Props = { tag: Tag; };
+
 export const TagCard = ({ tag }: Props) => {
   const { t } = useTranslation("tags");
   const navigate = useNavigate();
-  const { user } = useAuthQuery();
-  const { isFollowing, isFollowingIsError, isFollowingIsLoading, followTag } = useTagsQuery(tag.slug);
+  const authUserQuery = useAuthUserQuery();
+  const followState = useTagFollowStateQuery(tag.slug, !!authUserQuery.data);
+  const toggleFollow = useToggleTagFollow(tag.slug);
 
-  if (isFollowingIsLoading) return <Loading />;
-  if (isFollowingIsError) return <>{t("detail.loadError")}</>;
+  if (followState.isLoading) return <Loading />;
+  if (followState.isError) return <>{t("detail.loadError")}</>;
+
   return (
     <Card
       variant="outlined"
@@ -26,9 +30,9 @@ export const TagCard = ({ tag }: Props) => {
           <Avatar src={tag.avatar_url ?? undefined} variant="rounded" sx={{ width: 48, height: 48 }} />
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ flexGrow: 1 }}>
             <Typography fontWeight="bold">{tag.name}</Typography>
-            {user && (
-              <Button variant="outlined" onClick={(e) => { e.stopPropagation(); followTag(tag.slug); }}>
-                {isFollowing.isFollow ? t("detail.following") : t("detail.follow")}
+            {authUserQuery.data && (
+              <Button variant="outlined" onClick={(e) => { e.stopPropagation(); toggleFollow.mutate(tag.slug); }}>
+                {followState.data?.isFollow ? t("detail.following") : t("detail.follow")}
               </Button>
             )}
           </Stack>
