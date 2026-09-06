@@ -1,7 +1,12 @@
 import React from "react";
 import { Box, Button, Chip, Divider, Paper, Stack, Tooltip, Typography } from "@mui/material";
 import Loading from "../../components/common/Loading/Loading";
-import { useAuthQuery } from "../../hooks/useAuth";
+import {
+  useAuthUserQuery,
+  useLogoutAll,
+  useLogoutSession,
+  useSessionDevicesQuery,
+} from "../../hooks/auth";
 import ComputerIcon from "@mui/icons-material/Computer";
 import SmartphoneIcon from "@mui/icons-material/Smartphone";
 import { useTranslation } from "react-i18next";
@@ -15,16 +20,19 @@ const getDeviceIcon = (ua: string | null) => {
 
 export const Security = () => {
   const { t, i18n } = useTranslation("settings");
-  const { sessionDevice, sessionDeviceIsLoading, logoutAll, logoutAllIsPending, logoutSession, logoutSessionIsPending } = useAuthQuery();
-  if (sessionDeviceIsLoading) return <Loading />;
+  const authUserQuery = useAuthUserQuery();
+  const sessionDevicesQuery = useSessionDevicesQuery(!!authUserQuery.data);
+  const logoutAll = useLogoutAll();
+  const logoutSession = useLogoutSession();
+  if (sessionDevicesQuery.isLoading) return <Loading />;
   const formatDate = (value: string | Date) => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(value));
-  const sorted = [...(sessionDevice ?? [])].sort((a, b) => new Date(b.last_used_at ?? 0).getTime() - new Date(a.last_used_at ?? 0).getTime());
+  const sorted = [...(sessionDevicesQuery.data ?? [])].sort((a, b) => new Date(b.last_used_at ?? 0).getTime() - new Date(a.last_used_at ?? 0).getTime());
 
   return (
     <Paper sx={{ mx: "auto", flex: 1, p: 3, minWidth: { md: "600px", lg: "850px" } }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Typography variant="h5">{t("security.title")}</Typography>
-        <Button variant="outlined" color="error" onClick={() => logoutAll()} disabled={logoutAllIsPending}>{t("security.logoutAll")}</Button>
+        <Button variant="outlined" color="error" onClick={() => logoutAll.mutate()} disabled={logoutAll.isPending}>{t("security.logoutAll")}</Button>
       </Stack>
       <Divider sx={{ mb: 2 }} />
       <Stack spacing={2}>
@@ -45,7 +53,7 @@ export const Security = () => {
                   {sd.last_used_at && <Typography variant="body2" color="text.secondary">{t("security.lastUsedAt", { date: formatDate(sd.last_used_at) })}</Typography>}
                 </Box>
                 <Tooltip title={sd.is_current ? t("security.currentSessionCannotRevoke") : ""} placement="top" arrow>
-                  <span><Button variant="outlined" color="error" size="small" disabled={logoutSessionIsPending || sd.is_current} onClick={() => logoutSession(sd.id)} sx={{ ml: 2, flexShrink: 0 }}>{t("security.revoke")}</Button></span>
+                  <span><Button variant="outlined" color="error" size="small" disabled={logoutSession.isPending || sd.is_current} onClick={() => logoutSession.mutate(sd.id)} sx={{ ml: 2, flexShrink: 0 }}>{t("security.revoke")}</Button></span>
                 </Tooltip>
               </Stack>
             </Stack>
