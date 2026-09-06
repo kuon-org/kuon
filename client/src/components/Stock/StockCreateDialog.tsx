@@ -22,15 +22,16 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
 import { useCreateStockList } from "../../hooks/stocks";
 import { useTagsQuery } from "../../hooks/useTags";
-import { useAuthQuery } from "../../hooks/useAuth";
-import { useAdminPermissions } from "../../hooks/useRoles";
+import { useAuthUserQuery } from "../../hooks/auth";
+import { useMyPermissionsQuery } from "../../hooks/roles";
 
 export const StockCreateDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { t } = useTranslation("articles");
   const createList = useCreateStockList();
   const { tags, tags_isLoading, upsertTag } = useTagsQuery();
-  const { user } = useAuthQuery();
-  const { permissions } = useAdminPermissions(!!user);
+  const authUserQuery = useAuthUserQuery();
+  const permissionsQuery = useMyPermissionsQuery(!!authUserQuery.data);
+  const permissions = permissionsQuery.data?.permissions ?? [];
   const canCreateTag = permissions.includes("tag.create") || permissions.includes("tag.manage");
   const [name, setName] = useState("");
   const [visibility, setVisibility] = useState("private");
