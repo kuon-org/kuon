@@ -4,7 +4,7 @@ import ArticleIcon from "@mui/icons-material/Article";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { useTranslation } from "react-i18next";
 import { useLikeStockList, useStockListDetail, useStockListLike } from "../../hooks/stocks";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useAuthUserQuery } from "../../hooks/auth";
 import { useUserQuery } from "../../hooks/useUsers";
 import { TagChip } from "../../components/common/TagChip";
 import { LikeButton } from "../../components/Like/LikeButton";
@@ -17,7 +17,8 @@ export const StockPage = () => {
   const likeStock = useLikeStockList(listId);
   const detail = listDetail.data;
   const { isFollowing, follow } = useUserQuery(detail?.users.username || "");
-  const { user: authUser } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
+  const authUser = authUserQuery.data;
   const isAuth = !!authUser;
   if (listDetail.isLoading) return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>;
   if (!detail) return <Typography sx={{ p: 4 }}>{t("stock.notFound")}</Typography>;
