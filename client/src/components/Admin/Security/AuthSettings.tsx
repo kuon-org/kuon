@@ -13,20 +13,16 @@ import { useTranslation } from "react-i18next";
 import { AuthSettingForm } from "./AuthSettingForm";
 import { OIDCManager } from "./OIDCManager";
 import { SAMLManager } from "./SAMLManager";
-import { useAdminQuery } from "../../../hooks/useAdmin";
+import { useCleanupIdpRegistry, useIdpListQuery } from "../../../hooks/admin";
 
 export const AuthSettings = () => {
   const { t } = useTranslation("admin");
   const [mainTab, setMainTab] = useState(0);
   const [oauthTab, setOauthTab] = useState(0);
   const [cleanupError, setCleanupError] = useState<string | null>(null);
-  const {
-    allIdps,
-    cleanupIdpRegistry,
-    cleanupIdpRegistry_isPending,
-  } = useAdminQuery();
-
-  const orphanProviders = allIdps?.filter((provider) => provider.orphaned) ?? [];
+  const idpListQuery = useIdpListQuery();
+  const cleanupIdpRegistry = useCleanupIdpRegistry();
+  const orphanProviders = idpListQuery.data?.filter((provider) => provider.orphaned) ?? [];
 
   const handleMainTabChange = (
     _event: React.SyntheticEvent,
@@ -45,7 +41,7 @@ export const AuthSettings = () => {
   const handleCleanup = async (providerName: string) => {
     setCleanupError(null);
     try {
-      await cleanupIdpRegistry(providerName);
+      await cleanupIdpRegistry.mutateAsync(providerName);
     } catch {
       setCleanupError(t("security.idp.registry.cleanupFailed"));
     }
@@ -136,7 +132,7 @@ export const AuthSettings = () => {
                   <Button
                     color="inherit"
                     size="small"
-                    disabled={!provider.canCleanup || cleanupIdpRegistry_isPending}
+                    disabled={!provider.canCleanup || cleanupIdpRegistry.isPending}
                     onClick={() => handleCleanup(provider.provider_name)}
                   >
                     {t("security.idp.registry.cleanup")}
