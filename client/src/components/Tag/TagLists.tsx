@@ -2,24 +2,27 @@ import { useState } from "react";
 import { List, ListItemText, Typography, Button, Box, Collapse, ListItemButton, Avatar, ListItemAvatar } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import { useTagsQuery } from "../../hooks/useTags";
+import { useAuthUserQuery } from "../../hooks/auth";
+import { useMyFollowingTagsQuery } from "../../hooks/tags";
 import { Link } from "@tanstack/react-router";
 import { tagProfileRoute } from "../../routes";
 import { useTranslation } from "react-i18next";
 
 export const TagLists = () => {
   const { t } = useTranslation("tags");
-  const { myFollowingTags, myFollowingTagsIsLoading, myFollowingTagsIsError } = useTagsQuery();
+  const authUserQuery = useAuthUserQuery();
+  const followingTagsQuery = useMyFollowingTagsQuery(!!authUserQuery.data);
+  const myFollowingTags = followingTagsQuery.data;
   const [open, setOpen] = useState(false);
 
-  if (myFollowingTagsIsLoading || myFollowingTagsIsError || !myFollowingTags) return null;
+  if (followingTagsQuery.isLoading || followingTagsQuery.isError || !myFollowingTags) return null;
 
   const INITIAL_COUNT = 5;
   const initialTags = myFollowingTags.slice(0, INITIAL_COUNT);
   const remainingTags = myFollowingTags.slice(INITIAL_COUNT);
   const hasMore = myFollowingTags.length > INITIAL_COUNT;
 
-  const renderTagItem = (tag: any) => (
+  const renderTagItem = (tag: (typeof myFollowingTags)[number]) => (
     <Link key={tag.id} to={tagProfileRoute.to} search={{ page: 1 }} params={{ slug: tag.slug }} style={{ textDecoration: "none", color: "inherit" }}>
       <ListItemButton sx={{ py: 0.5 }}>
         <ListItemAvatar sx={{ minWidth: 40 }}>
@@ -38,11 +41,11 @@ export const TagLists = () => {
         {t("following.title")}
       </Typography>
       <List sx={{ p: 0 }}>
-        {initialTags.map((tag) => renderTagItem(tag))}
+        {initialTags.map(renderTagItem)}
         {hasMore && (
           <>
             <Collapse in={open} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding>{remainingTags.map((tag) => renderTagItem(tag))}</List>
+              <List component="div" disablePadding>{remainingTags.map(renderTagItem)}</List>
             </Collapse>
             <Box sx={{ px: 1 }}>
               <Button fullWidth size="small" startIcon={open ? <ExpandLessIcon /> : <ExpandMoreIcon />} onClick={() => setOpen(!open)} sx={{ mt: 0.5, color: "text.secondary", justifyContent: "flex-start", textTransform: "none", fontSize: "0.8rem" }}>
