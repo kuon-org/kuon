@@ -20,14 +20,14 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
-import { useStocks } from "../../hooks/useStocks";
+import { useCreateStockList } from "../../hooks/stocks";
 import { useTagsQuery } from "../../hooks/useTags";
 import { useAuthQuery } from "../../hooks/useAuth";
 import { useAdminPermissions } from "../../hooks/useRoles";
 
 export const StockCreateDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { t } = useTranslation("articles");
-  const { createList, isCreating } = useStocks();
+  const createList = useCreateStockList();
   const { tags, tags_isLoading, upsertTag } = useTagsQuery();
   const { user } = useAuthQuery();
   const { permissions } = useAdminPermissions(!!user);
@@ -48,7 +48,7 @@ export const StockCreateDialog = ({ open, onClose }: { open: boolean; onClose: (
         const createdTag = await upsertTag({ name: tagName, slug });
         return createdTag.id;
       }));
-      await createList({ name, visibility: visibility as any, description, tagIds });
+      await createList.mutateAsync({ name, visibility: visibility as "public" | "limited" | "private", description, tagIds });
       setName("");
       setVisibility("private");
       setDescription("");
@@ -99,7 +99,7 @@ export const StockCreateDialog = ({ open, onClose }: { open: boolean; onClose: (
       <Divider />
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={onClose} color="inherit">{t("stock.create.cancel")}</Button>
-        <Button onClick={handleCreate} variant="contained" disabled={!name.trim() || isCreating} sx={{ fontWeight: "bold" }}>{isCreating ? t("stock.create.creating") : t("stock.create.create")}</Button>
+        <Button onClick={handleCreate} variant="contained" disabled={!name.trim() || createList.isPending} sx={{ fontWeight: "bold" }}>{createList.isPending ? t("stock.create.creating") : t("stock.create.create")}</Button>
       </DialogActions>
     </Dialog>
   );
