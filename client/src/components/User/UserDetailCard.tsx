@@ -1,6 +1,14 @@
 import { Paper, Avatar, Box, Typography, Divider, Button } from "@mui/material";
-import { useUserQuery } from "../../hooks/useUsers";
-import { useAuthQuery } from "../../hooks/useAuth";
+import {
+  useFollowersQuery,
+  useFollowingQuery,
+  useFollowUser,
+  useUserArticleCountQuery,
+  useUserCommentCountQuery,
+  useUserFollowingStateQuery,
+  useUserQuery,
+} from "../../hooks/users";
+import { useAuthUserQuery } from "../../hooks/auth";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { publicProfileRoute, userFollowerRoute, userFollowingRoute, userProfileIndexRoute } from "../../routes";
 import { useTranslation } from "react-i18next";
@@ -9,12 +17,21 @@ interface UserDetailCardProps { username: string; }
 
 export const UserDetailCard = ({ username }: UserDetailCardProps) => {
   const { t } = useTranslation("users");
-  const { user: data } = useAuthQuery();
-  const { user, isFollowing, follow, follower_count, following_count, commentCount, commentCountIsLoading, articleCount, articleCountIsLoading } = useUserQuery(username);
+  const authUserQuery = useAuthUserQuery();
+  const userQuery = useUserQuery(username);
+  const user = userQuery.data;
+  const isFollowingQuery = useUserFollowingStateQuery(user?.id, !!authUserQuery.data);
+  const followingQuery = useFollowingQuery(user?.id);
+  const followersQuery = useFollowersQuery(user?.id);
+  const commentCountQuery = useUserCommentCountQuery(user?.id);
+  const articleCountQuery = useUserArticleCountQuery(user?.id);
+  const follow = useFollowUser(authUserQuery.data?.id);
   const navigate = useNavigate();
-  if (commentCountIsLoading || articleCountIsLoading) return <></>;
+  if (commentCountQuery.isLoading || articleCountQuery.isLoading) return <></>;
+  const commentCount = commentCountQuery.data ?? 0;
+  const articleCount = articleCountQuery.data ?? 0;
   const contribution = commentCount + articleCount;
-  const isMe = user?.id === data?.id;
+  const isMe = user?.id === authUserQuery.data?.id;
   if (!user) return <>{t("profile.notFound")}</>;
   return (
     <Paper sx={{ width: "100%", minWidth: "430px", maxWidth: "100%", minHeight: "430px", display: "flex", flexDirection: "column" }}>
@@ -39,13 +56,13 @@ export const UserDetailCard = ({ username }: UserDetailCardProps) => {
         </Box>
         <Box sx={{ display: "flex", flexDirection: "column", textAlign: "center", color: "inherit", "&:hover": { textDecoration: "underline" }, "&:focus": { textDecoration: "underline" } }}>
           <Link to={userFollowingRoute.to} params={{ username }} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
-            <Typography variant="caption">{following_count}</Typography>
+            <Typography variant="caption">{followingQuery.data?.length ?? 0}</Typography>
             <Typography variant="caption">{t("profile.following")}</Typography>
           </Link>
         </Box>
         <Box sx={{ display: "flex", flexDirection: "column", textAlign: "center", color: "inherit", "&:hover": { textDecoration: "underline" }, "&:focus": { textDecoration: "underline" } }}>
           <Link to={userFollowerRoute.to} params={{ username }} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
-            <Typography variant="caption">{follower_count}</Typography>
+            <Typography variant="caption">{followersQuery.data?.length ?? 0}</Typography>
             <Typography variant="caption">{t("profile.followers")}</Typography>
           </Link>
         </Box>
@@ -56,9 +73,9 @@ export const UserDetailCard = ({ username }: UserDetailCardProps) => {
           {t("profile.edit")}
         </Button>
       ) : (
-        data && (
-          <Button variant={isFollowing?.isFollow ? "outlined" : "contained"} sx={{ mt: 2, mx: "auto", width: "80%" }} onClick={() => { if (user?.id) follow(user.id); }}>
-            {isFollowing?.isFollow ? t("profile.followingButton") : t("profile.follow")}
+        authUserQuery.data && (
+          <Button variant={isFollowingQuery.data?.isFollow ? "outlined" : "contained"} disabled={follow.isPending} sx={{ mt: 2, mx: "auto", width: "80%" }} onClick={() => follow.mutate(user.id)}>
+            {isFollowingQuery.data?.isFollow ? t("profile.followingButton") : t("profile.follow")}
           </Button>
         )
       )}
