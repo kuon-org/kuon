@@ -61,6 +61,12 @@ export type WebhookDelivery = {
   errorMessage: string | null;
   createdAt: string;
 };
+export type PublishWebhookOption = {
+  id: string;
+  name: string;
+  provider: "generic" | "discord" | "slack" | "teams";
+  scope: "system" | "user";
+};
 export type PreviewInput = { payloadTemplate: unknown; eventType?: string };
 export type WebhookTestInput = Pick<WebhookInput, "url" | "headers" | "payloadTemplate"> & { eventType?: string };
 
@@ -84,6 +90,9 @@ export const fetchWebhook = async (scope: WebhookScope, id: string) =>
 
 export const fetchWebhookDeliveries = async (scope: WebhookScope, id: string) =>
   (await apiClient.get<WebhookDelivery[]>(`${basePath(scope)}/${id}/deliveries`)).data;
+
+export const fetchPublishWebhookOptions = async () =>
+  (await apiClient.get<PublishWebhookOption[]>("/webhooks/available/article-published")).data;
 
 export const saveWebhook = async (
   scope: WebhookScope,
