@@ -30,7 +30,7 @@ import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import { useAdminQuery } from "../../hooks/useAdmin";
-import { useAdminPermissions, useRoleManagement } from "../../hooks/useRoles";
+import { useAssignRoles, useMyPermissionsQuery, useRolesQuery } from "../../hooks/roles";
 import Loading from "../../components/common/Loading/Loading";
 import { userProfileIndexRoute } from "../../routes";
 import { useTranslation } from "react-i18next";
@@ -44,9 +44,12 @@ interface ManagedRole {
 export const UserManagement = () => {
   const { t, i18n } = useTranslation("admin");
   const { users, users_isLoading, users_isError, user_toggle_active } = useAdminQuery();
-  const { permissions } = useAdminPermissions();
+  const permissionsQuery = useMyPermissionsQuery();
+  const permissions = permissionsQuery.data?.permissions ?? [];
   const canAssignRoles = permissions.includes("role.assign");
-  const { roles, assignRoles, assignRoles_isPending } = useRoleManagement(canAssignRoles);
+  const rolesQuery = useRolesQuery(canAssignRoles);
+  const assignRoles = useAssignRoles();
+  const roles = rolesQuery.data ?? [];
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
@@ -64,7 +67,7 @@ export const UserManagement = () => {
   };
   const saveRoles = async () => {
     if (!selectedUser) return;
-    await assignRoles({ userId: selectedUser.id, roleIds: selectedRoleIds });
+    await assignRoles.mutateAsync({ userId: selectedUser.id, roleIds: selectedRoleIds });
     setRoleDialogOpen(false);
     setSelectedUser(null);
   };
@@ -143,7 +146,7 @@ export const UserManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRoleDialogOpen(false)}>{t("common.cancel")}</Button>
-          <Button variant="contained" disabled={assignRoles_isPending || selectedRoleIds.length === 0} onClick={() => void saveRoles()}>{t("common.save")}</Button>
+          <Button variant="contained" disabled={assignRoles.isPending || selectedRoleIds.length === 0} onClick={() => void saveRoles()}>{t("common.save")}</Button>
         </DialogActions>
       </Dialog>
     </>
