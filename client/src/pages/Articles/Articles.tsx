@@ -1,7 +1,7 @@
 import { Avatar, Box, Paper, Typography } from "@mui/material";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import type { Article } from "../../hooks/useArticles";
+import type { Article } from "../../hooks/articles";
 import Markdown from "../../components/Markdown";
 import { BottomUserCard } from "../../components/Article/BottomUserCard";
 import { Comment } from "../../components/Article/Comment/Comment";
