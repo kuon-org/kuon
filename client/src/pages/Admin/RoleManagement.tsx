@@ -1,7 +1,15 @@
 import { Box, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControlLabel, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
 import Loading from "../../components/common/Loading/Loading";
-import { type PermissionDefinition, type RoleDefinition, useRoleManagement } from "../../hooks/useRoles";
+import {
+  type PermissionDefinition,
+  type RoleDefinition,
+  useCreateRole,
+  useDeleteRole,
+  usePermissionCatalogQuery,
+  useRolesQuery,
+  useUpdateRole,
+} from "../../hooks/roles";
 import { useTranslation } from "react-i18next";
 
 interface EditorState {
@@ -17,7 +25,13 @@ const emptyEditor = (): EditorState => ({ name: "", displayName: "", description
 
 export const RoleManagement = () => {
   const { t } = useTranslation("admin");
-  const { permissions, roles, isLoading, isError, createRole, updateRole, deleteRole, createRole_isPending, updateRole_isPending, deleteRole_isPending } = useRoleManagement();
+  const permissionsQuery = usePermissionCatalogQuery();
+  const rolesQuery = useRolesQuery();
+  const createRole = useCreateRole();
+  const updateRole = useUpdateRole();
+  const deleteRole = useDeleteRole();
+  const permissions = permissionsQuery.data ?? [];
+  const roles = rolesQuery.data ?? [];
   const [editor, setEditor] = useState<EditorState | null>(null);
   const groupedPermissions = useMemo(() => permissions.reduce<Record<string, PermissionDefinition[]>>((groups, permission) => { (groups[permission.category] ??= []).push(permission); return groups; }, {}), [permissions]);
 
@@ -44,13 +58,13 @@ export const RoleManagement = () => {
   };
   const save = async () => {
     if (!editor) return;
-    if (editor.roleId) await updateRole({ roleId: editor.roleId, displayName: editor.displayName, description: editor.description, permissions: editor.permissions });
-    else await createRole({ name: editor.name, displayName: editor.displayName, description: editor.description, permissions: editor.permissions });
+    if (editor.roleId) await updateRole.mutateAsync({ roleId: editor.roleId, displayName: editor.displayName, description: editor.description, permissions: editor.permissions });
+    else await createRole.mutateAsync({ name: editor.name, displayName: editor.displayName, description: editor.description, permissions: editor.permissions });
     setEditor(null);
   };
 
-  if (isLoading) return <Loading />;
-  if (isError) return <Typography>{t("roles.loadFailed")}</Typography>;
+  if (permissionsQuery.isLoading || rolesQuery.isLoading) return <Loading />;
+  if (permissionsQuery.isError || rolesQuery.isError) return <Typography>{t("roles.loadFailed")}</Typography>;
 
   return (
     <Paper elevation={0} sx={{ mx: "auto", p: 3, minWidth: { xs: "100%", md: 650, lg: 850 }, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
@@ -74,7 +88,7 @@ export const RoleManagement = () => {
               </Box>
               <Stack direction="row" spacing={1} alignItems="center">
                 <Button size="small" onClick={() => openRole(role)}>{t("common.edit")}</Button>
-                {!role.is_builtin && <Button size="small" color="error" disabled={deleteRole_isPending} onClick={() => void deleteRole(role.id)}>{t("common.delete")}</Button>}
+                {!role.is_builtin && <Button size="small" color="error" disabled={deleteRole.isPending} onClick={() => void deleteRole.mutateAsync(role.id)}>{t("common.delete")}</Button>}
               </Stack>
             </Stack>
           </Paper>
@@ -106,7 +120,7 @@ export const RoleManagement = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setEditor(null)}>{t("common.cancel")}</Button>
-            <Button variant="contained" disabled={createRole_isPending || updateRole_isPending || !editor.name.trim() || !editor.displayName.trim()} onClick={() => void save()}>{t("common.save")}</Button>
+            <Button variant="contained" disabled={createRole.isPending || updateRole.isPending || !editor.name.trim() || !editor.displayName.trim()} onClick={() => void save()}>{t("common.save")}</Button>
           </DialogActions>
         </>}
       </Dialog>
