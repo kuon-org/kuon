@@ -3,7 +3,7 @@ import Loading from "../../components/common/Loading/Loading";
 import { useTagsQuery } from "../../hooks/useTags";
 import { tagEditRoute, tagProfileRoute } from "../../routes";
 import { TagEditForm } from "./TagEditForm";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useAuthUserQuery } from "../../hooks/auth";
 import { Navigate } from "@tanstack/react-router";
 import { useNotify } from "../../hooks/useNotify";
 import { useAdminPermissions } from "../../hooks/useRoles";
@@ -13,8 +13,8 @@ export const TagEdit = () => {
   const { t } = useTranslation("tags");
   const { slug } = tagEditRoute.useParams();
   const { tag, tag_isLoading, tag_isError, upsertTag, isUpserting, uploadImage } = useTagsQuery(slug);
-  const { user } = useAuthQuery();
-  const { permissions, permissions_isLoading } = useAdminPermissions(!!user);
+  const authUserQuery = useAuthUserQuery();
+  const { permissions, permissions_isLoading } = useAdminPermissions(!!authUserQuery.data);
   const { error } = useNotify();
   const canManageTag = permissions.includes("tag.manage");
 
