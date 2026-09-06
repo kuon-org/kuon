@@ -5,17 +5,17 @@ import {
   fetchStockListDetail,
   fetchStockListLike,
 } from "../../api/stocks";
-import { useAuthQuery } from "../useAuth";
+import { useAuthUserQuery } from "../auth";
 import { stockKeys } from "./keys";
 
 export const useStockLists = () => {
-  const { user } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
 
   return useQuery({
     queryKey: stockKeys.myLists(),
     queryFn: () => fetchMyStockLists(),
     retry: false,
-    enabled: !!user,
+    enabled: !!authUserQuery.data,
   });
 };
 
@@ -23,13 +23,13 @@ export const useArticleStockLists = (
   articleId: string,
   enabled: boolean = true,
 ) => {
-  const { user } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
 
   return useQuery({
     queryKey: stockKeys.articleLists(articleId),
     queryFn: () => fetchMyStockLists(articleId),
     retry: false,
-    enabled: enabled && !!user && !!articleId,
+    enabled: enabled && !!authUserQuery.data && !!articleId,
   });
 };
 
@@ -51,17 +51,17 @@ export const useStockListDetail = (
   page: number = 1,
   q?: string,
 ) => {
-  const { user } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
 
   return useQuery({
     queryKey: stockKeys.detail(listId, page, q),
     queryFn: () => fetchStockListDetail(listId, page, q),
-    enabled: listId ? true : !!user,
+    enabled: listId ? true : !!authUserQuery.data,
   });
 };
 
 export const useStockListLike = (listId?: string) => {
-  const { user } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
 
   return useQuery({
     queryKey: stockKeys.like(listId ?? ""),
@@ -69,6 +69,6 @@ export const useStockListLike = (listId?: string) => {
       if (!listId) throw new Error("ストックIDが指定されていません");
       return fetchStockListLike(listId);
     },
-    enabled: !!listId && !!user,
+    enabled: !!listId && !!authUserQuery.data,
   });
 };
