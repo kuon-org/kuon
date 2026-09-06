@@ -1,6 +1,6 @@
 import { Delete } from "@mui/icons-material";
 import { Box, Button, Checkbox, FormControlLabel, IconButton, MenuItem, Paper, Select, Stack, Tab, Tabs, TextField, Typography } from "@mui/material";
-import type { WebhookDelivery, WebhookEventMetadata, WebhookHeader, WebhookInput, WebhookPreset, WebhookVariable } from "../../hooks/useWebhooks";
+import type { WebhookDelivery, WebhookEventMetadata, WebhookHeader, WebhookInput, WebhookPreset, WebhookVariable } from "../../hooks/webhooks";
 import { AvailableVariables } from "./AvailableVariables";
 import { PayloadBuilder } from "./PayloadBuilder";
 import { useTranslation } from "react-i18next";
