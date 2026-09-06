@@ -38,6 +38,12 @@ $env:KUON_E2E_ADMIN_PASSWORD="password"
 pnpm test:e2e
 ```
 
+Client Hook regressionだけを実行する場合は以下です。
+
+```powershell
+pnpm --filter kuon-e2e exec playwright test tests/client-hooks.spec.ts
+```
+
 別URLを利用する場合は`PLAYWRIGHT_BASE_URL`を指定できます。
 
 ```powershell
