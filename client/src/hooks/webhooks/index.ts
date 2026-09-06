@@ -1,4 +1,5 @@
 export {
+  usePublishWebhookOptionsQuery,
   useWebhookDeliveriesQuery,
   useWebhookMetadataQuery,
   useWebhookQuery,
@@ -14,6 +15,7 @@ export {
 export { webhookKeys } from "./keys";
 export type {
   PreviewInput,
+  PublishWebhookOption,
   UserWebhookInput,
   WebhookDelivery,
   WebhookDetail,
