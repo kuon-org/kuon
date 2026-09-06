@@ -7,14 +7,15 @@ import {
   Avatar,
   ListItemAvatar,
 } from "@mui/material";
-import { useUserQuery } from "../../hooks/useUsers";
+import { useUserRankingQuery } from "../../hooks/users";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 export const Ranking = () => {
   const { t } = useTranslation("common");
-  const { ranking, rankingIsLoading } = useUserQuery();
-  if (rankingIsLoading || !ranking) return null;
+  const rankingQuery = useUserRankingQuery();
+  const ranking = rankingQuery.data;
+  if (rankingQuery.isLoading || !ranking) return null;
 
   return (
     <Box sx={{ width: "100%", maxWidth: 300 }}>
