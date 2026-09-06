@@ -1,6 +1,6 @@
 import { Button } from "@mui/material";
 import { useUserQuery } from "../../hooks/useUsers";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useAuthUserQuery } from "../../hooks/auth";
 import { useCallback } from "react";
 import { useNotify } from "../../hooks/useNotify";
 import { useTranslation } from "react-i18next";
@@ -14,10 +14,10 @@ export const FollowButton = ({
 }) => {
   const { isFollowing, isFollowingError, isFollowingLoading, follow } =
     useUserQuery(username);
-  const { user } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
   const { error } = useNotify();
   const { t } = useTranslation("common");
-  const isAuth = !!user;
+  const isAuth = !!authUserQuery.data;
 
   const handleClick = useCallback(() => {
     if (!isAuth) return error(t("errors.loginRequired"));
