@@ -5,7 +5,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { useTranslation } from "react-i18next";
 import { useLikeStockList, useStockListDetail, useStockListLike } from "../../hooks/stocks";
 import { useAuthUserQuery } from "../../hooks/auth";
-import { useUserQuery } from "../../hooks/useUsers";
+import { useFollowUser, useUserFollowingStateQuery } from "../../hooks/users";
 import { TagChip } from "../../components/common/TagChip";
 import { LikeButton } from "../../components/Like/LikeButton";
 
@@ -16,10 +16,11 @@ export const StockPage = () => {
   const stockLike = useStockListLike(listId);
   const likeStock = useLikeStockList(listId);
   const detail = listDetail.data;
-  const { isFollowing, follow } = useUserQuery(detail?.users.username || "");
   const authUserQuery = useAuthUserQuery();
   const authUser = authUserQuery.data;
   const isAuth = !!authUser;
+  const isFollowingQuery = useUserFollowingStateQuery(detail?.users.id, isAuth);
+  const follow = useFollowUser(authUser?.id);
   if (listDetail.isLoading) return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>;
   if (!detail) return <Typography sx={{ p: 4 }}>{t("stock.notFound")}</Typography>;
   const isMe = authUser?.id === detail.users.id;
@@ -49,7 +50,7 @@ export const StockPage = () => {
               <Box sx={{ flex: 1, minWidth: 0 }}><Link to="/$username" params={{ username: detail.users.username }} style={{ textDecoration: "none", color: "inherit" }}><Box sx={{ display: "flex", gap: 0.5, "&:hover *": { textDecoration: "underline" }, "&:focus *": { textDecoration: "underline" } }}><Typography variant="subtitle2" sx={{ fontWeight: "bold", display: "inline-block" }}>@{detail.users.username}</Typography><Typography variant="subtitle2" sx={{ fontWeight: "bold", display: "block" }}>({detail.users.display_name})</Typography></Box></Link></Box>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>{detail.users.bio || t("stock.noBio")}</Typography>
-            {!isMe && isAuth && <Button variant={isFollowing?.isFollow ? "outlined" : "contained"} sx={{ mt: 2, width: "fit-content" }} onClick={() => { if (detail.users?.id) follow(detail.users.id); }}>{isFollowing?.isFollow ? t("stock.following") : t("stock.follow")}</Button>}
+            {!isMe && isAuth && <Button variant={isFollowingQuery.data?.isFollow ? "outlined" : "contained"} disabled={follow.isPending} sx={{ mt: 2, width: "fit-content" }} onClick={() => follow.mutate(detail.users.id)}>{isFollowingQuery.data?.isFollow ? t("stock.following") : t("stock.follow")}</Button>}
           </Paper>
         </Box>
         <Box sx={{ flex: 1, minWidth: 0 }}><Outlet /></Box>
