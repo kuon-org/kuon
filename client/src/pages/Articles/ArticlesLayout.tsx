@@ -2,7 +2,13 @@ import { Box, Tooltip, Typography } from "@mui/material";
 import LeftSection from "../../components/layouts/SideSection/LeftSection";
 import RightSection from "../../components/layouts/SideSection/RightSection";
 import TocList from "../../components/Markdown/TocList";
-import { useArticles } from "../../hooks/useArticles";
+import {
+  useArticleIsLikedQuery,
+  useArticleLikeUsersQuery,
+  useArticleOwnershipQuery,
+  useArticleQuery,
+  useToggleArticleLike,
+} from "../../hooks/articles";
 import Articles from "./Articles";
 import { articleLikerRoute, articleRoute } from "../../routes";
 import { LikeButton } from "../../components/Like/LikeButton";
@@ -15,21 +21,21 @@ import { ShareButton } from "../../components/Article/ShareButton";
 
 export const ArticleLayout = () => {
   const { articleId } = articleRoute.useParams();
-  const {
-    article,
-    isLoading,
-    mutateLike,
-    isOwned,
-    isLiked,
-    likeCount,
-    isLikePending,
-  } = useArticles(articleId);
+  const articleQuery = useArticleQuery(articleId);
+  const ownershipQuery = useArticleOwnershipQuery(articleId);
+  const likeUsersQuery = useArticleLikeUsersQuery(articleId);
+  const isLikedQuery = useArticleIsLikedQuery(articleId);
+  const toggleLike = useToggleArticleLike(articleId);
+  const article = articleQuery.data;
+  const isOwned = ownershipQuery.data?.isOwned ?? false;
+  const isLiked = isLikedQuery.data?.isLike ?? false;
+  const likeCount = likeUsersQuery.data?.like_count ?? article?.like_count ?? 0;
 
   return (
     <Box
       sx={{
         display: "flex",
-        overflowY: "visible", // ← stickyが効くように変更
+        overflowY: "visible",
       }}
     >
       <LeftSection sticky>
@@ -43,16 +49,16 @@ export const ArticleLayout = () => {
         >
           <LikeButton
             isLiked={isLiked}
-            isLikePending={isLikePending}
+            isLikePending={toggleLike.isPending}
             likeCount={likeCount}
-            mutateLike={mutateLike}
+            mutateLike={toggleLike.mutate}
           />
           <Tooltip title="いいねした人一覧" placement="right">
             <Link
               to={articleLikerRoute.to}
               params={{
                 username: article?.users.username ?? "",
-                articleId: articleId,
+                articleId,
               }}
               style={{ color: "lightgray", textDecoration: "none" }}
             >
@@ -97,11 +103,11 @@ export const ArticleLayout = () => {
           justifyContent: "center",
         }}
       >
-        <Articles article={article} isLoading={isLoading} />
+        <Articles article={article} isLoading={articleQuery.isLoading} />
       </Box>
 
       <RightSection sticky>
-        {isLoading ? (
+        {articleQuery.isLoading ? (
           <Typography variant="body2">読み込み中...</Typography>
         ) : (
           article && (
@@ -115,9 +121,9 @@ export const ArticleLayout = () => {
       <BottomBar>
         <LikeButton
           isLiked={isLiked}
-          isLikePending={isLikePending}
+          isLikePending={toggleLike.isPending}
           likeCount={likeCount}
-          mutateLike={mutateLike}
+          mutateLike={toggleLike.mutate}
         />
         <StockButton key={articleId} articleId={articleId} />
         {article && (
