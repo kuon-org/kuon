@@ -1,12 +1,7 @@
 import { Box, Button, Paper, Typography } from "@mui/material";
 import { keyframes } from "@mui/system";
 import { useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNotify } from "../../hooks/useNotify";
-import apiClient from "../../api/client";
-import type { ApiError } from "../../api/FetchHttpClient";
-import type { AuthUser } from "../../hooks/useAuth";
-import { getApiErrorMessage } from "../../utils/errorHelpers";
+import { useVerifyLogin2FA } from "../../hooks/auth";
 import { useTranslation } from "react-i18next";
 
 const shakeAnimation = keyframes`
@@ -27,37 +22,18 @@ export const Login2FA = () => {
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const [shake, setShake] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { error, success } = useNotify();
-  const queryClient = useQueryClient();
-
-  const verifyMutation = useMutation({
-    mutationFn: async (totpToken: string) => {
-      const { data } = await apiClient.post("/login/verify-2fa", { token: totpToken });
-      return data;
-    },
-    onSuccess: async () => {
-      const { data: user } = await apiClient.get<AuthUser>("/me");
-      queryClient.setQueryData(["authUser"], user);
-      sessionStorage.removeItem("pendingEmail");
-      success(t("twoFactor.success"));
-    },
-    onError: (err: ApiError) => {
-      error(
-        getApiErrorMessage(err, t("twoFactor.invalidCode"), {
-          INVALID_2FA_CODE: t("twoFactor.invalidCode"),
-          TWO_FACTOR_SESSION_EXPIRED: t("twoFactor.sessionExpired"),
-        }),
-      );
-      setShake(true);
-      setToken("");
-      inputRef.current?.focus();
-      setTimeout(() => setShake(false), 400);
-    },
-  });
+  const verifyMutation = useVerifyLogin2FA();
 
   const handleVerify = (value: string) => {
     if (value.length !== 6 || verifyMutation.isPending) return;
-    verifyMutation.mutate(value);
+    verifyMutation.mutate(value, {
+      onError: () => {
+        setShake(true);
+        setToken("");
+        inputRef.current?.focus();
+        setTimeout(() => setShake(false), 400);
+      },
+    });
   };
 
   const handleChange = (value: string) => {
