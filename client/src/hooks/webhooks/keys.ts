@@ -7,4 +7,5 @@ export const webhookKeys = {
   list: (scope: WebhookScope) => [...webhookKeys.scope(scope), "list"] as const,
   detail: (scope: WebhookScope, id?: string) => [...webhookKeys.scope(scope), "detail", id] as const,
   deliveries: (scope: WebhookScope, id?: string) => [...webhookKeys.scope(scope), "deliveries", id] as const,
+  publishOptions: () => [...webhookKeys.all, "publish-options"] as const,
 };
