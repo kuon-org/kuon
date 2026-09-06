@@ -4,7 +4,7 @@ import prisma from "../prisma/client.js";
 const ENVIRONMENT_KEYS = [
   "DATABASE_URL",
   "JWT_SECRET",
-  "PLANTUML_HOST",
+  "PLANTUML_URL",
   "SERVER_PORT",
   "TRUST_PROXY",
   "NODE_ENV",
