@@ -4,7 +4,7 @@ import InventoryIcon from "@mui/icons-material/Inventory";
 import { useTranslation } from "react-i18next";
 import { StockManageDialog } from "./StockManageDialog";
 import { useArticleStockLists, useToggleDefaultStock } from "../../hooks/stocks";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useAuthUserQuery } from "../../hooks/auth";
 import { useNotify } from "../../hooks/useNotify";
 import { useLongPress } from "../../hooks/useLongPress";
 
@@ -15,9 +15,9 @@ export const StockButton = ({ articleId }: StockButtonProps) => {
   const [open, setOpen] = useState(false);
   const stockLists = useArticleStockLists(articleId, false);
   const toggleDefaultStock = useToggleDefaultStock(articleId);
-  const { user } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
   const { error } = useNotify();
-  const isAuth = !!user;
+  const isAuth = !!authUserQuery.data;
   const defaultList = stockLists.data?.find((list) => list.is_default);
   const isStoredInDefault = defaultList?.isStored ?? false;
 
