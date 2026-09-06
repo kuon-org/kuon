@@ -85,7 +85,11 @@ const TopBar = () => {
           {user ? (
             <>
               <UserIcon />
-              {canCreateArticle && <NavButton path="/drafts/new" message={t("article.create")} Icon={<EditIcon />} variant="contained" color="secondary" />}
+              {canCreateArticle && (
+                <Box data-testid="create-article-button">
+                  <NavButton path="/drafts/new" message={t("article.create")} Icon={<EditIcon />} variant="contained" color="secondary" />
+                </Box>
+              )}
             </>
           ) : (
             <>
