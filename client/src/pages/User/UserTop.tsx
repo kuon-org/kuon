@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { useAuthUserQuery } from "../../hooks/auth";
-import { useUserQuery } from "../../hooks/useUsers";
+import { useUserQuery } from "../../hooks/users";
 import { userRoute } from "../../routes";
 import { PickupArticles } from "./PickupList";
 import { UserArticles } from "./UserArticles";
@@ -10,7 +10,8 @@ export const UserTop = () => {
   const { t } = useTranslation("users");
   const { username } = userRoute.useParams();
   const authUserQuery = useAuthUserQuery();
-  const { user } = useUserQuery(username);
+  const userQuery = useUserQuery(username);
+  const user = userQuery.data;
 
   const isMe = authUserQuery.data?.id === user?.id;
   if (!user) return <>{t("profile.notFound")}</>;
