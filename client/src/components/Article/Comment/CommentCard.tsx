@@ -16,7 +16,13 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import LinkIcon from "@mui/icons-material/Link";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useTranslation } from "react-i18next";
-import { useComments, type Comment as CommentType } from "../../../hooks/useComments";
+import {
+  useCommentIsLikedQuery,
+  useCommentLikeUsersQuery,
+  useSoftDeleteComment,
+  useToggleCommentLike,
+  type Comment as CommentType,
+} from "../../../hooks/comments";
 import { CommentEditor } from "./CommentEditor";
 import { useAuthQuery } from "../../../hooks/useAuth";
 import { userProfileIndexRoute } from "../../../routes";
@@ -33,10 +39,15 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
   const [isReplyOpen, setIsReplyOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { user } = useAuthQuery();
-  const { softDelete, mutateLike, isLiked, likeCount, isLikePending } = useComments(comment.article_id, comment.id);
+  const softDelete = useSoftDeleteComment(comment.article_id);
+  const likeUsersQuery = useCommentLikeUsersQuery(comment.article_id, comment.id);
+  const isLikedQuery = useCommentIsLikedQuery(comment.article_id, comment.id);
+  const toggleLike = useToggleCommentLike(comment.article_id, comment.id);
   const isReply = depth > 0;
   const marginLeft = isReply ? 4 : 0;
   const isMyComment = !!comment.user_id && user?.id === comment.user_id;
+  const likeCount = likeUsersQuery.data?.like_count ?? comment.like_count;
+  const isLiked = isLikedQuery.data?.isLike ?? false;
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
@@ -49,7 +60,7 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
   };
 
   const handleDelete = () => {
-    if (window.confirm(t("card.deleteConfirm"))) softDelete(comment.id);
+    if (window.confirm(t("card.deleteConfirm"))) softDelete.mutate(comment.id);
     handleMenuClose();
   };
 
@@ -112,7 +123,7 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
         <Stack direction="row" alignItems="center">
           {!comment.is_deleted && (
             <>
-              <LikeButton isLiked={isLiked} isLikePending={isLikePending} likeCount={likeCount} mutateLike={mutateLike} />
+              <LikeButton isLiked={isLiked} isLikePending={toggleLike.isPending} likeCount={likeCount} mutateLike={toggleLike.mutate} />
               <Typography sx={{ fontSize: "0.9rem" }}>{likeCount}</Typography>
             </>
           )}
