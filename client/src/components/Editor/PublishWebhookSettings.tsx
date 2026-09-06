@@ -10,9 +10,9 @@ import {
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import {
-  usePublishWebhooks,
+  usePublishWebhookOptionsQuery,
   type PublishWebhookOption,
-} from "../../hooks/usePublishWebhooks";
+} from "../../hooks/webhooks";
 
 export const PUBLISH_WEBHOOK_NOTIFY_KEY = "kuon.publishWebhooks.notify";
 export const PUBLISH_WEBHOOK_IDS_KEY = "kuon.publishWebhooks.ids";
@@ -40,7 +40,9 @@ const providerLabel: Record<PublishWebhookOption["provider"], string> = {
 
 export const PublishWebhookSettings = ({ disabled = false }: { disabled?: boolean }) => {
   const { t } = useTranslation("articles");
-  const { data: options = [], isLoading } = usePublishWebhooks();
+  const publishWebhooksQuery = usePublishWebhookOptionsQuery();
+  const options = publishWebhooksQuery.data ?? [];
+  const isLoading = publishWebhooksQuery.isLoading;
   const initial = useMemo(() => getPublishWebhookPreference(), []);
   const [notify, setNotify] = useState(initial.notify);
   const [selectedIds, setSelectedIds] = useState<string[]>(initial.webhookIds);

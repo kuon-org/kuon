@@ -1,21 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import apiClient from "../api/client";
+import { fetchPublicServerSettings, type PublicServerSettings } from "../api/public-settings";
 
-export interface PublicServerSettings {
-  requireAuthentication: boolean;
-  maintenanceMode: boolean;
-  notificationsEnabled: boolean;
-}
+export type { PublicServerSettings } from "../api/public-settings";
 
 export const usePublicServerSettings = () =>
-  useQuery({
+  useQuery<PublicServerSettings>({
     queryKey: ["publicServerSettings"],
-    queryFn: async () => {
-      const { data } = await apiClient.get<PublicServerSettings>(
-        "/server/public-settings",
-      );
-      return data;
-    },
+    queryFn: fetchPublicServerSettings,
     staleTime: 60_000,
     retry: false,
   });

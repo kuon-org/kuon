@@ -1,6 +1,6 @@
 import { Box, Chip, Divider, Paper, Typography } from "@mui/material";
-import { useAdminStatusQuery, useServerSettingsQuery } from "../../hooks/useAdmin";
-import { useAdminPermissions } from "../../hooks/useRoles";
+import { useAdminStatusQuery, useServerSettingsQuery } from "../../hooks/admin";
+import { useMyPermissionsQuery } from "../../hooks/roles";
 import { useTranslation } from "react-i18next";
 
 const getBooleanSetting = (settings: { key: string; value: string }[] | undefined, key: string, defaultValue = false) => {
@@ -39,10 +39,13 @@ const formatUptime = (seconds: number) => {
 
 export const Dashboard = () => {
   const { t } = useTranslation("admin");
-  const { permissions } = useAdminPermissions();
+  const permissionsQuery = useMyPermissionsQuery();
+  const permissions = permissionsQuery.data?.permissions ?? [];
   const canReadSystemStatus = permissions.includes("system.settings.manage");
-  const { settings, settings_isLoading } = useServerSettingsQuery(canReadSystemStatus);
-  const { status, status_isLoading, status_isError } = useAdminStatusQuery(canReadSystemStatus);
+  const settingsQuery = useServerSettingsQuery(canReadSystemStatus);
+  const statusQuery = useAdminStatusQuery(canReadSystemStatus);
+  const settings = settingsQuery.data;
+  const status = statusQuery.data;
   const maintenanceMode = getBooleanSetting(settings, "maintenance_mode");
   const requireAuthentication = getBooleanSetting(settings, "require_authentication");
   const notificationsEnabled = getBooleanSetting(settings, "notifications_enabled", true);
@@ -61,7 +64,7 @@ export const Dashboard = () => {
       )}
       {canReadSystemStatus && (
         <>
-          {settings_isLoading ? <Typography color="text.secondary">{t("dashboard.fetchingStatus")}</Typography> : (
+          {settingsQuery.isLoading ? <Typography color="text.secondary">{t("dashboard.fetchingStatus")}</Typography> : (
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" }, gap: 2 }}>
               <StatusCard title={t("dashboard.maintenance.title")} description={t("dashboard.maintenance.description")} enabled={maintenanceMode} enabledLabel={t("dashboard.maintenance.enabled")} disabledLabel={t("dashboard.maintenance.disabled")} warningWhenEnabled />
               <StatusCard title={t("dashboard.authentication.title")} description={t("dashboard.authentication.description")} enabled={requireAuthentication} enabledLabel={t("dashboard.authentication.enabled")} disabledLabel={t("dashboard.authentication.disabled")} />
@@ -72,8 +75,8 @@ export const Dashboard = () => {
           )}
           <Paper elevation={0} sx={{ mt: 3, p: 2.5, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>{t("dashboard.runtime.title")}</Typography>
-            {status_isLoading && <Typography color="text.secondary">{t("dashboard.runtime.loading")}</Typography>}
-            {status_isError && <Typography color="error">{t("dashboard.runtime.loadFailed")}</Typography>}
+            {statusQuery.isLoading && <Typography color="text.secondary">{t("dashboard.runtime.loading")}</Typography>}
+            {statusQuery.isError && <Typography color="error">{t("dashboard.runtime.loadFailed")}</Typography>}
             {status && (
               <>
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" }, gap: 2 }}>

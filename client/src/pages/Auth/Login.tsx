@@ -12,7 +12,7 @@ import {
   Divider,
 } from "@mui/material";
 import { NavButton } from "../../components/common/NavButton";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useActiveIdpsQuery } from "../../hooks/auth";
 import { useLocalRegistrationStatus } from "../../hooks/useLocalRegistrationStatus";
 import Loading from "../../components/common/Loading/Loading";
 import { useNavigate } from "@tanstack/react-router";
@@ -24,7 +24,8 @@ import { useTranslation } from "react-i18next";
 
 const Login: React.FC = () => {
   const { t } = useTranslation("auth");
-  const { activeIdp, activeIdp_isLoading } = useAuthQuery();
+  const activeIdpQuery = useActiveIdpsQuery();
+  const activeIdp = activeIdpQuery.data;
   const registrationStatus = useLocalRegistrationStatus();
   const passwordResetStatus = useQuery({
     queryKey: ["passwordResetStatus"],
@@ -79,7 +80,7 @@ const Login: React.FC = () => {
     },
   });
 
-  if (activeIdp_isLoading) return <Loading />;
+  if (activeIdpQuery.isLoading) return <Loading />;
 
   const localRegistrationAllowed =
     registrationStatus.data?.localAccountRegistrationAllowed ?? true;

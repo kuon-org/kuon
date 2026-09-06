@@ -20,17 +20,20 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
-import { useStocks } from "../../hooks/useStocks";
-import { useTagsQuery } from "../../hooks/useTags";
-import { useAuthQuery } from "../../hooks/useAuth";
-import { useAdminPermissions } from "../../hooks/useRoles";
+import { useCreateStockList } from "../../hooks/stocks";
+import { useTagsQuery, useUpsertTag } from "../../hooks/tags";
+import { useAuthUserQuery } from "../../hooks/auth";
+import { useMyPermissionsQuery } from "../../hooks/roles";
 
 export const StockCreateDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { t } = useTranslation("articles");
-  const { createList, isCreating } = useStocks();
-  const { tags, tags_isLoading, upsertTag } = useTagsQuery();
-  const { user } = useAuthQuery();
-  const { permissions } = useAdminPermissions(!!user);
+  const createList = useCreateStockList();
+  const tagsQuery = useTagsQuery();
+  const upsertTag = useUpsertTag();
+  const tags = tagsQuery.data ?? [];
+  const authUserQuery = useAuthUserQuery();
+  const permissionsQuery = useMyPermissionsQuery(!!authUserQuery.data);
+  const permissions = permissionsQuery.data?.permissions ?? [];
   const canCreateTag = permissions.includes("tag.create") || permissions.includes("tag.manage");
   const [name, setName] = useState("");
   const [visibility, setVisibility] = useState("private");
@@ -45,10 +48,10 @@ export const StockCreateDialog = ({ open, onClose }: { open: boolean; onClose: (
         if (existingTag) return existingTag.id;
         if (!canCreateTag) throw new Error("TagCreatePermissionDenied");
         const slug = tagName.toLowerCase().trim().replace(/\s+/g, "-");
-        const createdTag = await upsertTag({ name: tagName, slug });
+        const createdTag = await upsertTag.mutateAsync({ name: tagName, slug });
         return createdTag.id;
       }));
-      await createList({ name, visibility: visibility as any, description, tagIds });
+      await createList.mutateAsync({ name, visibility: visibility as "public" | "limited" | "private", description, tagIds });
       setName("");
       setVisibility("private");
       setDescription("");
@@ -87,7 +90,7 @@ export const StockCreateDialog = ({ open, onClose }: { open: boolean; onClose: (
           <FormLabel sx={{ fontWeight: "bold", fontSize: "0.85rem", mb: 1, display: "block" }}>
             {t("stock.create.tags")} <Typography component="span" variant="caption" color="text.secondary">{t("stock.create.optional")}</Typography>
           </FormLabel>
-          <Autocomplete multiple freeSolo={canCreateTag} size="small" options={tags.map((tag) => tag.name)} loading={tags_isLoading} value={selectedTags} onChange={(_event, newValue) => setSelectedTags(newValue)} renderTags={(value, getTagProps) => value.map((option, index) => <Chip label={option} {...getTagProps({ index })} size="small" key={index} />)} renderInput={(params) => <TextField {...params} placeholder={canCreateTag ? t("stock.create.tagSearch") : t("stock.create.selectExistingTag")} variant="outlined" helperText={canCreateTag ? undefined : t("stock.create.noTagCreatePermission")} />} />
+          <Autocomplete multiple freeSolo={canCreateTag} size="small" options={tags.map((tag) => tag.name)} loading={tagsQuery.isLoading} value={selectedTags} onChange={(_event, newValue) => setSelectedTags(newValue)} renderTags={(value, getTagProps) => value.map((option, index) => <Chip label={option} {...getTagProps({ index })} size="small" key={index} />)} renderInput={(params) => <TextField {...params} placeholder={canCreateTag ? t("stock.create.tagSearch") : t("stock.create.selectExistingTag")} variant="outlined" helperText={canCreateTag ? undefined : t("stock.create.noTagCreatePermission")} />} />
         </Box>
         <Box>
           <FormLabel sx={{ fontWeight: "bold", fontSize: "0.85rem", mb: 1, display: "block" }}>
@@ -99,7 +102,7 @@ export const StockCreateDialog = ({ open, onClose }: { open: boolean; onClose: (
       <Divider />
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={onClose} color="inherit">{t("stock.create.cancel")}</Button>
-        <Button onClick={handleCreate} variant="contained" disabled={!name.trim() || isCreating} sx={{ fontWeight: "bold" }}>{isCreating ? t("stock.create.creating") : t("stock.create.create")}</Button>
+        <Button onClick={handleCreate} variant="contained" disabled={!name.trim() || createList.isPending} sx={{ fontWeight: "bold" }}>{createList.isPending ? t("stock.create.creating") : t("stock.create.create")}</Button>
       </DialogActions>
     </Dialog>
   );

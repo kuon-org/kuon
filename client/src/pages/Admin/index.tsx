@@ -19,8 +19,8 @@ import {
   adminUserManagementRoute,
   adminWebhooksRoute,
 } from "../../routes";
-import { useAuthQuery } from "../../hooks/useAuth";
-import { useAdminPermissions } from "../../hooks/useRoles";
+import { useAuthUserQuery } from "../../hooks/auth";
+import { useMyPermissionsQuery } from "../../hooks/roles";
 import { KuonLogo } from "../../components/Logo/Kuon";
 import Loading from "../../components/common/Loading/Loading";
 
@@ -39,8 +39,10 @@ export const AdminIndex = () => {
   const { t } = useTranslation("admin");
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuthQuery();
-  const { permissions, permissions_isLoading } = useAdminPermissions();
+  const authUserQuery = useAuthUserQuery();
+  const user = authUserQuery.data;
+  const permissionsQuery = useMyPermissionsQuery(!!user);
+  const permissions = permissionsQuery.data?.permissions ?? [];
   const can = (permission: string) => permissions.includes(permission);
 
   const sections: AdminNavSection[] = [
@@ -97,7 +99,7 @@ export const AdminIndex = () => {
       permission === "eventlog.read",
   );
 
-  if (!user || permissions_isLoading) return <Loading />;
+  if (!user || permissionsQuery.isLoading) return <Loading />;
   if (!hasAdminAccess) return <Navigate to="/" />;
 
   return (

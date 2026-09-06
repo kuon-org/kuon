@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, type ChangeEvent } from "react";
 import { Box, Paper, Typography, Button, Avatar } from "@mui/material";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useUploadLocalAvatar } from "../../hooks/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { accountSettingRoute } from "../../routes";
 import { useNotify } from "../../hooks/useNotify";
@@ -11,7 +11,7 @@ export const AvatarUpload = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const { localAvatarUpload, localAvatarUpload_isPending } = useAuthQuery();
+  const localAvatarUpload = useUploadLocalAvatar();
   const { error } = useNotify();
   const navigate = useNavigate();
 
@@ -24,7 +24,7 @@ export const AvatarUpload = () => {
   };
   const handleUpload = () => {
     if (!selectedFile) { error(t("avatarUpload.selectRequired")); return; }
-    localAvatarUpload(selectedFile, { onSuccess: async () => { navigate({ to: accountSettingRoute.to }); } });
+    localAvatarUpload.mutate(selectedFile, { onSuccess: () => { navigate({ to: accountSettingRoute.to }); } });
   };
   useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
 
@@ -40,7 +40,7 @@ export const AvatarUpload = () => {
         <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} style={{ display: "none" }} />
       </Box>
       <Box sx={{ display: "flex", gap: 2 }}>
-        <Button variant="contained" sx={{ mt: 4, px: 4, py: 1 }} onClick={handleUpload} disabled={localAvatarUpload_isPending || !selectedFile}>{localAvatarUpload_isPending ? t("avatarUpload.uploading") : t("avatarUpload.submit")}</Button>
+        <Button variant="contained" sx={{ mt: 4, px: 4, py: 1 }} onClick={handleUpload} disabled={localAvatarUpload.isPending || !selectedFile}>{localAvatarUpload.isPending ? t("avatarUpload.uploading") : t("avatarUpload.submit")}</Button>
         <Button variant="outlined" sx={{ mt: 4, px: 4, py: 1 }} onClick={() => navigate({ to: accountSettingRoute.to })}>{t("common.cancel")}</Button>
       </Box>
     </Paper>

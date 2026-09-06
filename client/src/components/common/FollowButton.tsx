@@ -1,44 +1,44 @@
 import { Button } from "@mui/material";
-import { useUserQuery } from "../../hooks/useUsers";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useFollowUser, useUserFollowingStateQuery } from "../../hooks/users";
+import { useAuthUserQuery } from "../../hooks/auth";
 import { useCallback } from "react";
 import { useNotify } from "../../hooks/useNotify";
 import { useTranslation } from "react-i18next";
 
 export const FollowButton = ({
   followeeId,
-  username,
+  username: _username,
 }: {
   followeeId: string;
   username: string;
 }) => {
-  const { isFollowing, isFollowingError, isFollowingLoading, follow } =
-    useUserQuery(username);
-  const { user } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
+  const isFollowingQuery = useUserFollowingStateQuery(followeeId, !!authUserQuery.data);
+  const follow = useFollowUser(authUserQuery.data?.id);
   const { error } = useNotify();
   const { t } = useTranslation("common");
-  const isAuth = !!user;
+  const isAuth = !!authUserQuery.data;
 
   const handleClick = useCallback(() => {
     if (!isAuth) return error(t("errors.loginRequired"));
-    follow(followeeId);
+    follow.mutate(followeeId);
   }, [isAuth, error, follow, followeeId, t]);
 
-  if (isFollowingError) error(t("errors.server"));
-  if (isFollowingLoading) return <>{t("loading")}</>;
+  if (isFollowingQuery.isError) error(t("errors.server"));
+  if (isFollowingQuery.isLoading) return <>{t("loading")}</>;
 
   return (
     <Button
-      variant={isFollowing?.isFollow ? "outlined" : "contained"}
+      variant={isFollowingQuery.data?.isFollow ? "outlined" : "contained"}
       size="small"
-      disabled={isFollowingLoading}
+      disabled={isFollowingQuery.isLoading || follow.isPending}
       onClick={handleClick}
       sx={{
         minWidth: "90px",
         textTransform: "none",
       }}
     >
-      {isFollowing?.isFollow ? t("follow.following") : t("follow.follow")}
+      {isFollowingQuery.data?.isFollow ? t("follow.following") : t("follow.follow")}
     </Button>
   );
 };

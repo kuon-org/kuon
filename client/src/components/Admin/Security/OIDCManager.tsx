@@ -20,18 +20,15 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { AuthSettingForm } from "./AuthSettingForm";
-import { useAdminQuery } from "../../../hooks/useAdmin";
+import { useDeleteIdpConfig, useIdpListQuery, useUpdateIdpConfig } from "../../../hooks/admin";
 import { useNotify } from "../../../hooks/useNotify";
 
 export const OIDCManager = () => {
   const { t } = useTranslation("admin");
-  const {
-    allIdps,
-    allIdps_isLoading,
-    refetchIdpList,
-    updateIdpConf,
-    deleteIdpConf,
-  } = useAdminQuery();
+  const idpListQuery = useIdpListQuery();
+  const updateIdpConfig = useUpdateIdpConfig();
+  const deleteIdpConfig = useDeleteIdpConfig();
+  const allIdps = idpListQuery.data;
   const [selectedProvider, setSelectedProvider] = useState<string>("");
   const [newSuffix, setNewSuffix] = useState("");
   const [isAdding, setIsAdding] = useState(false);
@@ -61,7 +58,7 @@ export const OIDCManager = () => {
 
     setIsAdding(true);
     try {
-      await updateIdpConf({
+      await updateIdpConfig.mutateAsync({
         provider_name: newName,
         config: {
           issuer_host: "",
@@ -70,7 +67,7 @@ export const OIDCManager = () => {
           scope: "openid profile email",
         },
       });
-      await refetchIdpList();
+      await idpListQuery.refetch();
       setSelectedProvider(newName);
       setNewSuffix("");
     } catch (e) {
@@ -86,11 +83,11 @@ export const OIDCManager = () => {
 
     setIsDeleting(true);
     try {
-      await deleteIdpConf(selectedProvider);
+      await deleteIdpConfig.mutateAsync(selectedProvider);
       setOpenDeleteModal(false);
       setDeleteConfirmText("");
       setSelectedProvider("");
-      await refetchIdpList();
+      await idpListQuery.refetch();
     } catch {
       error(t("security.idp.manager.deleteFailed"));
     } finally {
@@ -98,7 +95,7 @@ export const OIDCManager = () => {
     }
   };
 
-  if (allIdps_isLoading) return <CircularProgress />;
+  if (idpListQuery.isLoading) return <CircularProgress />;
 
   return (
     <Box>

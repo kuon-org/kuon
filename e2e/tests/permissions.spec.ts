@@ -196,7 +196,7 @@ test.describe.serial("Role / Permission authorization", () => {
     const page = await context.newPage();
 
     await page.goto("/");
-    await expect(page.getByText("記事を作成", { exact: false })).toBeVisible();
+    await expect(page.getByTestId("create-article-button")).toBeVisible();
 
     articleA = await createArticle(context.request, `E2E Article A ${runId}`);
 
@@ -264,7 +264,7 @@ test.describe.serial("Role / Permission authorization", () => {
     const page = await context.newPage();
 
     await page.goto("/");
-    await expect(page.getByText("記事を作成", { exact: false })).toHaveCount(0);
+    await expect(page.getByTestId("create-article-button")).toHaveCount(0);
 
     const read = await context.request.get(`/api/articles/${articleA.id}`);
     expect(read.status()).toBe(200);
