@@ -1,7 +1,7 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuthUserQuery } from "./hooks/auth";
-import { useAdminPermissions } from "./hooks/useRoles";
+import { useMyPermissionsQuery } from "./hooks/roles";
 import { usePublicServerSettings } from "./hooks/usePublicServerSettings";
 import { routeTree } from "./routes";
 import { NotFoundComponent } from "./components/Error/NotFoundComponents";
@@ -29,14 +29,15 @@ declare module "@tanstack/react-router" {
 export const AppRouter = () => {
   const authUserQuery = useAuthUserQuery();
   const user = authUserQuery.data;
-  const { permissions, permissions_isLoading } = useAdminPermissions(!!user);
+  const permissionsQuery = useMyPermissionsQuery(!!user);
+  const permissions = permissionsQuery.data?.permissions ?? [];
   const publicSettings = usePublicServerSettings();
   const requireAuthentication =
     publicSettings.data?.requireAuthentication ?? false;
   const maintenanceMode = publicSettings.data?.maintenanceMode ?? false;
 
   useEffect(() => {
-    if (authUserQuery.isLoading || permissions_isLoading || publicSettings.isLoading) return;
+    if (authUserQuery.isLoading || permissionsQuery.isLoading || publicSettings.isLoading) return;
     void router.invalidate();
   }, [
     user?.id,
@@ -44,7 +45,7 @@ export const AppRouter = () => {
     requireAuthentication,
     maintenanceMode,
     authUserQuery.isLoading,
-    permissions_isLoading,
+    permissionsQuery.isLoading,
     publicSettings.isLoading,
   ]);
 
@@ -61,7 +62,7 @@ export const AppRouter = () => {
       );
   }, [publicSettings.refetch]);
 
-  if (authUserQuery.isLoading || permissions_isLoading || publicSettings.isLoading) return null;
+  if (authUserQuery.isLoading || permissionsQuery.isLoading || publicSettings.isLoading) return null;
 
   return (
     <RouterProvider
