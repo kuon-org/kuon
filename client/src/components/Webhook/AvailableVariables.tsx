@@ -1,6 +1,6 @@
 import { ContentCopy } from "@mui/icons-material";
 import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
-import type { WebhookVariable } from "../../hooks/useWebhooks";
+import type { WebhookVariable } from "../../hooks/webhooks";
 import { useTranslation } from "react-i18next";
 
 type AvailableVariablesProps = { variables: WebhookVariable[]; };
