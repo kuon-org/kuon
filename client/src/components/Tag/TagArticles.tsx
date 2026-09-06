@@ -5,7 +5,7 @@ import apiClient from "../../api/client";
 import { Typography, Stack, Box, Pagination, PaginationItem } from "@mui/material";
 import { ArticlesSkeleton } from "../common/Loading/ArticlesSkelton";
 import { ArticleCard } from "../Article/ArticleCard";
-import type { Tag } from "../../hooks/useTags";
+import type { Tag } from "../../hooks/tags";
 import { useTranslation } from "react-i18next";
 
 interface TagArticlesProps { tag: Tag; }
