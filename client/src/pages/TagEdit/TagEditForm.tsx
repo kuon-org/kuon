@@ -1,5 +1,5 @@
 import type { UseMutateAsyncFunction } from "@tanstack/react-query";
-import { type UpsertTagData } from "../../hooks/useTags";
+import { type UpsertTagData } from "../../hooks/tags";
 import { useForm } from "@tanstack/react-form";
 import { Avatar, Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useNotify } from "../../hooks/useNotify";
