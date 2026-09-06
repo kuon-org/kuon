@@ -23,7 +23,7 @@ import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import MarkdownEditor from "./Experimental/MarkdownEditor";
 import { type Article } from "../../hooks/articles";
-import { useTagsQuery } from "../../hooks/useTags";
+import { useTagsQuery, useUpsertTag } from "../../hooks/tags";
 import { useKey } from "../../hooks/useKey";
 import { useNotify } from "../../hooks/useNotify";
 import { draftsRoute } from "../../routes";
@@ -47,6 +47,9 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
   const permissionsQuery = useMyPermissionsQuery(!!authUserQuery.data);
   const permissions = permissionsQuery.data?.permissions ?? [];
   const canCreateTag = permissions.includes("tag.create") || permissions.includes("tag.manage");
+  const tagsQuery = useTagsQuery();
+  const upsertTag = useUpsertTag();
+  const tags = tagsQuery.data ?? [];
 
   const [title, setTitle] = useState(article?.title ?? "");
   const [summary, setSummary] = useState(article?.summary ?? "");
@@ -55,7 +58,6 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
   const [isEdited, setIsEdited] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { tags, upsertTag } = useTagsQuery();
   const [selectedTagNames, setSelectedTagNames] = useState<string[]>(article?.article_tags?.map((item) => item.tags.name) ?? []);
   const [isPrivate, setIsPrivate] = useState(article?.is_private ?? false);
 
@@ -86,7 +88,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
           if (existingTag) return existingTag.id;
           if (!canCreateTag) throw new Error("TagCreatePermissionDenied");
           const slug = name.toLowerCase().trim().replace(/\s+/g, "-");
-          const createdTag = await upsertTag({ name, slug });
+          const createdTag = await upsertTag.mutateAsync({ name, slug });
           return createdTag.id;
         }));
         const webhookPreference = getPublishWebhookPreference();
@@ -165,7 +167,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
 
       <Box sx={{ flex: 1, py: 1, px: { md: 3 }, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         <TextField fullWidth label={t("editor.titleField", { ns: "articles" })} variant="standard" value={title} onChange={(e) => setTitle(e.target.value)} sx={{ mb: 2, "& .MuiInputBase-root": { fontSize: "1.5rem", fontWeight: "bold" } }} />
-        <Autocomplete multiple freeSolo={canCreateTag} options={tags?.map((tag) => tag.name) || []} value={selectedTagNames} onChange={(_event, newValue) => setSelectedTagNames(newValue)} renderTags={(value, getTagProps) => value.map((option, index) => <Chip label={option} {...getTagProps({ index })} key={index} variant="outlined" size="small" />)} renderInput={(params) => <TextField {...params} label={t("editor.tags", { ns: "articles" })} placeholder={canCreateTag ? t("editor.tagPlaceholder", { ns: "articles" }) : t("editor.selectExistingTag", { ns: "articles" })} variant="standard" sx={{ mb: 2 }} helperText={canCreateTag ? undefined : t("editor.noTagCreatePermission", { ns: "articles" })} />} />
+        <Autocomplete multiple freeSolo={canCreateTag} options={tags.map((tag) => tag.name)} value={selectedTagNames} onChange={(_event, newValue) => setSelectedTagNames(newValue)} renderTags={(value, getTagProps) => value.map((option, index) => <Chip label={option} {...getTagProps({ index })} key={index} variant="outlined" size="small" />)} renderInput={(params) => <TextField {...params} label={t("editor.tags", { ns: "articles" })} placeholder={canCreateTag ? t("editor.tagPlaceholder", { ns: "articles" }) : t("editor.selectExistingTag", { ns: "articles" })} variant="standard" sx={{ mb: 2 }} helperText={canCreateTag ? undefined : t("editor.noTagCreatePermission", { ns: "articles" })} />} />
         <TextField fullWidth label={t("editor.summary", { ns: "articles" })} multiline maxRows={3} variant="standard" value={summary} onChange={(e) => setSummary(e.target.value)} sx={{ mb: 2 }} />
         <MarkdownEditor text={text} setText={setText} setIsEdited={setIsEdited} />
       </Box>
