@@ -3,11 +3,12 @@ import { UserList } from "../../components/UserList/UserList";
 import { userRoute } from "../../routes";
 import { Link } from "@tanstack/react-router";
 import LoadingSkelton from "../../components/common/Loading/LoadingSkelton";
-import { useUserQuery } from "../../hooks/useUsers";
+import { useFollowersQuery, useUserQuery } from "../../hooks/users";
 
 export const Follower = () => {
   const { username } = userRoute.useParams();
-  const { follower, follower_isLoading } = useUserQuery(username);
+  const userQuery = useUserQuery(username);
+  const followerQuery = useFollowersQuery(userQuery.data?.id);
   return (
     <Paper
       elevation={2}
@@ -30,10 +31,10 @@ export const Follower = () => {
         </Link>
         のフォロワー
       </Typography>
-      {follower_isLoading ? (
+      {followerQuery.isLoading ? (
         <LoadingSkelton />
       ) : (
-        <UserList users={follower}></UserList>
+        <UserList users={followerQuery.data ?? []}></UserList>
       )}
     </Paper>
   );
