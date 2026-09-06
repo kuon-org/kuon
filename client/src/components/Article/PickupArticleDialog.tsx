@@ -6,7 +6,7 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import apiClient from "../../api/client";
-import type { Article } from "../../hooks/useArticles";
+import type { Article } from "../../hooks/articles";
 import React from "react";
 
 interface PickupArticleDialogProps {
