@@ -7,7 +7,7 @@ import {
   toggleDefaultStock,
   updateStockList,
 } from "../../api/stocks";
-import type { StockListPayload } from "../../api/stocks";
+import type { StockList, StockListPayload } from "../../api/stocks";
 import { useNotify } from "../useNotify";
 import { stockKeys } from "./keys";
 
@@ -71,7 +71,14 @@ export const useToggleDefaultStock = (articleId: string) => {
     mutationFn: () => toggleDefaultStock(articleId),
     onSuccess: (data) => {
       success(data.message);
-      queryClient.invalidateQueries({ queryKey: stockKeys.lists() });
+      queryClient.setQueryData<StockList[]>(
+        stockKeys.articleLists(articleId),
+        (lists) =>
+          lists?.map((list) =>
+            list.is_default ? { ...list, isStored: !list.isStored } : list,
+          ),
+      );
+      queryClient.invalidateQueries({ queryKey: stockKeys.myLists() });
       queryClient.invalidateQueries({ queryKey: stockKeys.details() });
     },
   });
