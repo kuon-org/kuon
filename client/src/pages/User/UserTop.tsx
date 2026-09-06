@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { useAuthQuery } from "../../hooks/useAuth";
+import { useAuthUserQuery } from "../../hooks/auth";
 import { useUserQuery } from "../../hooks/useUsers";
 import { userRoute } from "../../routes";
 import { PickupArticles } from "./PickupList";
@@ -9,10 +9,10 @@ import { useTranslation } from "react-i18next";
 export const UserTop = () => {
   const { t } = useTranslation("users");
   const { username } = userRoute.useParams();
-  const { user: authUser } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
   const { user } = useUserQuery(username);
 
-  const isMe = authUser?.id === user?.id;
+  const isMe = authUserQuery.data?.id === user?.id;
   if (!user) return <>{t("profile.notFound")}</>;
   return <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}><PickupArticles userId={user.id} isMe={isMe} /><UserArticles userId={user.id} /></Box>;
 };
