@@ -23,8 +23,8 @@ import {
   useToggleCommentLike,
   type Comment as CommentType,
 } from "../../../hooks/comments";
+import { useAuthUserQuery } from "../../../hooks/auth";
 import { CommentEditor } from "./CommentEditor";
-import { useAuthQuery } from "../../../hooks/useAuth";
 import { userProfileIndexRoute } from "../../../routes";
 import { Link } from "@tanstack/react-router";
 import { LikeButton } from "../../Like/LikeButton";
@@ -38,7 +38,8 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
   const { t, i18n } = useTranslation("comments");
   const [isReplyOpen, setIsReplyOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const { user } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
+  const user = authUserQuery.data;
   const softDelete = useSoftDeleteComment(comment.article_id);
   const likeUsersQuery = useCommentLikeUsersQuery(comment.article_id, comment.id);
   const isLikedQuery = useCommentIsLikedQuery(comment.article_id, comment.id);
