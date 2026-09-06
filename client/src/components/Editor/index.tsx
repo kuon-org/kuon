@@ -22,15 +22,15 @@ import { type UseMutateAsyncFunction } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import MarkdownEditor from "./Experimental/MarkdownEditor";
-import { type Article } from "../../hooks/useArticles";
+import { type Article } from "../../hooks/articles";
 import { useTagsQuery } from "../../hooks/useTags";
 import { useKey } from "../../hooks/useKey";
 import { useNotify } from "../../hooks/useNotify";
 import { draftsRoute } from "../../routes";
 import { ConfirmLeaveDialog } from "../common/ConfirmLeaveDialog";
 import { getPublishWebhookPreference, PublishWebhookSettings } from "./PublishWebhookSettings";
-import { useAuthQuery } from "../../hooks/useAuth";
-import { useAdminPermissions } from "../../hooks/useRoles";
+import { useAuthUserQuery } from "../../hooks/auth";
+import { useMyPermissionsQuery } from "../../hooks/roles";
 
 interface ArticleEditorProps {
   mutate: UseMutateAsyncFunction<any, any, any, unknown>;
@@ -43,8 +43,9 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
   const router = useRouter();
   const navigate = useNavigate();
   const { error, success } = useNotify();
-  const { user } = useAuthQuery();
-  const { permissions } = useAdminPermissions(!!user);
+  const authUserQuery = useAuthUserQuery();
+  const permissionsQuery = useMyPermissionsQuery(!!authUserQuery.data);
+  const permissions = permissionsQuery.data?.permissions ?? [];
   const canCreateTag = permissions.includes("tag.create") || permissions.includes("tag.manage");
 
   const [title, setTitle] = useState(article?.title ?? "");
