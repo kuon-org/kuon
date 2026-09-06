@@ -3,7 +3,7 @@ import { Box, Button, Stack, Paper, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import FastEditor, { type FastEditorRef } from "../../Editor/FastEditor";
 import { useCreateComment } from "../../../hooks/comments";
-import { useAuthQuery } from "../../../hooks/useAuth";
+import { useAuthUserQuery } from "../../../hooks/auth";
 import { NavButton } from "../../common/NavButton";
 
 interface CommentEditorProps {
@@ -23,7 +23,8 @@ export const CommentEditor = ({
   const [content, setContent] = useState("");
   const editorRef = useRef<FastEditorRef>(null);
   const createComment = useCreateComment(articleId);
-  const { user } = useAuthQuery();
+  const authUserQuery = useAuthUserQuery();
+  const user = authUserQuery.data;
   const resolvedPlaceholder = placeholder ?? t("editor.placeholder");
 
   if (!user) {
