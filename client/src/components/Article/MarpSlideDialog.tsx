@@ -12,7 +12,7 @@ import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
-import { useArticles } from "../../hooks/useArticles";
+import { useMarpQuery } from "../../hooks/articles";
 import { useKey } from "../../hooks/useKey";
 
 const SlideViewer = ({
@@ -92,26 +92,13 @@ const SlideViewer = ({
         color: "white",
       }}
     >
-      {/* 右上コントロール */}
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{
-          position: "absolute",
-          top: 20,
-          right: 20,
-          zIndex: 10,
-        }}
-      >
+      <Stack direction="row" spacing={1} sx={{ position: "absolute", top: 20, right: 20, zIndex: 10 }}>
         <IconButton
           onClick={(e) => {
             e.stopPropagation();
             toggleFullscreen();
           }}
-          sx={{
-            color: "rgba(255,255,255,0.7)",
-            "&:hover": { color: "white" },
-          }}
+          sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: "white" } }}
         >
           {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
         </IconButton>
@@ -121,23 +108,16 @@ const SlideViewer = ({
             e.stopPropagation();
             onClose();
           }}
-          sx={{
-            color: "rgba(255,255,255,0.7)",
-            "&:hover": { color: "white" },
-          }}
+          sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: "white" } }}
         >
           <CloseIcon sx={{ fontSize: 32 }} />
         </IconButton>
       </Stack>
 
-      {/* メインコンテンツ */}
       <Box
         onClick={(e) => {
           e.stopPropagation();
-
-          const rect = (
-            e.currentTarget as HTMLDivElement
-          ).getBoundingClientRect();
+          const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
           const clickX = e.clientX - rect.left;
           const ratio = clickX / rect.width;
           if (ratio > 0.55) handleNext();
@@ -187,7 +167,6 @@ const SlideViewer = ({
         )}
       </Box>
 
-      {/* ナビゲーション */}
       {!loading && totalPages > 0 && (
         <Box
           sx={{
@@ -215,47 +194,21 @@ const SlideViewer = ({
                 backdropFilter: "blur(4px)",
               }}
             >
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleBack();
-                }}
-                disabled={page === 0}
-                sx={{ color: "white" }}
-              >
+              <IconButton onClick={(e) => { e.stopPropagation(); handleBack(); }} disabled={page === 0} sx={{ color: "white" }}>
                 <NavigateBeforeIcon />
               </IconButton>
 
-              <Typography
-                variant="body2"
-                sx={{ minWidth: "40px", textAlign: "center" }}
-              >
+              <Typography variant="body2" sx={{ minWidth: "40px", textAlign: "center" }}>
                 {page + 1} / {totalPages}
               </Typography>
 
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNext();
-                }}
-                disabled={page === totalPages - 1}
-                sx={{ color: "white" }}
-              >
+              <IconButton onClick={(e) => { e.stopPropagation(); handleNext(); }} disabled={page === totalPages - 1} sx={{ color: "white" }}>
                 <NavigateNextIcon />
               </IconButton>
             </Stack>
           )}
 
-          <Box
-            sx={{
-              position: "fixed",
-              bottom: 0,
-              left: 0,
-              width: "100%",
-              height: 3,
-              backgroundColor: "transparent",
-            }}
-          >
+          <Box sx={{ position: "fixed", bottom: 0, left: 0, width: "100%", height: 3, backgroundColor: "transparent" }}>
             <Box
               sx={{
                 width: `${((page + 1) / totalPages) * 100}%`,
@@ -280,15 +233,15 @@ export const MarpSlideDialog = ({
   open: boolean;
   onClose: () => void;
 }) => {
-  const { marp: data, marpIsLoading: loading } = useArticles(articleId);
+  const marpQuery = useMarpQuery(articleId, open);
 
   return (
     <Dialog fullScreen open={open} onClose={onClose}>
       {open && (
         <SlideViewer
           key={`${articleId}-${open}`}
-          data={data}
-          loading={loading}
+          data={marpQuery.data}
+          loading={marpQuery.isLoading}
           onClose={onClose}
         />
       )}
