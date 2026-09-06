@@ -114,8 +114,8 @@ export const login = async (value: unknown) => {
   return data;
 };
 
-export const verifyLogin2FA = async (email: string, token: string) => {
-  const { data } = await apiClient.post("/login/verify-2fa", { email, token });
+export const verifyLogin2FA = async (token: string) => {
+  const { data } = await apiClient.post("/login/verify-2fa", { token });
   return data;
 };
 
