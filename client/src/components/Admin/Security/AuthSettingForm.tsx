@@ -11,8 +11,11 @@ import {
 import { useTranslation } from "react-i18next";
 import {
   type IdpConnectivityResult,
-  useAdminQuery,
-} from "../../../hooks/useAdmin";
+  useIdpConfigQuery,
+  useTestIdpConnectivity,
+  useToggleIdpActive,
+  useUpdateIdpConfig,
+} from "../../../hooks/admin";
 import Loading from "../../common/Loading/Loading";
 import { OIDCForm } from "./OIDCForm";
 import { OAuth2TemplateForm } from "./OAuth2TemplateForm";
@@ -24,20 +27,15 @@ interface AuthSettingFormProps {
 
 export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
   const { t } = useTranslation("admin");
-  const {
-    idpConf,
-    idpConf_isLoading,
-    updateIdpConf,
-    toggleActive,
-    testIdpConnectivity,
-    testIdpConnectivity_isPending,
-  } = useAdminQuery(provider_name);
-  const [testResult, setTestResult] = useState<IdpConnectivityResult | null>(
-    null,
-  );
+  const idpConfigQuery = useIdpConfigQuery(provider_name);
+  const updateIdpConfig = useUpdateIdpConfig(provider_name);
+  const toggleIdpActive = useToggleIdpActive(provider_name);
+  const testIdpConnectivity = useTestIdpConnectivity();
+  const idpConf = idpConfigQuery.data;
+  const [testResult, setTestResult] = useState<IdpConnectivityResult | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
-  if (idpConf_isLoading) return <Loading />;
+  if (idpConfigQuery.isLoading) return <Loading />;
 
   const config = idpConf?.idp_configurations?.config ?? {
     issuer_host: "",
@@ -51,7 +49,7 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
     setTestError(null);
     setTestResult(null);
     try {
-      setTestResult(await testIdpConnectivity(provider_name));
+      setTestResult(await testIdpConnectivity.mutateAsync(provider_name));
     } catch {
       setTestError(t("security.idp.connectivity.failed"));
     }
@@ -63,9 +61,9 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
         <Button
           variant="outlined"
           onClick={handleConnectivityTest}
-          disabled={testIdpConnectivity_isPending}
+          disabled={testIdpConnectivity.isPending}
         >
-          {testIdpConnectivity_isPending ? (
+          {testIdpConnectivity.isPending ? (
             <>
               <CircularProgress size={16} sx={{ mr: 1 }} />
               {t("security.idp.connectivity.checking")}
@@ -137,8 +135,8 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
           provider_name={provider_name}
           initialData={config}
           isActive={isActive}
-          updateIdpConf={updateIdpConf}
-          toggleActive={toggleActive}
+          updateIdpConf={updateIdpConfig.mutateAsync}
+          toggleActive={toggleIdpActive.mutate}
         />
       ) : provider_name === "oidc" || provider_name.startsWith("oidc-") ? (
         <OIDCForm
@@ -146,8 +144,8 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
           provider_name={provider_name}
           initialData={config}
           isActive={isActive}
-          updateIdpConf={updateIdpConf}
-          toggleActive={toggleActive}
+          updateIdpConf={updateIdpConfig.mutateAsync}
+          toggleActive={toggleIdpActive.mutate}
         />
       ) : (
         <OAuth2TemplateForm
@@ -155,8 +153,8 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
           provider_name={provider_name}
           initialData={config}
           isActive={isActive}
-          updateIdpConf={updateIdpConf}
-          toggleActive={toggleActive}
+          updateIdpConf={updateIdpConfig.mutateAsync}
+          toggleActive={toggleIdpActive.mutate}
         />
       )}
     </>
