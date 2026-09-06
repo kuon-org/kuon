@@ -1,6 +1,6 @@
 import { Add, Delete, DataObject } from "@mui/icons-material";
 import { Box, Button, IconButton, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
-import type { WebhookVariable } from "../../hooks/useWebhooks";
+import type { WebhookVariable } from "../../hooks/webhooks";
 import { useTranslation } from "react-i18next";
 
 export type PayloadNode = { type: "object"; properties: PayloadProperty[] } | { type: "array"; items: PayloadNode[] } | { type: "variable"; variable: string } | { type: "text"; value: string } | { type: "number"; value: number } | { type: "boolean"; value: boolean } | { type: "null" };
