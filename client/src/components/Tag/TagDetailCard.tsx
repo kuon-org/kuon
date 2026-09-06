@@ -8,8 +8,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useTagsQuery, type Tag } from "../../hooks/useTags";
-import { useAuthQuery } from "../../hooks/useAuth";
-import { useAdminPermissions } from "../../hooks/useRoles";
+import { useAuthUserQuery } from "../../hooks/auth";
+import { useMyPermissionsQuery } from "../../hooks/roles";
 import { MoreHButton } from "../common/MoreHbutton";
 import Loading from "../common/Loading/Loading";
 import { useNavigate } from "@tanstack/react-router";
@@ -23,8 +23,10 @@ interface TagDetailCardProps {
 export const TagDetailCard = ({ tag, slug }: TagDetailCardProps) => {
   const { t } = useTranslation("tags");
   const navigate = useNavigate();
-  const { user } = useAuthQuery();
-  const { permissions } = useAdminPermissions(!!user);
+  const authUserQuery = useAuthUserQuery();
+  const user = authUserQuery.data;
+  const permissionsQuery = useMyPermissionsQuery(!!user);
+  const permissions = permissionsQuery.data?.permissions ?? [];
   const { isFollowing, isFollowingIsError, isFollowingIsLoading, followTag } =
     useTagsQuery(slug);
   const canManageTag = permissions.includes("tag.manage");
