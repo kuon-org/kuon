@@ -6,13 +6,13 @@ export interface AuthUser {
   username: string;
   display_name: string;
   email: string;
-  avatar_url: unknown;
-  bio: unknown;
+  avatar_url: string | null;
+  bio: string | null;
   created_at: string;
   updated_at: string;
   is_active: boolean;
   last_login_at: string;
-  created_by: unknown;
+  created_by: string | null;
   is_2fa_enabled: boolean;
   role: string;
 }
@@ -68,8 +68,8 @@ export interface UserIdpInfo {
   created_at: string;
   updated_at: string;
   is_active: boolean;
-  last_login_at: unknown;
-  created_by: unknown;
+  last_login_at: string | null;
+  created_by: string | null;
   user_identities: UserIdentity[];
   user_avatars: UserAvatar[];
 }
