@@ -6,7 +6,7 @@ import { TagEditForm } from "./TagEditForm";
 import { useAuthUserQuery } from "../../hooks/auth";
 import { Navigate } from "@tanstack/react-router";
 import { useNotify } from "../../hooks/useNotify";
-import { useAdminPermissions } from "../../hooks/useRoles";
+import { useMyPermissionsQuery } from "../../hooks/roles";
 import { useTranslation } from "react-i18next";
 
 export const TagEdit = () => {
@@ -14,11 +14,12 @@ export const TagEdit = () => {
   const { slug } = tagEditRoute.useParams();
   const { tag, tag_isLoading, tag_isError, upsertTag, isUpserting, uploadImage } = useTagsQuery(slug);
   const authUserQuery = useAuthUserQuery();
-  const { permissions, permissions_isLoading } = useAdminPermissions(!!authUserQuery.data);
+  const permissionsQuery = useMyPermissionsQuery(!!authUserQuery.data);
+  const permissions = permissionsQuery.data?.permissions ?? [];
   const { error } = useNotify();
   const canManageTag = permissions.includes("tag.manage");
 
-  if (permissions_isLoading) return <Loading />;
+  if (permissionsQuery.isLoading) return <Loading />;
   if (!canManageTag) {
     error(t("edit.permissionDenied"));
     return <Navigate to={tagProfileRoute.to} search={{ page: 1 }} params={{ slug }} />;
