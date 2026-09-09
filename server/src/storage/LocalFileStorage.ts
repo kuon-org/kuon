@@ -9,7 +9,7 @@ import type {
 } from "./FileStorage.js";
 
 const normalizeKey = (key: string) => {
-  const normalized = path.posix.normalize(key.replaceAll("\\", "/"));
+  const normalized = path.posix.normalize(key.replace(/\\/g, "/"));
   if (
     normalized === "." ||
     normalized.startsWith("../") ||
