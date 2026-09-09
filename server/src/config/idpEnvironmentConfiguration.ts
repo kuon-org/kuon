@@ -147,6 +147,8 @@ export const sanitizeIdpConfig = (
   Object.fromEntries(
     Object.entries(config).map(([key, value]) => [
       key,
-      SECRET_FIELD_PATTERN.test(key) && value ? "[REDACTED]" : value,
+      key !== "public_cert" && SECRET_FIELD_PATTERN.test(key) && value
+        ? "[REDACTED]"
+        : value,
     ]),
   );
