@@ -64,10 +64,16 @@ export const SAMLForm = ({
       wantAuthnResponseSigned: initialData.wantAuthnResponseSigned ?? false,
       disableRequestedAuthnContext:
         initialData.disableRequestedAuthnContext ?? false,
+      signAuthnRequest:
+        initialData.signAuthnRequest ?? initialData.sign_authn_request ?? false,
+      private_key: "",
+      public_cert: initialData.public_cert || "",
       identifier_format:
         initialData.identifier_format ||
         "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
       signature_algorithm: initialData.signature_algorithm || "sha256",
+      digest_algorithm:
+        initialData.digest_algorithm || initialData.signature_algorithm || "sha256",
       mapping: {
         id: initialData.mapping?.id || "nameID",
         username: initialData.mapping?.username || "email",
@@ -75,9 +81,14 @@ export const SAMLForm = ({
       },
     },
     onSubmit: async ({ value }) => {
+      const config: Record<string, unknown> = { ...value };
+      if (!value.private_key) {
+        delete config.private_key;
+      }
+
       await updateIdpConf({
         provider_name,
-        config: value,
+        config,
         provider_type: "SAML",
       });
     },
@@ -149,6 +160,17 @@ export const SAMLForm = ({
                 ),
               }}
               helperText={t("security.idp.saml.acsHint")}
+            />
+          </Grid>
+
+          <Grid size={12}>
+            <TextField
+              label="SP Metadata URL"
+              fullWidth
+              size="small"
+              value={`${window.location.origin}/auth/${provider_name}/metadata`}
+              disabled
+              helperText="IdPへKuonのSP設定を登録する際に利用できます。"
             />
           </Grid>
 
@@ -299,6 +321,21 @@ export const SAMLForm = ({
                           />
                         )}
                       </form.Field>
+                      <form.Field name="signAuthnRequest">
+                        {(field) => (
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={field.state.value}
+                                onChange={(e) =>
+                                  field.handleChange(e.target.checked)
+                                }
+                              />
+                            }
+                            label="Sign AuthnRequest"
+                          />
+                        )}
+                      </form.Field>
                     </Box>
                   </Grid>
 
@@ -323,6 +360,80 @@ export const SAMLForm = ({
                     </form.Field>
                   </Grid>
                   <Grid size={6}>
+                    <form.Field name="digest_algorithm">
+                      {(field) => (
+                        <TextField
+                          select
+                          label="Digest Algorithm"
+                          fullWidth
+                          size="small"
+                          value={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                        >
+                          <MenuItem value="sha256">SHA-256</MenuItem>
+                          <MenuItem value="sha512">SHA-512</MenuItem>
+                          <MenuItem value="sha1">SHA-1 (deprecated)</MenuItem>
+                        </TextField>
+                      )}
+                    </form.Field>
+                  </Grid>
+
+                  <form.Subscribe selector={(state) => state.values.signAuthnRequest}>
+                    {(signAuthnRequest) =>
+                      signAuthnRequest ? (
+                        <>
+                          <Grid size={12}>
+                            <form.Field name="private_key">
+                              {(field) => (
+                                <TextField
+                                  label="SP Private Key (PEM)"
+                                  fullWidth
+                                  multiline
+                                  rows={8}
+                                  size="small"
+                                  value={field.state.value}
+                                  onChange={(e) => field.handleChange(e.target.value)}
+                                  placeholder="-----BEGIN PRIVATE KEY----- ..."
+                                  helperText="DB設定では暗号化して保存され、APIからは返却されません。空欄のまま保存すると既存の秘密鍵を維持します。"
+                                  sx={{
+                                    "& .MuiInputBase-input": {
+                                      fontFamily: "monospace",
+                                      fontSize: "0.8rem",
+                                    },
+                                  }}
+                                />
+                              )}
+                            </form.Field>
+                          </Grid>
+                          <Grid size={12}>
+                            <form.Field name="public_cert">
+                              {(field) => (
+                                <TextField
+                                  label="SP Public Certificate (PEM)"
+                                  fullWidth
+                                  multiline
+                                  rows={8}
+                                  size="small"
+                                  value={field.state.value}
+                                  onChange={(e) => field.handleChange(e.target.value)}
+                                  placeholder="-----BEGIN CERTIFICATE----- ..."
+                                  helperText="秘密鍵に対応する証明書です。SP Metadataにも公開されます。"
+                                  sx={{
+                                    "& .MuiInputBase-input": {
+                                      fontFamily: "monospace",
+                                      fontSize: "0.8rem",
+                                    },
+                                  }}
+                                />
+                              )}
+                            </form.Field>
+                          </Grid>
+                        </>
+                      ) : null
+                    }
+                  </form.Subscribe>
+
+                  <Grid size={12}>
                     <form.Field name="identifier_format">
                       {(field) => (
                         <TextField
