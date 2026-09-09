@@ -27,13 +27,13 @@ import { requireSiteAuthentication } from "./middlewares/siteAccess.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { serverSettingsService } from "./services/serverSettingsService.js";
 import { runtimeMaintenanceGate } from "./services/runtimeMaintenanceService.js";
+import { storageDelivery } from "./storage/storageDelivery.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distPath = path.resolve(__dirname, "../dist");
-const uploadsPath = path.resolve(__dirname, "../public/uploads");
 
 const app = express();
 const trustProxy = process.env.TRUST_PROXY;
@@ -97,7 +97,7 @@ app.use(
   "/uploads",
   runtimeMaintenanceGate,
   requireSiteAuthentication,
-  express.static(uploadsPath),
+  storageDelivery,
 );
 
 if (process.env.NODE_ENV === "production") {
