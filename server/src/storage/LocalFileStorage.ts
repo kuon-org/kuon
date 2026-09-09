@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import type {
   FileStorage,
   PutFileInput,
@@ -28,25 +28,20 @@ export class LocalFileStorage implements FileStorage {
   }
 
   async put(input: PutFileInput): Promise<StoredFile> {
-    const filePath = this.resolvePath(input.key);
+    const normalizedKey = normalizeKey(input.key);
+    const filePath = this.resolvePath(normalizedKey);
     await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
 
     if (Buffer.isBuffer(input.body)) {
       await fs.promises.writeFile(filePath, input.body);
     } else {
-      await new Promise<void>((resolve, reject) => {
-        const stream = fs.createWriteStream(filePath);
-        input.body.pipe(stream);
-        input.body.on("error", reject);
-        stream.on("error", reject);
-        stream.on("finish", resolve);
-      });
+      await pipeline(input.body, fs.createWriteStream(filePath));
     }
 
-    return { key: normalizeKey(input.key) };
+    return { key: normalizedKey };
   }
 
-  async get(key: string): Promise<Readable> {
+  async get(key: string) {
     return fs.createReadStream(this.resolvePath(key));
   }
 
