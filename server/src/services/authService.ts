@@ -14,6 +14,7 @@ import {
 import { serverSettingsService } from "./serverSettingsService.js";
 import { ServerSettingKey } from "../constants/serverSettings.js";
 import { isTotpEnabledForUser } from "../utils/totp/index.js";
+import { resolveIdpConfigSecrets } from "../utils/idpConfigSecrets.js";
 
 const pkceStore = new Map<
   string,
@@ -388,7 +389,24 @@ export class AuthService {
     const record = await this.repo.findProviderByName(providerName);
     if (!record || record.idp_configurations == null)
       throw new Error("Invalid SAML provider");
-    const config = record.idp_configurations.config as any;
+
+    const storedConfig = record.idp_configurations.config as Record<
+      string,
+      unknown
+    >;
+    const config =
+      record.source === "database"
+        ? (resolveIdpConfigSecrets(storedConfig) as any)
+        : (storedConfig as any);
+    const signAuthnRequest =
+      config.signAuthnRequest ?? config.sign_authn_request ?? false;
+
+    if (signAuthnRequest && !config.private_key) {
+      throw new Error(
+        "SAML AuthnRequest signing is enabled but private_key is not configured",
+      );
+    }
+
     return new SAML({
       issuer: config.issuer,
       callbackUrl: config.redirect_uri,
@@ -401,10 +419,19 @@ export class AuthService {
       disableRequestedAuthnContext:
         config.disableRequestedAuthnContext ?? false,
       signatureAlgorithm: config.signature_algorithm || "sha256",
-      digestAlgorithm: config.signature_algorithm || "sha256",
+      digestAlgorithm:
+        config.digest_algorithm || config.signature_algorithm || "sha256",
       identifierFormat:
         config.identifier_format ||
         "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+      ...(signAuthnRequest
+        ? {
+            privateKey: config.private_key,
+            publicCert: config.public_cert
+              ? this.formatCert(config.public_cert)
+              : undefined,
+          }
+        : {}),
     });
   }
 
