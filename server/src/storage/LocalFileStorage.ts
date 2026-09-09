@@ -5,6 +5,7 @@ import type {
   FileStorage,
   PutFileInput,
   StoredFile,
+  StoredFileInfo,
 } from "./FileStorage.js";
 
 const normalizeKey = (key: string) => {
@@ -60,5 +61,37 @@ export class LocalFileStorage implements FileStorage {
     } catch {
       return false;
     }
+  }
+
+  async *list(prefix = ""): AsyncIterable<StoredFileInfo> {
+    const normalizedPrefix = prefix ? normalizeKey(prefix) : "";
+    const startPath = normalizedPrefix
+      ? this.resolvePath(normalizedPrefix)
+      : this.basePath;
+
+    const walk = async function* (
+      currentPath: string,
+      relativePrefix: string,
+    ): AsyncIterable<StoredFileInfo> {
+      let entries: fs.Dirent[];
+      try {
+        entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+        throw error;
+      }
+
+      for (const entry of entries) {
+        const relativePath = path.posix.join(relativePrefix, entry.name);
+        const absolutePath = path.join(currentPath, entry.name);
+        if (entry.isDirectory()) {
+          yield* walk(absolutePath, relativePath);
+        } else if (entry.isFile()) {
+          yield { key: relativePath };
+        }
+      }
+    };
+
+    yield* walk(startPath, normalizedPrefix);
   }
 }
