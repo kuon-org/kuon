@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import type { Prisma } from "@prisma/client";
 import JWT_SECRET from "./sessionTokens/jwtSecret.js";
 
 const ENCRYPTION_PREFIX = "enc:v1";
@@ -54,16 +55,16 @@ export const decryptIdpSecret = (value: string): string => {
 
 export const prepareIdpConfigForStorage = (
   config: Record<string, unknown>,
-): Record<string, unknown> => {
+): Prisma.InputJsonValue => {
   const privateKey = config[PRIVATE_KEY_FIELD];
   if (typeof privateKey !== "string" || !privateKey || isEncryptedIdpSecret(privateKey)) {
-    return config;
+    return config as Prisma.InputJsonValue;
   }
 
   return {
     ...config,
     [PRIVATE_KEY_FIELD]: encryptIdpSecret(privateKey),
-  };
+  } as Prisma.InputJsonValue;
 };
 
 export const resolveIdpConfigSecrets = (
