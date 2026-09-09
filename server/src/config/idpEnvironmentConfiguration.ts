@@ -16,6 +16,7 @@ const BOOLEAN_CONFIG_FIELDS = new Map<string, string>([
   ["WANT_ASSERTIONS_SIGNED", "wantAssertionsSigned"],
   ["WANT_AUTHN_RESPONSE_SIGNED", "wantAuthnResponseSigned"],
   ["DISABLE_REQUESTED_AUTHN_CONTEXT", "disableRequestedAuthnContext"],
+  ["SIGN_AUTHN_REQUEST", "signAuthnRequest"],
 ]);
 
 const INTEGER_CONFIG_FIELDS = new Map<string, string>([
@@ -23,7 +24,8 @@ const INTEGER_CONFIG_FIELDS = new Map<string, string>([
   ["REQUEST_ID_EXPIRATION_MS", "requestIdExpirationMs"],
 ]);
 
-const SECRET_FIELD_PATTERN = /(?:SECRET|PASSWORD|TOKEN|CERT)$/i;
+const SECRET_FIELD_PATTERN =
+  /(?:SECRET|PASSWORD|TOKEN|CERT|PRIVATE[_-]?KEY)$/i;
 
 export type EnvironmentIdp = {
   key: string;
