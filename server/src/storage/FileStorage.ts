@@ -12,11 +12,16 @@ export type StoredFile = {
   key: string;
 };
 
+export type StoredFileInfo = {
+  key: string;
+};
+
 export interface FileStorage {
   put(input: PutFileInput): Promise<StoredFile>;
   get(key: string): Promise<Readable>;
   delete(key: string): Promise<void>;
   exists(key: string): Promise<boolean>;
+  list(prefix?: string): AsyncIterable<StoredFileInfo>;
 
   createTemporaryUrl?(
     key: string,
