@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import prisma from "../prisma/client.js";
+import { prepareIdpConfigForStorage } from "../utils/idpConfigSecrets.js";
 
 export class IdpConfigurationRepository {
   private db: PrismaClient;
@@ -39,6 +40,8 @@ export class IdpConfigurationRepository {
   }
 
   async upsertIdp(provider_name: string, data: any) {
+    const storedConfig = prepareIdpConfigForStorage(data.config ?? {});
+
     return this.db.$transaction(async (tx) => {
       // identity_providers を UPSERT（存在なければ作成）
       const identityProvider = await tx.identity_providers.upsert({
@@ -65,7 +68,7 @@ export class IdpConfigurationRepository {
       const config = await tx.idp_configurations.upsert({
         where: { provider_id: identityProvider.id },
         update: {
-          config: data.config,
+          config: storedConfig,
           button_color: data.button_color,
           text_color: data.text_color,
           is_active: data.is_active,
@@ -73,7 +76,7 @@ export class IdpConfigurationRepository {
         },
         create: {
           provider_id: identityProvider.id,
-          config: data.config,
+          config: storedConfig,
           button_color: data.button_color,
           text_color: data.text_color,
           is_active: data.is_active,
