@@ -1,3 +1,5 @@
+import path from "node:path";
+
 export type StorageProvider = "local";
 export type StorageDeliveryMode = "relay" | "redirect";
 
@@ -19,5 +21,5 @@ export const storageConfig = {
   deliveryMode: deliveryMode as StorageDeliveryMode,
   localPath:
     process.env.KUON_STORAGE_LOCAL_PATH ??
-    `${process.cwd()}/public/uploads`,
+    path.resolve(process.cwd(), "public/uploads"),
 };
