@@ -1,6 +1,8 @@
+import { SAML } from "@node-saml/node-saml";
 import { IdpConfigurationRepository } from "../repositories/idpConfigurationsRepository.js";
 import { UsersRepository } from "../repositories/usersRepository.js";
 import { getEnvironmentIdp } from "../config/idpEnvironmentConfiguration.js";
+import { resolveIdpConfigSecrets } from "../utils/idpConfigSecrets.js";
 import {
   getPublicRuntimeIdp,
   getRuntimeIdp,
@@ -48,6 +50,17 @@ const fetchEndpoint = async (
   } catch {
     return { name, success: false, message: "接続できませんでした" };
   }
+};
+
+const formatCertificate = (cert: unknown): string => {
+  if (typeof cert !== "string" || !cert) return "";
+
+  const cleanCert = cert
+    .replace(/-----BEGIN CERTIFICATE-----/g, "")
+    .replace(/-----END CERTIFICATE-----/g, "")
+    .replace(/\s+/g, "");
+
+  return `-----BEGIN CERTIFICATE-----\n${cleanCert.match(/.{1,64}/g)?.join("\n") ?? cleanCert}\n-----END CERTIFICATE-----`;
 };
 
 export class IdpConfigurationsService {
@@ -128,7 +141,14 @@ export class IdpConfigurationsService {
       throw new Error("有効な設定が存在しないIdPです");
     }
 
-    const config = provider.idp_configurations.config as Record<string, unknown>;
+    const storedConfig = provider.idp_configurations.config as Record<
+      string,
+      unknown
+    >;
+    const config =
+      provider.source === "database"
+        ? resolveIdpConfigSecrets(storedConfig)
+        : storedConfig;
     const providerType = provider.provider_type.toUpperCase();
     const checks: ConnectivityCheck[] = [];
 
@@ -181,7 +201,91 @@ export class IdpConfigurationsService {
         }
       }
     } else if (providerType === "SAML") {
-      checks.push(await fetchEndpoint("SAML SSO endpoint", config.entry_point));
+      const samlConfig = config as Record<string, any>;
+      const signAuthnRequest =
+        samlConfig.signAuthnRequest ?? samlConfig.sign_authn_request ?? false;
+      const requiredFields = ["issuer", "entry_point", "cert", "redirect_uri"];
+      if (signAuthnRequest) {
+        requiredFields.push("private_key", "public_cert");
+      }
+      const missingFields = requiredFields.filter((key) => !samlConfig[key]);
+
+      checks.push({
+        name: "Required configuration",
+        success: missingFields.length === 0,
+        message:
+          missingFields.length > 0
+            ? `未設定: ${missingFields.join(", ")}`
+            : undefined,
+      });
+
+      if (missingFields.length === 0) {
+        try {
+          const saml = new SAML({
+            issuer: samlConfig.issuer,
+            callbackUrl: samlConfig.redirect_uri,
+            entryPoint: samlConfig.entry_point,
+            idpCert: formatCertificate(samlConfig.cert),
+            acceptedClockSkewMs: (samlConfig.clockSkewSeconds || 0) * 1000,
+            requestIdExpirationPeriodMs:
+              samlConfig.requestIdExpirationMs || 28800000,
+            wantAssertionsSigned: samlConfig.wantAssertionsSigned ?? true,
+            wantAuthnResponseSigned:
+              samlConfig.wantAuthnResponseSigned ?? false,
+            disableRequestedAuthnContext:
+              samlConfig.disableRequestedAuthnContext ?? false,
+            signatureAlgorithm: samlConfig.signature_algorithm || "sha256",
+            digestAlgorithm:
+              samlConfig.digest_algorithm ||
+              samlConfig.signature_algorithm ||
+              "sha256",
+            identifierFormat:
+              samlConfig.identifier_format ||
+              "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+            ...(signAuthnRequest
+              ? {
+                  privateKey: samlConfig.private_key,
+                  publicCert: formatCertificate(samlConfig.public_cert),
+                }
+              : {}),
+          });
+          const authUrl = await saml.getAuthorizeUrlAsync(
+            crypto.randomUUID(),
+            undefined,
+            {},
+          );
+          const url = new URL(authUrl);
+          const hasSamlRequest = Boolean(url.searchParams.get("SAMLRequest"));
+
+          checks.push({
+            name: "SAML AuthnRequest generation",
+            success: hasSamlRequest,
+            message: hasSamlRequest
+              ? undefined
+              : "SAMLRequestを生成できませんでした",
+          });
+
+          if (signAuthnRequest) {
+            const hasSignature = Boolean(
+              url.searchParams.get("SigAlg") &&
+                url.searchParams.get("Signature"),
+            );
+            checks.push({
+              name: "SAML AuthnRequest signature",
+              success: hasSignature,
+              message: hasSignature
+                ? undefined
+                : "AuthnRequest署名を生成できませんでした",
+            });
+          }
+        } catch {
+          checks.push({
+            name: "SAML AuthnRequest generation",
+            success: false,
+            message: "AuthnRequestを生成できませんでした。SAML設定と署名鍵を確認してください",
+          });
+        }
+      }
     } else {
       checks.push(
         await fetchEndpoint("Authorization endpoint", config.auth_url),
@@ -190,19 +294,18 @@ export class IdpConfigurationsService {
       );
     }
 
-    const requiredFields =
-      providerType === "SAML"
-        ? ["issuer", "entry_point", "cert"]
-        : ["client_id", "client_secret"];
-    const missingFields = requiredFields.filter((key) => !config[key]);
-    checks.push({
-      name: "Required configuration",
-      success: missingFields.length === 0,
-      message:
-        missingFields.length > 0
-          ? `未設定: ${missingFields.join(", ")}`
-          : undefined,
-    });
+    if (providerType !== "SAML") {
+      const requiredFields = ["client_id", "client_secret"];
+      const missingFields = requiredFields.filter((key) => !config[key]);
+      checks.push({
+        name: "Required configuration",
+        success: missingFields.length === 0,
+        message:
+          missingFields.length > 0
+            ? `未設定: ${missingFields.join(", ")}`
+            : undefined,
+      });
+    }
 
     return {
       provider_name,
