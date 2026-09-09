@@ -5,6 +5,7 @@ import { authenticateToken, optionalAuth } from "../middlewares/auth.js";
 import express from "express";
 import { AuthService } from "../services/authService.js";
 import { AuthRepository } from "../repositories/authRepository.js";
+import { generateSamlServiceProviderMetadata } from "../services/samlMetadataService.js";
 const authRouter = Router();
 const authRepository = new AuthRepository();
 const authSercice = new AuthService(authRepository);
@@ -28,6 +29,20 @@ const authController = new AuthController(authSercice);
  *         description: パラメータの外部認証機構へリダイレクト
  */
 authRouter.get("/auth/:provider/login", optionalAuth, authController.login);
+
+/**
+ * @openapi
+ * /auth/{provider}/metadata:
+ *   get:
+ *     summary: SAML Service Provider Metadata
+ *     tags: [Auth]
+ */
+authRouter.get("/auth/:provider/metadata", async (req, res) => {
+  const metadata = await generateSamlServiceProviderMetadata(
+    String(req.params.provider),
+  );
+  res.type("application/samlmetadata+xml").send(metadata);
+});
 
 /**
  * @opanapi
