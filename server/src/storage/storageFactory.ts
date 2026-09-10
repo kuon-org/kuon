@@ -6,6 +6,10 @@ import { storageConfig } from "./storageConfig.js";
 
 let storage: FileStorage | undefined;
 
+export const resetFileStorage = (): void => {
+  storage = undefined;
+};
+
 export const getFileStorage = (): FileStorage => {
   if (storage) return storage;
 
