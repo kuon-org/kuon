@@ -1,4 +1,3 @@
-import { Readable } from "node:stream";
 import {
   BlobSASPermissions,
   BlobServiceClient,
@@ -60,12 +59,16 @@ export class AzureBlobFileStorage implements FileStorage {
     return { key: input.key };
   }
 
-  async get(key: string): Promise<Readable> {
+  async get(key: string) {
     const response = await this.getBlobClient(key).download();
     if (!response.readableStreamBody) {
       throw new Error(`Azure Blob object has no body: ${key}`);
     }
-    return response.readableStreamBody;
+    return {
+      body: response.readableStreamBody,
+      contentType: response.contentType,
+      contentLength: response.contentLength,
+    };
   }
 
   async delete(key: string): Promise<void> {
