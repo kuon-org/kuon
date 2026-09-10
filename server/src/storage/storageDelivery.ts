@@ -35,12 +35,16 @@ export const storageDelivery = async (
       return res.redirect(302, url);
     }
 
-    res.type(key);
+    const file = await storage.get(key);
+    if (file.contentType) res.type(file.contentType);
+    else res.type(key);
+    if (file.contentLength !== undefined) {
+      res.setHeader("Content-Length", String(file.contentLength));
+    }
     if (req.method === "HEAD") return res.end();
 
-    const stream = await storage.get(key);
-    stream.on("error", next);
-    stream.pipe(res);
+    file.body.on("error", next);
+    file.body.pipe(res);
   } catch (error) {
     next(error);
   }
