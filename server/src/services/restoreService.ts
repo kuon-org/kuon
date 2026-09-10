@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
+import { createReadStream, createWriteStream } from "node:fs";
 import {
   access,
-  cp,
   lstat,
   mkdir,
   mkdtemp,
@@ -11,9 +11,11 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pipeline } from "node:stream/promises";
 import prisma from "../prisma/client.js";
 import { runMigrations } from "../database/migrationRunner.js";
 import { ServerSettingKey } from "../constants/serverSettings.js";
+import { getFileStorage } from "../storage/storageFactory.js";
 import { serverSettingsService } from "./serverSettingsService.js";
 import { runtimeMaintenanceService } from "./runtimeMaintenanceService.js";
 
@@ -97,35 +99,44 @@ const assertNoLinks = async (directory: string): Promise<void> => {
   }
 };
 
-const directoryExists = async (directory: string) => {
-  try {
-    const stat = await lstat(directory);
-    return stat.isDirectory();
-  } catch {
-    return false;
-  }
-};
-
-const clearDirectory = async (directory: string) => {
-  await mkdir(directory, { recursive: true });
-  for (const entry of await readdir(directory)) {
-    await rm(path.join(directory, entry), { recursive: true, force: true });
-  }
-};
-
-const copyDirectoryContents = async (source: string, destination: string) => {
+const materializeStorage = async (destination: string) => {
+  const storage = getFileStorage();
   await mkdir(destination, { recursive: true });
-  for (const entry of await readdir(source)) {
-    await cp(path.join(source, entry), path.join(destination, entry), {
-      recursive: true,
-      force: true,
-    });
+
+  for await (const file of storage.list()) {
+    const target = path.join(destination, ...file.key.split("/"));
+    await mkdir(path.dirname(target), { recursive: true });
+    await pipeline(await storage.get(file.key), createWriteStream(target));
+  }
+};
+
+const clearStorage = async () => {
+  const storage = getFileStorage();
+  const keys: string[] = [];
+  for await (const file of storage.list()) keys.push(file.key);
+  for (const key of keys) await storage.delete(key);
+};
+
+const restoreDirectoryToStorage = async (
+  directory: string,
+  relativePath = "",
+): Promise<void> => {
+  const storage = getFileStorage();
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const absolutePath = path.join(directory, entry.name);
+    const key = relativePath
+      ? path.posix.join(relativePath, entry.name)
+      : entry.name;
+
+    if (entry.isDirectory()) {
+      await restoreDirectoryToStorage(absolutePath, key);
+    } else if (entry.isFile()) {
+      await storage.put({ key, body: createReadStream(absolutePath) });
+    }
   }
 };
 
 export class RestoreService {
-  private uploadsPath = path.resolve(process.cwd(), "public/uploads");
-
   async restore(archivePath: string) {
     if (runtimeMaintenanceService.isLocked()) {
       throw new Error("Another restore operation is already running");
@@ -175,7 +186,6 @@ export class RestoreService {
         throw new Error("Invalid backup manifest: createdAt");
       }
 
-      // Ensure the custom-format dump is readable before changing the current instance.
       await runCommand(getPgRestoreCommand(), ["--list", databaseDumpPath]);
 
       const [serverVersion] = await prisma.$queryRaw<Array<{ version: string }>>`
@@ -191,16 +201,12 @@ export class RestoreService {
         );
       }
 
-      // Prepare an uploads rollback copy before entering the destructive phase.
-      await mkdir(safetyUploadsPath, { recursive: true });
-      if (await directoryExists(this.uploadsPath)) {
-        await copyDirectoryContents(this.uploadsPath, safetyUploadsPath);
-      }
+      // Snapshot the currently configured provider before entering the destructive phase.
+      await materializeStorage(safetyUploadsPath);
 
       runtimeMaintenanceService.lock("instance-restore");
       const databaseUri = createPgConnectionUri();
 
-      // Safety DB snapshot for best-effort rollback if restore fails.
       await runCommand(getPgDumpCommand(), [
         "--format=custom",
         "--file",
@@ -223,13 +229,10 @@ export class RestoreService {
 
       await runMigrations();
 
-      // Replace contents rather than renaming the directory itself because uploads
-      // can be a Docker bind/named-volume mount point.
       uploadsRestoreStarted = true;
-      await clearDirectory(this.uploadsPath);
-      await copyDirectoryContents(restoredUploadsPath, this.uploadsPath);
+      await clearStorage();
+      await restoreDirectoryToStorage(restoredUploadsPath);
 
-      // Restored sessions must never remain valid on a new/restored instance.
       await prisma.user_sessions.deleteMany();
       await serverSettingsService.initialize();
       await serverSettingsService.set(ServerSettingKey.MaintenanceMode, "false");
@@ -241,13 +244,12 @@ export class RestoreService {
       };
     } catch (error) {
       if (uploadsRestoreStarted) {
-        await clearDirectory(this.uploadsPath).catch(() => {});
-        await copyDirectoryContents(safetyUploadsPath, this.uploadsPath).catch((rollbackError) => {
+        await clearStorage().catch(() => {});
+        await restoreDirectoryToStorage(safetyUploadsPath).catch((rollbackError) => {
           console.error("❌ Uploads rollback failed:", rollbackError);
         });
       }
 
-      // Best-effort DB rollback using the snapshot made immediately before restore.
       if (databaseRestoreStarted) {
         const databaseUri = createPgConnectionUri();
         await runCommand(getPgRestoreCommand(), [
