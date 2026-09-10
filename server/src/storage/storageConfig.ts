@@ -33,13 +33,12 @@ const s3 = {
   accessKeyId: process.env.KUON_STORAGE_S3_ACCESS_KEY_ID ?? "",
   secretAccessKey: process.env.KUON_STORAGE_S3_SECRET_ACCESS_KEY ?? "",
   forcePathStyle:
-    (process.env.KUON_STORAGE_S3_FORCE_PATH_STYLE ?? "true").toLowerCase() ===
+    (process.env.KUON_STORAGE_S3_FORCE_PATH_STYLE ?? "false").toLowerCase() ===
     "true",
 };
 
 if (provider === "s3") {
   const missing = Object.entries({
-    KUON_STORAGE_S3_ENDPOINT: s3.endpoint,
     KUON_STORAGE_S3_BUCKET: s3.bucket,
     KUON_STORAGE_S3_ACCESS_KEY_ID: s3.accessKeyId,
     KUON_STORAGE_S3_SECRET_ACCESS_KEY: s3.secretAccessKey,
