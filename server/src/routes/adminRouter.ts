@@ -8,6 +8,7 @@ import { RestoreController } from "../controllers/restoreController.js";
 import { WebhookController } from "../controllers/webhookController.js";
 import { webhookSelectionController } from "../controllers/webhookSelectionController.js";
 import { mailController } from "../controllers/mailController.js";
+import { storageSettingsController } from "../controllers/storageSettingsController.js";
 import { roleController } from "../controllers/roleController.js";
 import { adminStatusController } from "../controllers/adminStatusController.js";
 import { authenticateToken } from "../middlewares/auth.js";
@@ -91,6 +92,18 @@ adminRouter.post(
   authenticateToken,
   requirePermission(Permissions.System.SettingsManage),
   mailController.sendTest,
+);
+adminRouter.get(
+  "/admin/settings/storage",
+  authenticateToken,
+  requirePermission(Permissions.System.SettingsManage),
+  storageSettingsController.getSettings,
+);
+adminRouter.put(
+  "/admin/settings/storage",
+  authenticateToken,
+  requirePermission(Permissions.System.SettingsManage),
+  storageSettingsController.updateSettings,
 );
 
 adminRouter.get(
