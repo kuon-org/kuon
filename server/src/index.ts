@@ -26,6 +26,7 @@ import serverEventRouter from "./routes/serverEventRouter.js";
 import { requireSiteAuthentication } from "./middlewares/siteAccess.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { serverSettingsService } from "./services/serverSettingsService.js";
+import { storageSettingsService } from "./services/storageSettingsService.js";
 import { runtimeMaintenanceGate } from "./services/runtimeMaintenanceService.js";
 import { storageDelivery } from "./storage/storageDelivery.js";
 import path from "node:path";
@@ -126,6 +127,7 @@ async function main() {
   await runMigrations();
   await init();
   await serverSettingsService.initialize();
+  await storageSettingsService.initialize();
   const port = Number(process.env.SERVER_PORT ?? 3030);
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);
