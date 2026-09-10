@@ -1,8 +1,11 @@
 import { spawn } from "node:child_process";
+import { createWriteStream } from "node:fs";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pipeline } from "node:stream/promises";
 import prisma from "../prisma/client.js";
+import { getFileStorage } from "../storage/storageFactory.js";
 
 export interface BackupArchive {
   fileName: string;
@@ -65,14 +68,24 @@ const createPgConnectionUri = () => {
 const timestampForFileName = (date: Date) =>
   date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 
-export class BackupService {
-  private uploadsPath = path.resolve(process.cwd(), "public/uploads");
+const materializeStorage = async (destination: string) => {
+  const storage = getFileStorage();
+  await mkdir(destination, { recursive: true });
 
+  for await (const file of storage.list()) {
+    const target = path.join(destination, ...file.key.split("/"));
+    await mkdir(path.dirname(target), { recursive: true });
+    await pipeline(await storage.get(file.key), createWriteStream(target));
+  }
+};
+
+export class BackupService {
   async createArchive(): Promise<BackupArchive> {
     const createdAt = new Date();
     const tempDirectory = await mkdtemp(path.join(tmpdir(), "kuon-backup-"));
     const databaseDumpPath = path.join(tempDirectory, "database.dump");
     const manifestPath = path.join(tempDirectory, "manifest.json");
+    const uploadsPath = path.join(tempDirectory, "uploads");
     const archivePath = path.join(tempDirectory, "backup.tar.gz");
     const fileName = `kuon-backup-${timestampForFileName(createdAt)}.tar.gz`;
 
@@ -102,7 +115,7 @@ export class BackupService {
       };
       await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
-      await mkdir(this.uploadsPath, { recursive: true });
+      await materializeStorage(uploadsPath);
 
       await runCommand("tar", [
         "-czf",
@@ -111,9 +124,7 @@ export class BackupService {
         tempDirectory,
         "manifest.json",
         "database.dump",
-        "-C",
-        path.dirname(this.uploadsPath),
-        path.basename(this.uploadsPath),
+        "uploads",
       ]);
 
       return {
