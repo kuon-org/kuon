@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { getFileStorage } from "./storageFactory.js";
 
@@ -8,7 +9,7 @@ const sanitizeProviderName = (provider: string) =>
 
 export const buildLocalAvatarKey = (userId: string, originalName: string) => {
   const ext = path.extname(originalName);
-  return `${AVATAR_PREFIX}/${userId}_local${ext}`;
+  return `${AVATAR_PREFIX}/${userId}_local_${randomUUID()}${ext}`;
 };
 
 export const buildExternalAvatarKey = (
