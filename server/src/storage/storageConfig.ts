@@ -1,6 +1,6 @@
 import path from "node:path";
 
-export type StorageProvider = "local" | "s3";
+export type StorageProvider = "local" | "s3" | "azure";
 export type StorageDeliveryMode = "relay" | "redirect";
 
 const provider = (process.env.KUON_STORAGE_PROVIDER ?? "local").toLowerCase();
@@ -11,7 +11,7 @@ const signedUrlExpiresInSeconds = Number(
   process.env.KUON_STORAGE_SIGNED_URL_EXPIRES_IN ?? 300,
 );
 
-if (provider !== "local" && provider !== "s3") {
+if (provider !== "local" && provider !== "s3" && provider !== "azure") {
   throw new Error(`Unsupported storage provider: ${provider}`);
 }
 
@@ -37,6 +37,13 @@ const s3 = {
     "true",
 };
 
+const azure = {
+  accountName: process.env.KUON_STORAGE_AZURE_ACCOUNT_NAME ?? "",
+  accountKey: process.env.KUON_STORAGE_AZURE_ACCOUNT_KEY ?? "",
+  container: process.env.KUON_STORAGE_AZURE_CONTAINER ?? "",
+  endpoint: process.env.KUON_STORAGE_AZURE_ENDPOINT ?? "",
+};
+
 if (provider === "s3") {
   const missing = Object.entries({
     KUON_STORAGE_S3_BUCKET: s3.bucket,
@@ -48,6 +55,22 @@ if (provider === "s3") {
 
   if (missing.length > 0) {
     throw new Error(`Missing S3 storage configuration: ${missing.join(", ")}`);
+  }
+}
+
+if (provider === "azure") {
+  const missing = Object.entries({
+    KUON_STORAGE_AZURE_ACCOUNT_NAME: azure.accountName,
+    KUON_STORAGE_AZURE_ACCOUNT_KEY: azure.accountKey,
+    KUON_STORAGE_AZURE_CONTAINER: azure.container,
+  })
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing Azure Blob storage configuration: ${missing.join(", ")}`,
+    );
   }
 }
 
@@ -63,4 +86,5 @@ export const storageConfig = {
     process.env.KUON_STORAGE_LOCAL_PATH ??
     path.resolve(process.cwd(), "public/uploads"),
   s3,
+  azure,
 };
