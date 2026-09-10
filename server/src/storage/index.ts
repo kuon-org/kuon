@@ -15,5 +15,12 @@ export {
   AzureBlobFileStorage,
   type AzureBlobStorageOptions,
 } from "./AzureBlobFileStorage.js";
-export { getFileStorage } from "./storageFactory.js";
-export { storageConfig } from "./storageConfig.js";
+export { getFileStorage, resetFileStorage } from "./storageFactory.js";
+export {
+  storageConfig,
+  applyStorageConfig,
+  validateStorageConfig,
+  type StorageConfig,
+  type StorageDeliveryMode,
+  type StorageProvider,
+} from "./storageConfig.js";
