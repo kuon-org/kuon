@@ -51,14 +51,22 @@ export class S3CompatibleFileStorage implements FileStorage {
     return { key: input.key };
   }
 
-  async get(key: string): Promise<Readable> {
+  async get(key: string) {
     const response = await this.client.send(
       new GetObjectCommand({ Bucket: this.options.bucket, Key: key }),
     );
     if (!response.Body) throw new Error(`S3 object has no body: ${key}`);
 
-    if (response.Body instanceof Readable) return response.Body;
-    return Readable.fromWeb(response.Body.transformToWebStream() as never);
+    const body =
+      response.Body instanceof Readable
+        ? response.Body
+        : Readable.fromWeb(response.Body.transformToWebStream() as never);
+
+    return {
+      body,
+      contentType: response.ContentType,
+      contentLength: response.ContentLength,
+    };
   }
 
   async delete(key: string): Promise<void> {
