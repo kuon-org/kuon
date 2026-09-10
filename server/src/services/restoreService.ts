@@ -19,15 +19,26 @@ import { getFileStorage } from "../storage/storageFactory.js";
 import { serverSettingsService } from "./serverSettingsService.js";
 import { runtimeMaintenanceService } from "./runtimeMaintenanceService.js";
 
+interface BackupStorageFile {
+  key: string;
+  contentType?: string;
+  contentLength?: number;
+}
+
 interface BackupManifest {
   formatVersion: number;
   createdAt: string;
   kuonVersion: string;
   postgresVersion: string;
   pgDumpVersion: string;
+  storage?: {
+    formatVersion: number;
+    files: BackupStorageFile[];
+  };
 }
 
 const SUPPORTED_FORMAT_VERSION = 1;
+const SUPPORTED_STORAGE_FORMAT_VERSION = 1;
 
 const runCommand = (
   command: string,
@@ -67,13 +78,32 @@ const parseMajor = (value: string) => value.match(/\b(\d+)(?:\.\d+)?/)?.[1] ?? n
 const isBackupManifest = (value: unknown): value is BackupManifest => {
   if (!value || typeof value !== "object") return false;
   const manifest = value as Record<string, unknown>;
-  return (
-    typeof manifest.formatVersion === "number" &&
-    typeof manifest.createdAt === "string" &&
-    typeof manifest.kuonVersion === "string" &&
-    typeof manifest.postgresVersion === "string" &&
-    typeof manifest.pgDumpVersion === "string"
-  );
+  if (
+    typeof manifest.formatVersion !== "number" ||
+    typeof manifest.createdAt !== "string" ||
+    typeof manifest.kuonVersion !== "string" ||
+    typeof manifest.postgresVersion !== "string" ||
+    typeof manifest.pgDumpVersion !== "string"
+  ) {
+    return false;
+  }
+
+  if (manifest.storage === undefined) return true;
+  if (!manifest.storage || typeof manifest.storage !== "object") return false;
+  const storage = manifest.storage as Record<string, unknown>;
+  if (typeof storage.formatVersion !== "number" || !Array.isArray(storage.files)) {
+    return false;
+  }
+
+  return storage.files.every((file) => {
+    if (!file || typeof file !== "object") return false;
+    const entry = file as Record<string, unknown>;
+    return (
+      typeof entry.key === "string" &&
+      (entry.contentType === undefined || typeof entry.contentType === "string") &&
+      (entry.contentLength === undefined || typeof entry.contentLength === "number")
+    );
+  });
 };
 
 const validateEntryName = (entry: string) => {
@@ -99,15 +129,37 @@ const assertNoLinks = async (directory: string): Promise<void> => {
   }
 };
 
+const inferContentType = (key: string) => {
+  switch (path.extname(key).toLowerCase()) {
+    case ".png": return "image/png";
+    case ".jpg":
+    case ".jpeg": return "image/jpeg";
+    case ".gif": return "image/gif";
+    case ".webp": return "image/webp";
+    case ".svg": return "image/svg+xml";
+    case ".avif": return "image/avif";
+    default: return undefined;
+  }
+};
+
 const materializeStorage = async (destination: string) => {
   const storage = getFileStorage();
+  const metadata = new Map<string, BackupStorageFile>();
   await mkdir(destination, { recursive: true });
 
   for await (const file of storage.list()) {
     const target = path.join(destination, ...file.key.split("/"));
     await mkdir(path.dirname(target), { recursive: true });
-    await pipeline(await storage.get(file.key), createWriteStream(target));
+    const stored = await storage.get(file.key);
+    await pipeline(stored.body, createWriteStream(target));
+    metadata.set(file.key, {
+      key: file.key,
+      contentType: stored.contentType,
+      contentLength: stored.contentLength,
+    });
   }
+
+  return metadata;
 };
 
 const clearStorage = async () => {
@@ -119,6 +171,7 @@ const clearStorage = async () => {
 
 const restoreDirectoryToStorage = async (
   directory: string,
+  metadata: ReadonlyMap<string, BackupStorageFile>,
   relativePath = "",
 ): Promise<void> => {
   const storage = getFileStorage();
@@ -129,9 +182,14 @@ const restoreDirectoryToStorage = async (
       : entry.name;
 
     if (entry.isDirectory()) {
-      await restoreDirectoryToStorage(absolutePath, key);
+      await restoreDirectoryToStorage(absolutePath, metadata, key);
     } else if (entry.isFile()) {
-      await storage.put({ key, body: createReadStream(absolutePath) });
+      const contentType = metadata.get(key)?.contentType ?? inferContentType(key);
+      await storage.put({
+        key,
+        body: createReadStream(absolutePath),
+        contentType,
+      });
     }
   }
 };
@@ -146,6 +204,7 @@ export class RestoreService {
     const extractedDir = path.join(workDir, "extracted");
     const safetyDumpPath = path.join(workDir, "pre-restore.dump");
     const safetyUploadsPath = path.join(workDir, "pre-restore-uploads");
+    let safetyStorageMetadata = new Map<string, BackupStorageFile>();
     let uploadsRestoreStarted = false;
     let databaseRestoreStarted = false;
 
@@ -185,6 +244,18 @@ export class RestoreService {
       if (!manifest.createdAt || Number.isNaN(Date.parse(manifest.createdAt))) {
         throw new Error("Invalid backup manifest: createdAt");
       }
+      if (
+        manifest.storage &&
+        manifest.storage.formatVersion !== SUPPORTED_STORAGE_FORMAT_VERSION
+      ) {
+        throw new Error(
+          `Unsupported storage formatVersion: ${manifest.storage.formatVersion}`,
+        );
+      }
+
+      const restoredStorageMetadata = new Map(
+        (manifest.storage?.files ?? []).map((file) => [file.key, file]),
+      );
 
       await runCommand(getPgRestoreCommand(), ["--list", databaseDumpPath]);
 
@@ -201,8 +272,7 @@ export class RestoreService {
         );
       }
 
-      // Snapshot the currently configured provider before entering the destructive phase.
-      await materializeStorage(safetyUploadsPath);
+      safetyStorageMetadata = await materializeStorage(safetyUploadsPath);
 
       runtimeMaintenanceService.lock("instance-restore");
       const databaseUri = createPgConnectionUri();
@@ -231,7 +301,7 @@ export class RestoreService {
 
       uploadsRestoreStarted = true;
       await clearStorage();
-      await restoreDirectoryToStorage(restoredUploadsPath);
+      await restoreDirectoryToStorage(restoredUploadsPath, restoredStorageMetadata);
 
       await prisma.user_sessions.deleteMany();
       await serverSettingsService.initialize();
@@ -245,7 +315,10 @@ export class RestoreService {
     } catch (error) {
       if (uploadsRestoreStarted) {
         await clearStorage().catch(() => {});
-        await restoreDirectoryToStorage(safetyUploadsPath).catch((rollbackError) => {
+        await restoreDirectoryToStorage(
+          safetyUploadsPath,
+          safetyStorageMetadata,
+        ).catch((rollbackError) => {
           console.error("❌ Uploads rollback failed:", rollbackError);
         });
       }
