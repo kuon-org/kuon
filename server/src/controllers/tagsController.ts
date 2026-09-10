@@ -2,11 +2,11 @@ import { Request, Response } from "express";
 import { TagsService } from "../services/tagsService.js";
 import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
 import path from "path";
-import fs from "fs";
 import multer from "multer";
 import { permissionService } from "../services/permissionService.js";
 import { Permissions } from "../constants/permissions.js";
 import { AppError, ValidationError } from "../errors/AppError.js";
+import { getFileStorage } from "../storage/storageFactory.js";
 
 export class TagsController {
   constructor(private tagsService: TagsService) {}
@@ -92,18 +92,8 @@ export class TagsController {
     if (!isAuthenticated(req)) {
       throw new AppError(401, "AUTHENTICATION_REQUIRED", "Authentication required");
     }
-    const uploadDir = path.join(process.cwd(), "public/uploads/tags");
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    let filename;
-    const storage = multer.diskStorage({
-      destination: (_req, _file, cb) => cb(null, uploadDir),
-      filename: (_req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        filename = `${file.originalname}_tag${ext}`;
-        cb(null, filename);
-      },
-    });
-    const upload = multer({ storage }).single("image");
+
+    const upload = multer({ storage: multer.memoryStorage() }).single("image");
 
     upload(req, res, async (err: any) => {
       if (err) {
@@ -124,8 +114,28 @@ export class TagsController {
           },
         });
       }
-      const pathname = `/uploads/tags/${req.file.filename}`;
-      return res.status(200).json({ url: pathname });
+
+      const ext = path.extname(req.file.originalname);
+      const filename = `${req.file.originalname}_tag${ext}`;
+      const key = `tags/${filename}`;
+
+      try {
+        await getFileStorage().put({
+          key,
+          body: req.file.buffer,
+          contentType: req.file.mimetype,
+        });
+        return res.status(200).json({ url: `/uploads/${key}` });
+      } catch (error) {
+        console.error("Tag avatar storage failed", error);
+        return res.status(500).json({
+          error: {
+            code: "TAG_AVATAR_UPLOAD_FAILED",
+            message: "Tag avatar upload failed",
+            details: null,
+          },
+        });
+      }
     });
   };
 

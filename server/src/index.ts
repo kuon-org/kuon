@@ -26,14 +26,19 @@ import serverEventRouter from "./routes/serverEventRouter.js";
 import { requireSiteAuthentication } from "./middlewares/siteAccess.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { serverSettingsService } from "./services/serverSettingsService.js";
+import { storageSettingsService } from "./services/storageSettingsService.js";
 import { runtimeMaintenanceGate } from "./services/runtimeMaintenanceService.js";
+import { storageDelivery } from "./storage/storageDelivery.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distPath = path.resolve(__dirname, "../dist");
-const uploadsPath = path.resolve(__dirname, "../public/uploads");
+const bundledIdpLogoPath = path.resolve(
+  __dirname,
+  "../public/uploads/idp-logo",
+);
 
 const app = express();
 const trustProxy = process.env.TRUST_PROXY;
@@ -93,11 +98,21 @@ app.get("/api-docs.json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);
 });
+
+// Bundled IdP logos are application assets, not persisted upload data. Keep the
+// legacy URL stable without requiring the configured external storage provider
+// to contain a copy of the packaged asset.
+app.use(
+  "/uploads/idp-logo",
+  runtimeMaintenanceGate,
+  requireSiteAuthentication,
+  express.static(bundledIdpLogoPath),
+);
 app.use(
   "/uploads",
   runtimeMaintenanceGate,
   requireSiteAuthentication,
-  express.static(uploadsPath),
+  storageDelivery,
 );
 
 if (process.env.NODE_ENV === "production") {
@@ -112,6 +127,7 @@ async function main() {
   await runMigrations();
   await init();
   await serverSettingsService.initialize();
+  await storageSettingsService.initialize();
   const port = Number(process.env.SERVER_PORT ?? 3030);
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);
