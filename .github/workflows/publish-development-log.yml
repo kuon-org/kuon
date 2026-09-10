@@ -1,10 +1,19 @@
 name: Publish Development Log
 
 on:
+  # develop に PR がマージされたときに自動実行
   pull_request:
     types: [closed]
     branches:
       - develop
+
+  # Actions 画面から PR 番号を指定して手動実行
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to publish"
+        required: true
+        type: number
 
 permissions:
   contents: read
@@ -12,17 +21,54 @@ permissions:
 
 jobs:
   publish-development-log:
-    if: github.event.pull_request.merged == true
+    # PRマージ時、または手動実行時のみ実行
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.merged == true
+
     runs-on: ubuntu-latest
 
     steps:
+      # ------------------------------------------------------------
+      # 対象となる PR 番号を決定
+      #
+      # pull_request:
+      #   マージされた PR の番号
+      #
+      # workflow_dispatch:
+      #   Actions 画面で入力された PR 番号
+      # ------------------------------------------------------------
+      - name: Resolve pull request number
+        id: resolve_pr
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            PR_NUMBER="$INPUT_PR_NUMBER"
+          else
+            PR_NUMBER="$EVENT_PR_NUMBER"
+          fi
+
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "Target PR: #$PR_NUMBER"
+
+      # ------------------------------------------------------------
+      # GitHub API から最新の PR 情報を取得
+      #
+      # github.event.pull_request.body を直接使わないことで、
+      # PRマージ後に本文を編集して手動実行した場合でも
+      # 最新の本文を取得できる
+      # ------------------------------------------------------------
       - name: Fetch latest pull request
-        id: pr
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ steps.resolve_pr.outputs.pr_number }}
           REPOSITORY: ${{ github.repository }}
         run: |
+          echo "Fetching PR #$PR_NUMBER..."
+
           gh api \
             "repos/$REPOSITORY/pulls/$PR_NUMBER" \
             --jq '.title' > pr-title.txt
@@ -31,6 +77,17 @@ jobs:
             "repos/$REPOSITORY/pulls/$PR_NUMBER" \
             --jq '.body // ""' > pr-body.txt
 
+          echo "Pull request fetched successfully."
+
+      # ------------------------------------------------------------
+      # PR本文から Development Log を抽出
+      #
+      # <!-- DEVELOPMENT_LOG_START -->
+      #
+      # ここが記事本文になる
+      #
+      # <!-- DEVELOPMENT_LOG_END -->
+      # ------------------------------------------------------------
       - name: Extract development log
         id: development_log
         run: |
@@ -74,16 +131,24 @@ jobs:
           with open(output_file, "a", encoding="utf-8") as f:
               f.write("should_publish=true\n")
 
-          print("Development log was extracted successfully.")
+          print("Development log extracted successfully.")
           PY
 
+      # ------------------------------------------------------------
+      # Kuon に記事として投稿
+      # ------------------------------------------------------------
       - name: Publish development log to Kuon
         if: steps.development_log.outputs.should_publish == 'true'
         env:
           KUON_API_KEY: ${{ secrets.KUON_API_KEY }}
           KUON_DOMAIN: https://demo.kuon.f5.si
+          PR_NUMBER: ${{ steps.resolve_pr.outputs.pr_number }}
         run: |
           PR_TITLE=$(cat pr-title.txt)
+
+          echo "Publishing development log..."
+          echo "PR: #$PR_NUMBER"
+          echo "Title: $PR_TITLE"
 
           PAYLOAD=$(jq -n \
             --arg title "$PR_TITLE" \
@@ -107,4 +172,4 @@ jobs:
             --data "$PAYLOAD"
 
           echo
-          echo "Development log was published successfully."
+          echo "Development log published successfully."
