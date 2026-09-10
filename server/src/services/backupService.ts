@@ -13,12 +13,22 @@ export interface BackupArchive {
   cleanup: () => Promise<void>;
 }
 
+interface BackupStorageFile {
+  key: string;
+  contentType?: string;
+  contentLength?: number;
+}
+
 interface BackupManifest {
   formatVersion: number;
   createdAt: string;
   kuonVersion: string;
   postgresVersion: string;
   pgDumpVersion: string;
+  storage?: {
+    formatVersion: number;
+    files: BackupStorageFile[];
+  };
 }
 
 const runCommand = (
@@ -70,13 +80,22 @@ const timestampForFileName = (date: Date) =>
 
 const materializeStorage = async (destination: string) => {
   const storage = getFileStorage();
+  const files: BackupStorageFile[] = [];
   await mkdir(destination, { recursive: true });
 
   for await (const file of storage.list()) {
     const target = path.join(destination, ...file.key.split("/"));
     await mkdir(path.dirname(target), { recursive: true });
-    await pipeline(await storage.get(file.key), createWriteStream(target));
+    const stored = await storage.get(file.key);
+    await pipeline(stored.body, createWriteStream(target));
+    files.push({
+      key: file.key,
+      contentType: stored.contentType,
+      contentLength: stored.contentLength,
+    });
   }
+
+  return files;
 };
 
 export class BackupService {
@@ -106,16 +125,19 @@ export class BackupService {
         SELECT current_setting('server_version') AS version
       `;
 
+      const storageFiles = await materializeStorage(uploadsPath);
       const manifest: BackupManifest = {
         formatVersion: 1,
         createdAt: createdAt.toISOString(),
         kuonVersion: process.env.KUON_VERSION ?? "unknown",
         postgresVersion: postgres?.version ?? "unknown",
         pgDumpVersion,
+        storage: {
+          formatVersion: 1,
+          files: storageFiles,
+        },
       };
       await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-
-      await materializeStorage(uploadsPath);
 
       await runCommand("tar", [
         "-czf",
