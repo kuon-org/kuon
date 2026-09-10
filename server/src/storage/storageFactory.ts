@@ -1,4 +1,5 @@
 import type { FileStorage } from "./FileStorage.js";
+import { AzureBlobFileStorage } from "./AzureBlobFileStorage.js";
 import { LocalFileStorage } from "./LocalFileStorage.js";
 import { S3CompatibleFileStorage } from "./S3CompatibleFileStorage.js";
 import { storageConfig } from "./storageConfig.js";
@@ -15,6 +16,11 @@ export const getFileStorage = (): FileStorage => {
 
   if (storageConfig.provider === "s3") {
     storage = new S3CompatibleFileStorage(storageConfig.s3);
+    return storage;
+  }
+
+  if (storageConfig.provider === "azure") {
+    storage = new AzureBlobFileStorage(storageConfig.azure);
     return storage;
   }
 
