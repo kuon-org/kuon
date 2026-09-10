@@ -16,9 +16,15 @@ export type StoredFileInfo = {
   key: string;
 };
 
+export type StoredFileContent = {
+  body: Readable;
+  contentType?: string;
+  contentLength?: number;
+};
+
 export interface FileStorage {
   put(input: PutFileInput): Promise<StoredFile>;
-  get(key: string): Promise<Readable>;
+  get(key: string): Promise<StoredFileContent>;
   delete(key: string): Promise<void>;
   exists(key: string): Promise<boolean>;
   list(prefix?: string): AsyncIterable<StoredFileInfo>;
