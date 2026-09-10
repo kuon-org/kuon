@@ -7,12 +7,16 @@ import {
   getCookieOptions,
 } from "../utils/sessionTokens/index.js";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 import { UsersService } from "../services/usersService.js";
 import { UploadImagesService } from "../services/uploadImagesService.js";
 import { TagsService } from "../services/tagsService.js";
 import { totpService } from "../services/totpService.js";
+import {
+  buildLocalAvatarKey,
+  deleteAvatar,
+  saveAvatar,
+  toLegacyUploadPath,
+} from "../storage/avatarStorage.js";
 
 export class UsersController {
   constructor(
@@ -268,16 +272,7 @@ export class UsersController {
   uploadLocalAvatar = async (req: AuthRequest, res: Response) => {
     const user = this.requireUser(req);
     const userId = user.userId;
-    const uploadDir = path.join(process.cwd(), "public/uploads/avatars");
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    const storage = multer.diskStorage({
-      destination: (_req, _file, cb) => cb(null, uploadDir),
-      filename: (_req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        cb(null, `${userId}_local${ext}`);
-      },
-    });
-    const upload = multer({ storage }).single("image");
+    const upload = multer({ storage: multer.memoryStorage() }).single("image");
 
     upload(req, res, async (error: any) => {
       if (error) {
@@ -295,14 +290,17 @@ export class UsersController {
         });
       }
 
-      const pathname = `/uploads/avatars/${req.file.filename}`;
+      const key = buildLocalAvatarKey(userId, req.file.originalname);
+      const pathname = toLegacyUploadPath(key);
       try {
+        await saveAvatar(key, req.file.buffer, req.file.mimetype);
         await this.usersService.updateLocalAvatar(userId, pathname);
         return res.status(200).json({
           message: "プロフィール画像をアップロードしました",
           pathname,
         });
       } catch (dbError) {
+        await deleteAvatar(key).catch(() => {});
         console.error("Avatar DB update failed", dbError);
         return res.status(500).json({
           error: {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Alert, Box, CircularProgress, Divider, FormControlLabel, Paper, Switch, Typography } from "@mui/material";
 import { useServerSettingsQuery, useUpdateServerSetting } from "../../hooks/admin";
 import { SmtpSettingsSection } from "./SmtpSettingsSection";
+import { StorageSettingsSection } from "./StorageSettingsSection";
 import { useTranslation } from "react-i18next";
 
 export const ServerSettings = () => {
@@ -57,6 +58,8 @@ export const ServerSettings = () => {
             {sourceAlert(allowUserWebhooksSetting?.readOnly)}
             <FormControlLabel control={<Switch checked={allowUserWebhooks} onChange={(event) => updateBooleanSetting("allow_user_webhooks", event.target.checked)} disabled={!webhooksEnabled || allowUserWebhooksSetting?.readOnly || updateServerSetting.isPending} />} label={allowUserWebhooks ? t("common.allowed") : t("common.notAllowed")} />
           </Box>
+          <Divider sx={{ my: 3 }} />
+          <StorageSettingsSection />
           <Divider sx={{ my: 3 }} />
           <SmtpSettingsSection />
         </>

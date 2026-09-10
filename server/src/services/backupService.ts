@@ -1,13 +1,22 @@
 import { spawn } from "node:child_process";
+import { createWriteStream } from "node:fs";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pipeline } from "node:stream/promises";
 import prisma from "../prisma/client.js";
+import { getFileStorage } from "../storage/storageFactory.js";
 
 export interface BackupArchive {
   fileName: string;
   archivePath: string;
   cleanup: () => Promise<void>;
+}
+
+interface BackupStorageFile {
+  key: string;
+  contentType?: string;
+  contentLength?: number;
 }
 
 interface BackupManifest {
@@ -16,6 +25,10 @@ interface BackupManifest {
   kuonVersion: string;
   postgresVersion: string;
   pgDumpVersion: string;
+  storage?: {
+    formatVersion: number;
+    files: BackupStorageFile[];
+  };
 }
 
 const runCommand = (
@@ -65,14 +78,33 @@ const createPgConnectionUri = () => {
 const timestampForFileName = (date: Date) =>
   date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 
-export class BackupService {
-  private uploadsPath = path.resolve(process.cwd(), "public/uploads");
+const materializeStorage = async (destination: string) => {
+  const storage = getFileStorage();
+  const files: BackupStorageFile[] = [];
+  await mkdir(destination, { recursive: true });
 
+  for await (const file of storage.list()) {
+    const target = path.join(destination, ...file.key.split("/"));
+    await mkdir(path.dirname(target), { recursive: true });
+    const stored = await storage.get(file.key);
+    await pipeline(stored.body, createWriteStream(target));
+    files.push({
+      key: file.key,
+      contentType: stored.contentType,
+      contentLength: stored.contentLength,
+    });
+  }
+
+  return files;
+};
+
+export class BackupService {
   async createArchive(): Promise<BackupArchive> {
     const createdAt = new Date();
     const tempDirectory = await mkdtemp(path.join(tmpdir(), "kuon-backup-"));
     const databaseDumpPath = path.join(tempDirectory, "database.dump");
     const manifestPath = path.join(tempDirectory, "manifest.json");
+    const uploadsPath = path.join(tempDirectory, "uploads");
     const archivePath = path.join(tempDirectory, "backup.tar.gz");
     const fileName = `kuon-backup-${timestampForFileName(createdAt)}.tar.gz`;
 
@@ -93,16 +125,19 @@ export class BackupService {
         SELECT current_setting('server_version') AS version
       `;
 
+      const storageFiles = await materializeStorage(uploadsPath);
       const manifest: BackupManifest = {
         formatVersion: 1,
         createdAt: createdAt.toISOString(),
         kuonVersion: process.env.KUON_VERSION ?? "unknown",
         postgresVersion: postgres?.version ?? "unknown",
         pgDumpVersion,
+        storage: {
+          formatVersion: 1,
+          files: storageFiles,
+        },
       };
       await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-
-      await mkdir(this.uploadsPath, { recursive: true });
 
       await runCommand("tar", [
         "-czf",
@@ -111,9 +146,7 @@ export class BackupService {
         tempDirectory,
         "manifest.json",
         "database.dump",
-        "-C",
-        path.dirname(this.uploadsPath),
-        path.basename(this.uploadsPath),
+        "uploads",
       ]);
 
       return {

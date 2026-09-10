@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
+import { createReadStream, createWriteStream } from "node:fs";
 import {
   access,
-  cp,
   lstat,
   mkdir,
   mkdtemp,
@@ -11,11 +11,19 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pipeline } from "node:stream/promises";
 import prisma from "../prisma/client.js";
 import { runMigrations } from "../database/migrationRunner.js";
 import { ServerSettingKey } from "../constants/serverSettings.js";
+import { getFileStorage } from "../storage/storageFactory.js";
 import { serverSettingsService } from "./serverSettingsService.js";
 import { runtimeMaintenanceService } from "./runtimeMaintenanceService.js";
+
+interface BackupStorageFile {
+  key: string;
+  contentType?: string;
+  contentLength?: number;
+}
 
 interface BackupManifest {
   formatVersion: number;
@@ -23,9 +31,14 @@ interface BackupManifest {
   kuonVersion: string;
   postgresVersion: string;
   pgDumpVersion: string;
+  storage?: {
+    formatVersion: number;
+    files: BackupStorageFile[];
+  };
 }
 
 const SUPPORTED_FORMAT_VERSION = 1;
+const SUPPORTED_STORAGE_FORMAT_VERSION = 1;
 
 const runCommand = (
   command: string,
@@ -65,13 +78,32 @@ const parseMajor = (value: string) => value.match(/\b(\d+)(?:\.\d+)?/)?.[1] ?? n
 const isBackupManifest = (value: unknown): value is BackupManifest => {
   if (!value || typeof value !== "object") return false;
   const manifest = value as Record<string, unknown>;
-  return (
-    typeof manifest.formatVersion === "number" &&
-    typeof manifest.createdAt === "string" &&
-    typeof manifest.kuonVersion === "string" &&
-    typeof manifest.postgresVersion === "string" &&
-    typeof manifest.pgDumpVersion === "string"
-  );
+  if (
+    typeof manifest.formatVersion !== "number" ||
+    typeof manifest.createdAt !== "string" ||
+    typeof manifest.kuonVersion !== "string" ||
+    typeof manifest.postgresVersion !== "string" ||
+    typeof manifest.pgDumpVersion !== "string"
+  ) {
+    return false;
+  }
+
+  if (manifest.storage === undefined) return true;
+  if (!manifest.storage || typeof manifest.storage !== "object") return false;
+  const storage = manifest.storage as Record<string, unknown>;
+  if (typeof storage.formatVersion !== "number" || !Array.isArray(storage.files)) {
+    return false;
+  }
+
+  return storage.files.every((file) => {
+    if (!file || typeof file !== "object") return false;
+    const entry = file as Record<string, unknown>;
+    return (
+      typeof entry.key === "string" &&
+      (entry.contentType === undefined || typeof entry.contentType === "string") &&
+      (entry.contentLength === undefined || typeof entry.contentLength === "number")
+    );
+  });
 };
 
 const validateEntryName = (entry: string) => {
@@ -97,35 +129,72 @@ const assertNoLinks = async (directory: string): Promise<void> => {
   }
 };
 
-const directoryExists = async (directory: string) => {
-  try {
-    const stat = await lstat(directory);
-    return stat.isDirectory();
-  } catch {
-    return false;
+const inferContentType = (key: string) => {
+  switch (path.extname(key).toLowerCase()) {
+    case ".png": return "image/png";
+    case ".jpg":
+    case ".jpeg": return "image/jpeg";
+    case ".gif": return "image/gif";
+    case ".webp": return "image/webp";
+    case ".svg": return "image/svg+xml";
+    case ".avif": return "image/avif";
+    default: return undefined;
   }
 };
 
-const clearDirectory = async (directory: string) => {
-  await mkdir(directory, { recursive: true });
-  for (const entry of await readdir(directory)) {
-    await rm(path.join(directory, entry), { recursive: true, force: true });
-  }
-};
-
-const copyDirectoryContents = async (source: string, destination: string) => {
+const materializeStorage = async (destination: string) => {
+  const storage = getFileStorage();
+  const metadata = new Map<string, BackupStorageFile>();
   await mkdir(destination, { recursive: true });
-  for (const entry of await readdir(source)) {
-    await cp(path.join(source, entry), path.join(destination, entry), {
-      recursive: true,
-      force: true,
+
+  for await (const file of storage.list()) {
+    const target = path.join(destination, ...file.key.split("/"));
+    await mkdir(path.dirname(target), { recursive: true });
+    const stored = await storage.get(file.key);
+    await pipeline(stored.body, createWriteStream(target));
+    metadata.set(file.key, {
+      key: file.key,
+      contentType: stored.contentType,
+      contentLength: stored.contentLength,
     });
+  }
+
+  return metadata;
+};
+
+const clearStorage = async () => {
+  const storage = getFileStorage();
+  const keys: string[] = [];
+  for await (const file of storage.list()) keys.push(file.key);
+  for (const key of keys) await storage.delete(key);
+};
+
+const restoreDirectoryToStorage = async (
+  directory: string,
+  metadata: ReadonlyMap<string, BackupStorageFile>,
+  relativePath = "",
+): Promise<void> => {
+  const storage = getFileStorage();
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const absolutePath = path.join(directory, entry.name);
+    const key = relativePath
+      ? path.posix.join(relativePath, entry.name)
+      : entry.name;
+
+    if (entry.isDirectory()) {
+      await restoreDirectoryToStorage(absolutePath, metadata, key);
+    } else if (entry.isFile()) {
+      const contentType = metadata.get(key)?.contentType ?? inferContentType(key);
+      await storage.put({
+        key,
+        body: createReadStream(absolutePath),
+        contentType,
+      });
+    }
   }
 };
 
 export class RestoreService {
-  private uploadsPath = path.resolve(process.cwd(), "public/uploads");
-
   async restore(archivePath: string) {
     if (runtimeMaintenanceService.isLocked()) {
       throw new Error("Another restore operation is already running");
@@ -135,6 +204,7 @@ export class RestoreService {
     const extractedDir = path.join(workDir, "extracted");
     const safetyDumpPath = path.join(workDir, "pre-restore.dump");
     const safetyUploadsPath = path.join(workDir, "pre-restore-uploads");
+    let safetyStorageMetadata = new Map<string, BackupStorageFile>();
     let uploadsRestoreStarted = false;
     let databaseRestoreStarted = false;
 
@@ -174,8 +244,19 @@ export class RestoreService {
       if (!manifest.createdAt || Number.isNaN(Date.parse(manifest.createdAt))) {
         throw new Error("Invalid backup manifest: createdAt");
       }
+      if (
+        manifest.storage &&
+        manifest.storage.formatVersion !== SUPPORTED_STORAGE_FORMAT_VERSION
+      ) {
+        throw new Error(
+          `Unsupported storage formatVersion: ${manifest.storage.formatVersion}`,
+        );
+      }
 
-      // Ensure the custom-format dump is readable before changing the current instance.
+      const restoredStorageMetadata = new Map(
+        (manifest.storage?.files ?? []).map((file) => [file.key, file]),
+      );
+
       await runCommand(getPgRestoreCommand(), ["--list", databaseDumpPath]);
 
       const [serverVersion] = await prisma.$queryRaw<Array<{ version: string }>>`
@@ -191,16 +272,11 @@ export class RestoreService {
         );
       }
 
-      // Prepare an uploads rollback copy before entering the destructive phase.
-      await mkdir(safetyUploadsPath, { recursive: true });
-      if (await directoryExists(this.uploadsPath)) {
-        await copyDirectoryContents(this.uploadsPath, safetyUploadsPath);
-      }
+      safetyStorageMetadata = await materializeStorage(safetyUploadsPath);
 
       runtimeMaintenanceService.lock("instance-restore");
       const databaseUri = createPgConnectionUri();
 
-      // Safety DB snapshot for best-effort rollback if restore fails.
       await runCommand(getPgDumpCommand(), [
         "--format=custom",
         "--file",
@@ -223,13 +299,10 @@ export class RestoreService {
 
       await runMigrations();
 
-      // Replace contents rather than renaming the directory itself because uploads
-      // can be a Docker bind/named-volume mount point.
       uploadsRestoreStarted = true;
-      await clearDirectory(this.uploadsPath);
-      await copyDirectoryContents(restoredUploadsPath, this.uploadsPath);
+      await clearStorage();
+      await restoreDirectoryToStorage(restoredUploadsPath, restoredStorageMetadata);
 
-      // Restored sessions must never remain valid on a new/restored instance.
       await prisma.user_sessions.deleteMany();
       await serverSettingsService.initialize();
       await serverSettingsService.set(ServerSettingKey.MaintenanceMode, "false");
@@ -241,13 +314,15 @@ export class RestoreService {
       };
     } catch (error) {
       if (uploadsRestoreStarted) {
-        await clearDirectory(this.uploadsPath).catch(() => {});
-        await copyDirectoryContents(safetyUploadsPath, this.uploadsPath).catch((rollbackError) => {
+        await clearStorage().catch(() => {});
+        await restoreDirectoryToStorage(
+          safetyUploadsPath,
+          safetyStorageMetadata,
+        ).catch((rollbackError) => {
           console.error("❌ Uploads rollback failed:", rollbackError);
         });
       }
 
-      // Best-effort DB rollback using the snapshot made immediately before restore.
       if (databaseRestoreStarted) {
         const databaseUri = createPgConnectionUri();
         await runCommand(getPgRestoreCommand(), [

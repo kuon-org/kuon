@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 import { AppError, ValidationError } from "../errors/AppError.js";
 import { uuidv7 } from "../utils/uuid/index.js";
 import { ArticlesService } from "../services/articlesService.js";
 import { UploadImagesService } from "../services/uploadImagesService.js";
 import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
+import { getFileStorage } from "../storage/storageFactory.js";
 
 export class ArticlesController {
   constructor(
@@ -276,16 +276,8 @@ export class ArticlesController {
   uploadArticleImage = async (req: AuthRequest, res: Response) => {
     const user = this.requireUser(req);
     const userId = user.userId;
-    const uploadDir = path.join(process.cwd(), "public/uploads");
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
     const imageId = uuidv7();
-    const storage = multer.diskStorage({
-      destination: (_req, _file, cb) => cb(null, uploadDir),
-      filename: (_req, file, cb) =>
-        cb(null, `${imageId}${path.extname(file.originalname)}`),
-    });
-    const upload = multer({ storage }).single("image");
+    const upload = multer({ storage: multer.memoryStorage() }).single("image");
 
     upload(req, res, async (error: any) => {
       if (error) {
@@ -307,15 +299,29 @@ export class ArticlesController {
         });
       }
 
+      const ext = path.extname(req.file.originalname);
+      const key = `${imageId}${ext}`;
+      const fileStorage = getFileStorage();
+
       try {
+        await fileStorage.put({
+          key,
+          body: req.file.buffer,
+          contentType: req.file.mimetype,
+        });
         await this.uploadImagesService.registerImage(
           imageId,
           userId,
           req.file,
           "article",
         );
-        return res.status(200).json({ url: `/uploads/${req.file.filename}` });
+        return res.status(200).json({ url: `/uploads/${key}` });
       } catch (dbError) {
+        try {
+          await fileStorage.delete(key);
+        } catch (cleanupError) {
+          console.error("Article image cleanup failed", cleanupError);
+        }
         console.error("Article image registration failed", dbError);
         return res.status(500).json({
           error: {

@@ -1,7 +1,5 @@
 import * as pkce from "pkce-challenge";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import fs from "node:fs/promises";
-import path from "node:path";
 import { get } from "lodash-es";
 import { AuthRepository } from "../repositories/authRepository.js";
 import prisma from "../prisma/client.js";
@@ -15,6 +13,12 @@ import { serverSettingsService } from "./serverSettingsService.js";
 import { ServerSettingKey } from "../constants/serverSettings.js";
 import { isTotpEnabledForUser } from "../utils/totp/index.js";
 import { resolveIdpConfigSecrets } from "../utils/idpConfigSecrets.js";
+import {
+  buildExternalAvatarKey,
+  deleteProviderAvatars,
+  saveAvatar,
+  toLegacyUploadPath,
+} from "../storage/avatarStorage.js";
 
 const pkceStore = new Map<
   string,
@@ -38,7 +42,6 @@ export type ExternalAuthResult =
 
 export class AuthService {
   constructor(private repo: AuthRepository) {}
-  private AVATAR_DIR = "public/uploads/avatars";
 
   async generateAuthUrl(providerName: string, currentUserId?: string) {
     const record = await this.repo.findProviderByName(providerName);
@@ -319,12 +322,11 @@ export class AuthService {
     if (!res.ok) {
       throw new Error(`Failed to download avatar: ${res.status}`);
     }
-    const ext = path.extname(new URL(url).pathname) || ".png";
-    const fileName = `${userId}_${provider}${ext}`;
-    const filePath = path.join(this.AVATAR_DIR, fileName);
-    await fs.mkdir(this.AVATAR_DIR, { recursive: true });
-    await fs.writeFile(filePath, Buffer.from(await res.arrayBuffer()));
-    return `/uploads/avatars/${fileName}`;
+
+    const key = buildExternalAvatarKey(userId, provider, url);
+    const contentType = res.headers.get("content-type") ?? undefined;
+    await saveAvatar(key, Buffer.from(await res.arrayBuffer()), contentType);
+    return toLegacyUploadPath(key);
   }
 
   private async findOrCreateUser(
@@ -375,13 +377,8 @@ export class AuthService {
     });
     if (identityCount <= 1)
       throw new Error("最後の連携手段を解除することはできません。");
-    const files = await fs.readdir(this.AVATAR_DIR).catch(() => []);
-    const targetFiles = files.filter((f) =>
-      f.startsWith(`${userId}_${providerName}`),
-    );
-    for (const file of targetFiles) {
-      await fs.unlink(path.join(this.AVATAR_DIR, file)).catch(() => {});
-    }
+
+    await deleteProviderAvatars(userId, providerName);
     return this.repo.deleteIdentityAndAvatar(userId, providerName);
   }
 
