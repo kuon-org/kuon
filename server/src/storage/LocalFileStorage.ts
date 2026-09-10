@@ -21,6 +21,19 @@ const normalizeKey = (key: string) => {
   return normalized;
 };
 
+const inferContentType = (key: string) => {
+  switch (path.extname(key).toLowerCase()) {
+    case ".png": return "image/png";
+    case ".jpg":
+    case ".jpeg": return "image/jpeg";
+    case ".gif": return "image/gif";
+    case ".webp": return "image/webp";
+    case ".svg": return "image/svg+xml";
+    case ".avif": return "image/avif";
+    default: return undefined;
+  }
+};
+
 export class LocalFileStorage implements FileStorage {
   constructor(private readonly basePath: string) {}
 
@@ -43,7 +56,13 @@ export class LocalFileStorage implements FileStorage {
   }
 
   async get(key: string) {
-    return fs.createReadStream(this.resolvePath(key));
+    const filePath = this.resolvePath(key);
+    const stat = await fs.promises.stat(filePath);
+    return {
+      body: fs.createReadStream(filePath),
+      contentType: inferContentType(key),
+      contentLength: stat.size,
+    };
   }
 
   async delete(key: string): Promise<void> {
