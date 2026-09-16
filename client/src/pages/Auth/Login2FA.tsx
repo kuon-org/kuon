@@ -3,6 +3,8 @@ import { keyframes } from "@mui/system";
 import { useRef, useState } from "react";
 import { useVerifyLogin2FA } from "../../hooks/auth";
 import { useTranslation } from "react-i18next";
+import { Footer } from "../../components/layouts/Footer/Footer";
+import { DevelopmentTotpHelper } from "../../components/layouts/Footer/DevelopmentTotpHelper";
 
 const shakeAnimation = keyframes`
   0%, 100% { transform: translateX(0); }
@@ -43,6 +45,7 @@ export const Login2FA = () => {
   };
 
   return (
+    <>
     <Paper sx={{ mx: "auto", mt: 8, p: 4, maxWidth: "400px", textAlign: "center" }}>
       <Typography variant="h6" gutterBottom>{t("twoFactor.title")}</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -80,5 +83,8 @@ export const Login2FA = () => {
         {t("twoFactor.submit")}
       </Button>
     </Paper>
+      <Footer />
+      {import.meta.env.DEV && <DevelopmentTotpHelper />}
+    </>
   );
 };

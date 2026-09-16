@@ -42,6 +42,18 @@ export class TotpService {
     return this.repo.enable(userId, security.totp_secret);
   }
 
+  async getDevelopmentCode(userId: string): Promise<string | null> {
+    if (process.env.NODE_ENV !== "development") return null;
+    const security = await this.repo.findSecurity(userId);
+    if (!security?.is_2fa_enabled || !security.totp_secret) return null;
+
+    const totp = new TOTP({
+      crypto: new NodeCryptoPlugin(),
+      base32: new ScureBase32Plugin(),
+    });
+    return totp.generate({ secret: security.totp_secret });
+  }
+
   async disable(userId: string) {
     return this.repo.disable(userId);
   }
