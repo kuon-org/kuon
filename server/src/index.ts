@@ -4,6 +4,7 @@ import usersRoutes from "./routes/usersRoutes.js";
 import localAuthRoutes from "./routes/localAuthRoutes.js";
 import passwordResetRoutes from "./routes/passwordResetRoutes.js";
 import totpRoutes from "./routes/totpRoutes.js";
+import devTotpRoutes from "./routes/devTotpRoutes.js";
 import articlesRouter from "./routes/articlesRoutes.js";
 import tagsRouter from "./routes/tagsRoutes.js";
 import cors from "cors";
@@ -61,6 +62,12 @@ app.use("/api", runtimeMaintenanceGate);
 app.use("/api", localAuthRoutes);
 app.use("/api", passwordResetRoutes);
 app.use("/api", totpRoutes);
+if (process.env.NODE_ENV === "development") {
+  app.use("/api", devTotpRoutes);
+} else {
+  // Keep this API unavailable even when the production SPA fallback is enabled.
+  app.get("/api/dev/totp", (_req, res) => res.sendStatus(404));
+}
 app.use("/api", usersRoutes);
 app.use("/api", idpRouter);
 app.use("/api", adminRouter);
