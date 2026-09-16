@@ -3,7 +3,6 @@ import { keyframes } from "@mui/system";
 import { useRef, useState } from "react";
 import { useVerifyLogin2FA } from "../../hooks/auth";
 import { useTranslation } from "react-i18next";
-import { Footer } from "../../components/layouts/Footer/Footer";
 import { DevelopmentTotpHelper } from "../../components/layouts/Footer/DevelopmentTotpHelper";
 
 const shakeAnimation = keyframes`
@@ -83,7 +82,6 @@ export const Login2FA = () => {
         {t("twoFactor.submit")}
       </Button>
     </Paper>
-      <Footer />
       {import.meta.env.DEV && <DevelopmentTotpHelper />}
     </>
   );
