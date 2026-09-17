@@ -17,6 +17,7 @@
     "lint": "pnpm --filter client lint",
     "typecheck": "pnpm --filter client i18n:check && pnpm --filter client exec tsc --noEmit && pnpm --filter server typecheck",
     "check": "pnpm run lint && pnpm run typecheck",
+    "openapi:generate": "pnpm --filter server openapi:generate",
     "test:e2e": "pnpm --filter @kuon/e2e test",
     "test:e2e:ui": "pnpm --filter @kuon/e2e test:ui",
     "test:e2e:headed": "pnpm --filter @kuon/e2e test:headed",
