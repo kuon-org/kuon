@@ -1,0 +1,68 @@
+name: Sync OpenAPI to kuon-lp
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-openapi-to-kuon-lp
+  cancel-in-progress: false
+
+jobs:
+  sync-openapi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Kuon
+        uses: actions/checkout@v5
+        with:
+          ref: develop
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate OpenAPI document
+        run: pnpm openapi:generate
+
+      - name: Checkout kuon-lp
+        uses: actions/checkout@v5
+        with:
+          repository: hiroppe0409/kuon-lp
+          ref: main
+          token: ${{ secrets.KUON_LP_PAT }}
+          path: kuon-lp
+
+      - name: Copy OpenAPI document
+        run: cp server/generated/openapi.json kuon-lp/src/openapi/openapi.json
+
+      - name: Commit and push changes
+        working-directory: kuon-lp
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/openapi/openapi.json
+
+          if git diff --cached --quiet; then
+            echo "OpenAPI document is already up to date."
+            exit 0
+          fi
+
+          git commit \
+            -m "docs: sync OpenAPI schema from Kuon" \
+            -m "Source: hiroppe0409/kuon@${SOURCE_SHA}"
+          git push origin HEAD:main
