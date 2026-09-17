@@ -40,6 +40,9 @@ dist/
 **/build/
 **/dist/
 
+# Generated API documentation
+server/generated/
+
 # dotenv environment variables
 .env
 .env.local
