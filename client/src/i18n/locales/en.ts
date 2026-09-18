@@ -8,5 +8,6 @@ import notifications from "../../../locales/en/notifications.yml";
 import settings from "../../../locales/en/settings.yml";
 import tags from "../../../locales/en/tags.yml";
 import users from "../../../locales/en/users.yml";
+import groups from "../../../locales/en/groups.yml";
 
-export default { admin, articles, auth, comments, common, errors, notifications, settings, tags, users };
+export default { admin, articles, auth, comments, common, errors, groups, notifications, settings, tags, users };

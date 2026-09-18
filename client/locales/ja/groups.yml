@@ -1,0 +1,24 @@
+loading: 読み込み中…
+notFound: グループが見つかりません
+list:
+  title: グループ
+  create: グループを作成
+  counts: "メンバー {{members}}人・記事 {{articles}}件"
+create:
+  title: グループを作成
+detail:
+  members: メンバー
+  articles: グループの記事
+fields:
+  name: 管理名
+  displayName: 表示名
+  slug: スラッグ
+  slugHint: 小文字英数字とハイフン（3〜50文字）
+  description: 説明
+  username: ユーザ名
+actions:
+  cancel: キャンセル
+  create: 作成
+  save: 保存
+  add: 追加
+  remove: 削除

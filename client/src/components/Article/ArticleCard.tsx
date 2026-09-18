@@ -15,6 +15,7 @@ interface ArticleCardProps {
       display_name: string;
       avatar_url: string;
     };
+    groups?: { slug: string; display_name: string } | null;
     article_tags: {
       tags: {
         id: string;
@@ -98,11 +99,17 @@ export const ArticleCard = ({ article }: ArticleCardProps) => {
                   "&:hover": { textDecoration: "underline" },
                 }}
               >
-                <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
+                <Typography component="span" variant="subtitle2" sx={{ fontWeight: "bold" }}>
                   @{article.users.username} ({article.users.display_name})
                 </Typography>
               </Box>
             </Link>
+            {article.groups && <>
+              <Typography component="span" variant="subtitle2" sx={{ mx: 0.5 }}>in</Typography>
+              <Link to="/group/$slug" params={{ slug: article.groups.slug }} search={{ page: 1 }} style={{ textDecoration: "none", color: "inherit" }} onClick={stopPropagation}>
+                <Typography component="span" variant="subtitle2" sx={{ fontWeight: "bold", "&:hover": { textDecoration: "underline" } }}>{article.groups.display_name}</Typography>
+              </Link>
+            </>}
 
             <Typography
               variant="caption"

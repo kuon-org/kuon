@@ -64,6 +64,7 @@ language:
 userMenu:
   myPage: My page
   stocks: Stock lists
+  groups: Groups
   theme: Theme color
   language: Language
   drafts: Drafts
