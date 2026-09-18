@@ -41,6 +41,8 @@ export interface GroupFeed {
 
 export const fetchGroups = async () => (await apiClient.get<GroupSummary[]>("/groups")).data;
 export const fetchMyGroups = async () => (await apiClient.get<MyGroupMembership[]>("/groups/me")).data;
+export const fetchFollowedGroupsByUser = async (userId: string) => (await apiClient.get<Array<{ groups: GroupSummary }>>(`/groups/users/${userId}/following`)).data;
+export const fetchJoinedGroupsByUser = async (userId: string) => (await apiClient.get<MyGroupMembership[]>(`/groups/users/${userId}/joined`)).data;
 export const fetchGroupFeed = async (page = 1) => (await apiClient.get<GroupFeed>("/groups/feed", { params: { page, limit: 10 } })).data;
 export const fetchGroupFollowing = async (slug: string) => (await apiClient.get<{ isFollowing: boolean }>(`/groups/${slug}/is-following`)).data;
 export const toggleGroupFollowing = async (slug: string) => (await apiClient.post<{ isFollowing: boolean }>(`/groups/${slug}/follow`)).data;

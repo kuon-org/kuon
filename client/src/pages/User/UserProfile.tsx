@@ -5,6 +5,7 @@ import { UserDetailCard } from "../../components/User/UserDetailCard";
 import { Outlet } from "@tanstack/react-router";
 import { FollowingTags } from "./FollowingTags";
 import { useTranslation } from "react-i18next";
+import { UserGroups } from "./UserGroups";
 
 const UserProfile = () => {
   const { t } = useTranslation("users");
@@ -27,6 +28,7 @@ const UserProfile = () => {
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <UserDetailCard username={username} />
         <FollowingTags userId={user.id} username={username} />
+        <UserGroups userId={user.id} />
       </Box>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: { xs: "100%", md: "auto" } }}>
         <Outlet />

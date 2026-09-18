@@ -364,6 +364,7 @@ export class StocksRepository {
       is_published: true,
       is_deleted: false,
       is_private: false,
+      visibility: "public",
       AND: [],
     };
 
