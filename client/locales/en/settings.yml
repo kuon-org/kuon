@@ -182,6 +182,9 @@ notifications:
   followedUserArticle:
     label: New articles from followed users
     description: Notify you when a user you follow publishes an article.
+  followedGroupArticle:
+    label: New articles from followed groups
+    description: Notify you when an article is published from a group you follow.
   userFollow:
     label: New followers
     description: Notify you when another user follows you.

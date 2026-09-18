@@ -37,6 +37,24 @@ export class GroupsController {
     try { res.json(await this.service.mine(user.userId)); } catch (error) { throw this.map(error); }
   };
 
+  feed = async (req: Request, res: Response) => {
+    try {
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
+      res.json(await this.service.feed(page, limit));
+    } catch (error) { throw this.map(error); }
+  };
+
+  isFollowing = async (req: AuthRequest, res: Response) => {
+    const user = this.user(req);
+    try { res.json(await this.service.isFollowing(String(req.params.slug), user.userId)); } catch (error) { throw this.map(error); }
+  };
+
+  toggleFollowing = async (req: AuthRequest, res: Response) => {
+    const user = this.user(req);
+    try { res.json(await this.service.toggleFollowing(String(req.params.slug), user.userId)); } catch (error) { throw this.map(error); }
+  };
+
   detail = async (req: AuthRequest, res: Response) => {
     try {
       const page = Math.max(1, Number(req.query.page) || 1);

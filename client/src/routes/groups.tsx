@@ -9,6 +9,7 @@ const GroupDetail = lazy(() => import("../pages/Groups/GroupDetail").then((modul
 export const groupsRoute = createRoute({
   getParentRoute: () => layoutWithTopRoute,
   path: "groups",
+  validateSearch: (search: Record<string, unknown>) => ({ page: Number(search.page) || 1 }),
   component: () => <Suspense fallback={<Loading />}><Groups /></Suspense>,
 });
 

@@ -79,6 +79,7 @@ navigation:
   timeline: タイムライン
   trend: トレンド
   stocks: ストック
+  groups: グループ
 
 search:
   placeholder: キーワードを入力

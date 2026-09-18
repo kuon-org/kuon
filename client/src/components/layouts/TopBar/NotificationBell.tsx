@@ -56,6 +56,7 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
   const reasonLabels: Record<NotificationReason, string> = {
     followed_tag: t("reasons.followedTag"),
     followed_user: t("reasons.followedUser"),
+    followed_group: t("reasons.followedGroup"),
   };
 
   const handleNotificationClick = async (

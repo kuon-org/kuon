@@ -18,6 +18,8 @@ const TabsBar = () => {
     currentValue = "/trend";
   } else if (matchRoute({ to: "/timeline" })) {
     currentValue = "/timeline";
+  } else if (matchRoute({ to: "/groups" }) || matchRoute({ to: "/group/$slug", fuzzy: true })) {
+    currentValue = "/groups";
   } else if (
     matchRoute({ to: stockListRoute.fullPath }) ||
     matchRoute({ to: stocksRoute.fullPath }) ||
@@ -79,6 +81,7 @@ const TabsBar = () => {
             aria-label={t("navigation.stocks")}
             sx={{ minHeight: 44 }}
           />
+          <Tab label={t("navigation.groups")} value="/groups" component={Link as any} to="/groups" search={{ page: 1 }} aria-label={t("navigation.groups")} sx={{ minHeight: 44 }} />
         </Tabs>
       </Toolbar>
     </AppBar>

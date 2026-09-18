@@ -182,6 +182,9 @@ notifications:
   followedUserArticle:
     label: フォロー中ユーザーの新着記事
     description: フォローしているユーザーが記事を公開したときに通知します。
+  followedGroupArticle:
+    label: フォロー中グループの新着記事
+    description: フォローしているグループから記事が公開されたときに通知します。
   userFollow:
     label: ユーザーからのフォロー
     description: ほかのユーザーからフォローされたときに通知します。

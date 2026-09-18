@@ -16,6 +16,7 @@ export const Notifications = () => {
     { key: "notifyOnCommentReply", label: t("notifications.commentReply.label"), description: t("notifications.commentReply.description") },
     { key: "notifyOnFollowedTagArticle", label: t("notifications.followedTagArticle.label"), description: t("notifications.followedTagArticle.description") },
     { key: "notifyOnFollowedUserArticle", label: t("notifications.followedUserArticle.label"), description: t("notifications.followedUserArticle.description") },
+    { key: "notifyOnFollowedGroupArticle", label: t("notifications.followedGroupArticle.label"), description: t("notifications.followedGroupArticle.description") },
     { key: "notifyOnUserFollow", label: t("notifications.userFollow.label"), description: t("notifications.userFollow.description") },
   ];
   const update = async (key: keyof NotificationPreferences, checked: boolean) => {

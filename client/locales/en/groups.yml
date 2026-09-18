@@ -9,6 +9,8 @@ create:
 detail:
   members: Members
   articles: Group articles
+feed:
+  title: Latest group posts
 fields:
   name: Internal name
   displayName: Display name
@@ -23,5 +25,7 @@ actions:
   add: Add
   remove: Remove
   delete: Delete group
+  follow: Follow
+  following: Following
 delete:
   confirm: "Delete the group “{{name}}”? Its articles will remain as personal posts."

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Box, Button, Card, CardContent, Container, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, Container, Dialog, DialogActions, DialogContent, DialogTitle, Pagination, Stack, TextField, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { createGroup, fetchGroups } from "../../api/groups";
+import { createGroup, fetchGroupFeed, fetchGroups } from "../../api/groups";
 import { useAuthUserQuery } from "../../hooks/auth";
 import { useMyPermissionsQuery } from "../../hooks/roles";
+import { ArticleCard } from "../../components/Article/ArticleCard";
+import { groupsRoute } from "../../routes/groups";
 
 export const Groups = () => {
   const { t } = useTranslation("groups");
@@ -13,8 +15,10 @@ export const Groups = () => {
   const permissions = useMyPermissionsQuery(!!user).data?.permissions ?? [];
   const canCreateGroup = permissions.includes("group.create");
   const navigate = useNavigate();
+  const { page } = groupsRoute.useSearch();
   const queryClient = useQueryClient();
   const groups = useQuery({ queryKey: ["groups"], queryFn: fetchGroups });
+  const feed = useQuery({ queryKey: ["groups", "feed", page], queryFn: () => fetchGroupFeed(page) });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", display_name: "", slug: "", description: "" });
   const create = useMutation({
@@ -37,6 +41,9 @@ export const Groups = () => {
         </CardContent>
       </Card>)}
     </Stack>
+    <Typography variant="h5" sx={{ mt: 5, mb: 2 }}>{t("feed.title")}</Typography>
+    <Stack spacing={2}>{feed.data?.articles.map((article) => <ArticleCard key={article.id} article={article} />)}</Stack>
+    {feed.data && feed.data.totalPages > 1 && <Box display="flex" justifyContent="center" mt={4}><Pagination count={feed.data.totalPages} page={page} onChange={(_event, nextPage) => navigate({ to: "/groups", search: { page: nextPage } })} /></Box>}
     <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
       <DialogTitle>{t("create.title")}</DialogTitle>
       <DialogContent><Stack spacing={2} sx={{ mt: 1 }}>
