@@ -22,6 +22,7 @@ export class GroupsController {
     if (message === "UserNotFound") return new AppError(404, "USER_NOT_FOUND", "User not found");
     if (message === "MembershipNotFound") return new AppError(404, "GROUP_MEMBERSHIP_NOT_FOUND", "Group membership not found");
     if (["Forbidden", "OwnerCannotLeave"].includes(message)) return new AppError(403, "GROUP_ACCESS_DENIED", "Group access denied");
+    if (message === "CannotAddSelf") return new AppError(409, "GROUP_SELF_MEMBERSHIP_ALREADY_EXISTS", "You are already a group member");
     if ((error as { code?: string })?.code === "P2002") return new AppError(409, "GROUP_SLUG_ALREADY_EXISTS", "Group slug already exists");
     console.error("Group operation failed", error);
     return new AppError(500, "GROUP_OPERATION_FAILED", "Group operation failed");

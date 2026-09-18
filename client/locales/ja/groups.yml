@@ -22,3 +22,6 @@ actions:
   save: 保存
   add: 追加
   remove: 削除
+  delete: グループを削除
+delete:
+  confirm: "グループ「{{name}}」を削除しますか？グループの記事は個人投稿として残ります。"

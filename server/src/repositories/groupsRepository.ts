@@ -35,6 +35,10 @@ export class GroupsRepository {
     });
   }
 
+  findUserByUsername(username: string) {
+    return prisma.users.findUnique({ where: { username }, select: { id: true } });
+  }
+
   findMine(userId: string) {
     return prisma.user_groups.findMany({
       where: { user_id: userId },
@@ -65,7 +69,7 @@ export class GroupsRepository {
   }
 
   async addMember(groupId: string, username: string, role: GroupRole) {
-    const user = await prisma.users.findUnique({ where: { username }, select: { id: true } });
+    const user = await this.findUserByUsername(username);
     if (!user) throw new Error("UserNotFound");
     return prisma.user_groups.upsert({
       where: { user_id_group_id: { user_id: user.id, group_id: groupId } },

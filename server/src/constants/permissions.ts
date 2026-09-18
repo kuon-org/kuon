@@ -16,6 +16,9 @@ export const Permissions = {
     Create: "tag.create",
     Manage: "tag.manage",
   },
+  Group: {
+    Create: "group.create",
+  },
   User: {
     Read: "user.read",
     Manage: "user.manage",
@@ -51,6 +54,7 @@ export const permissionDefinitions = [
   { key: Permissions.Comment.DeleteAny, displayName: "すべてのコメントを削除", category: "comment", description: "所有者に関係なくコメントを削除できます", requires: [Permissions.Article.Read] },
   { key: Permissions.Tag.Create, displayName: "タグを作成", category: "tag", description: "新しいタグを作成できます", requires: [] },
   { key: Permissions.Tag.Manage, displayName: "タグを管理", category: "tag", description: "タグ情報とタグ画像を編集できます", requires: [Permissions.Tag.Create] },
+  { key: Permissions.Group.Create, displayName: "グループを作成", category: "group", description: "新しいグループを作成できます", requires: [] },
   { key: Permissions.User.Read, displayName: "ユーザー一覧を閲覧", category: "user", description: "管理画面からユーザー情報を確認できます", requires: [] },
   { key: Permissions.User.Manage, displayName: "ユーザーを管理", category: "user", description: "ユーザーの有効・無効などを管理できます", requires: [Permissions.User.Read] },
   { key: Permissions.Role.Read, displayName: "ロールを閲覧", category: "role", description: "ロールとPermissionの設定を確認できます", requires: [] },

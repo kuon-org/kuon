@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Box, Button, Card, CardContent, Container, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { createGroup, fetchGroups } from "../../api/groups";
 import { useAuthUserQuery } from "../../hooks/auth";
+import { useMyPermissionsQuery } from "../../hooks/roles";
 
 export const Groups = () => {
   const { t } = useTranslation("groups");
   const user = useAuthUserQuery().data;
+  const permissions = useMyPermissionsQuery(!!user).data?.permissions ?? [];
+  const canCreateGroup = permissions.includes("group.create");
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const groups = useQuery({ queryKey: ["groups"], queryFn: fetchGroups });
   const [open, setOpen] = useState(false);
@@ -21,14 +25,12 @@ export const Groups = () => {
   return <Container sx={{ py: 4 }}>
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
       <Typography variant="h4">{t("list.title")}</Typography>
-      {user && <Button variant="contained" onClick={() => setOpen(true)}>{t("list.create")}</Button>}
+      {canCreateGroup && <Button variant="contained" onClick={() => setOpen(true)}>{t("list.create")}</Button>}
     </Box>
     <Stack spacing={2}>
-      {groups.data?.map((group) => <Card key={group.id} variant="outlined">
+      {groups.data?.map((group) => <Card key={group.id} variant="outlined" onClick={() => navigate({ to: "/group/$slug", params: { slug: group.slug }, search: { page: 1 } })} sx={{ cursor: "pointer", transition: "background-color 0.2s", "&:hover": { bgcolor: "action.hover" } }}>
         <CardContent>
-          <Link to="/group/$slug" params={{ slug: group.slug }} search={{ page: 1 }} style={{ color: "inherit", textDecoration: "none" }}>
-            <Typography variant="h6">{group.display_name}</Typography>
-          </Link>
+          <Typography variant="h6">{group.display_name}</Typography>
           <Typography color="text.secondary">@{group.slug}</Typography>
           <Typography sx={{ my: 1 }}>{group.description}</Typography>
           <Typography variant="caption">{t("list.counts", { members: group._count.user_groups, articles: group._count.articles })}</Typography>

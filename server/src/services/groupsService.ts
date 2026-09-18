@@ -41,6 +41,9 @@ export class GroupsService {
     await this.requireManager(group.id, actorId);
     this.assertRole(role);
     if (role === "owner") throw new Error("Forbidden");
+    const target = await this.repo.findUserByUsername(username);
+    if (!target) throw new Error("UserNotFound");
+    if (target.id === actorId) throw new Error("CannotAddSelf");
     return this.repo.addMember(group.id, username, role);
   }
 
