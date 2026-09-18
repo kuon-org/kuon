@@ -10,6 +10,7 @@ followBack: Follow back
 reasons:
   followedTag: Followed tag
   followedUser: Followed user
+  followedGroup: Followed group
 deleteAllDialog:
   title: Delete all notifications?
   description: All currently stored notifications, including read notifications, will be deleted. This action cannot be undone.

@@ -7,6 +7,23 @@ export class GroupsService {
 
   list() { return this.repo.findAll(); }
   mine(userId: string) { return this.repo.findMine(userId); }
+  feed(page: number, limit: number) { return this.repo.findFeed(page, limit); }
+
+  async isFollowing(slug: string, userId: string) {
+    const group = await this.requireGroup(slug);
+    return { isFollowing: !!(await this.repo.findFollow(userId, group.id)) };
+  }
+
+  async toggleFollowing(slug: string, userId: string) {
+    const group = await this.requireGroup(slug);
+    const existing = await this.repo.findFollow(userId, group.id);
+    if (existing) {
+      await this.repo.removeFollow(userId, group.id);
+      return { isFollowing: false };
+    }
+    await this.repo.addFollow(userId, group.id);
+    return { isFollowing: true };
+  }
 
   async detail(slug: string, page: number, limit: number, currentUserId?: string) {
     const group = await this.requireGroup(slug);

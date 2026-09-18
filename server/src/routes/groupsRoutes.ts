@@ -9,6 +9,9 @@ const controller = new GroupsController(new GroupsService(new GroupsRepository()
 
 groupsRouter.get("/groups", controller.list);
 groupsRouter.get("/groups/me", authenticateToken, controller.mine);
+groupsRouter.get("/groups/feed", controller.feed);
+groupsRouter.get("/groups/:slug/is-following", authenticateToken, controller.isFollowing);
+groupsRouter.post("/groups/:slug/follow", authenticateToken, controller.toggleFollowing);
 groupsRouter.get("/groups/:slug", optionalAuth, controller.detail);
 groupsRouter.post("/groups", authenticateToken, controller.create);
 groupsRouter.patch("/groups/:slug", authenticateToken, controller.update);

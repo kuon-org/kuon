@@ -9,6 +9,8 @@ create:
 detail:
   members: メンバー
   articles: グループの記事
+feed:
+  title: グループからの新着記事
 fields:
   name: 管理名
   displayName: 表示名
@@ -23,5 +25,7 @@ actions:
   add: 追加
   remove: 削除
   delete: グループを削除
+  follow: フォロー
+  following: フォロー中
 delete:
   confirm: "グループ「{{name}}」を削除しますか？グループの記事は個人投稿として残ります。"

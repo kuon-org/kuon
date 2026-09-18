@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Avatar, Box, Button, Container, Divider, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { addGroupMember, deleteGroup, fetchGroup, removeGroupMember, type GroupRole, updateGroup, updateGroupMember } from "../../api/groups";
+import { addGroupMember, deleteGroup, fetchGroup, fetchGroupFollowing, removeGroupMember, toggleGroupFollowing, type GroupRole, updateGroup, updateGroupMember } from "../../api/groups";
 import { ArticleCard } from "../../components/Article/ArticleCard";
 import { groupDetailRoute } from "../../routes/groups";
 import { useNavigate } from "@tanstack/react-router";
+import { useAuthUserQuery } from "../../hooks/auth";
 
 export const GroupDetailPage = () => {
   const { slug } = groupDetailRoute.useParams();
@@ -13,8 +14,11 @@ export const GroupDetailPage = () => {
   const { t } = useTranslation("groups");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const user = useAuthUserQuery().data;
   const group = useQuery({ queryKey: ["groups", slug, page], queryFn: () => fetchGroup(slug, page) });
   const data = group.data;
+  const following = useQuery({ queryKey: ["groups", slug, "following"], queryFn: () => fetchGroupFollowing(slug), enabled: !!user });
+  const toggleFollow = useMutation({ mutationFn: () => toggleGroupFollowing(slug), onSuccess: (result) => queryClient.setQueryData(["groups", slug, "following"], result) });
   const canManage = data?.current_user_role === "owner" || data?.current_user_role === "admin";
   const [username, setUsername] = useState("");
   const [role, setRole] = useState<GroupRole>("member");
@@ -29,7 +33,7 @@ export const GroupDetailPage = () => {
   const save = useMutation({ mutationFn: () => updateGroup(slug, edit), onSuccess: () => void refresh() });
   const removeGroup = useMutation({
     mutationFn: () => deleteGroup(slug),
-    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ["groups"] }); navigate({ to: "/groups" }); },
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ["groups"] }); navigate({ to: "/groups", search: { page: 1 } }); },
   });
   const handleDeleteGroup = () => {
     if (window.confirm(t("delete.confirm", { name: data?.display_name ?? "" }))) removeGroup.mutate();
@@ -49,6 +53,7 @@ export const GroupDetailPage = () => {
         <Button size="small" variant="outlined" onClick={() => save.mutate()} disabled={save.isPending || !edit.name || !edit.display_name}>{t("actions.save")}</Button>
         {data.current_user_role === "owner" && <Button size="small" color="error" onClick={handleDeleteGroup} disabled={removeGroup.isPending}>{t("actions.delete")}</Button>}
       </Stack> : <><Typography variant="h4">{data.display_name}</Typography><Typography color="text.secondary">@{data.slug}</Typography><Typography sx={{ mt: 2 }}>{data.description}</Typography></>}
+      {user && <Button sx={{ mt: 2 }} variant={following.data?.isFollowing ? "contained" : "outlined"} disabled={toggleFollow.isPending} onClick={() => toggleFollow.mutate()}>{following.data?.isFollowing ? t("actions.following") : t("actions.follow")}</Button>}
     </Paper>
     <Paper sx={{ p: 3 }}><Typography variant="h6" mb={2}>{t("detail.members")}</Typography>
       {canManage && <Stack direction={{ xs: "column", sm: "row" }} spacing={1} mb={2}>

@@ -89,7 +89,20 @@ model groups {
   articles     articles[]
   users        users         @relation(fields: [created_by], references: [id], onUpdate: NoAction)
   user_groups  user_groups[]
+  group_follows group_follows[]
 
+  @@schema("knowledge")
+}
+
+model group_follows {
+  user_id    String    @db.Uuid
+  group_id   String    @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  groups     groups    @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, group_id])
+  @@index([group_id], map: "idx_group_follows_group_id")
   @@schema("knowledge")
 }
 
@@ -323,6 +336,7 @@ model user_settings {
   notify_on_comment_reply         Boolean?  @default(true)
   notify_on_followed_tag_article  Boolean?  @default(true)
   notify_on_followed_user_article Boolean?  @default(true)
+  notify_on_followed_group_article Boolean? @default(true)
   notify_on_user_follow           Boolean?  @default(true)
   notify_via_email                Boolean?  @default(false)
   created_at                      DateTime? @default(now()) @db.Timestamp(6)
@@ -365,6 +379,7 @@ model users {
   user_follows_user_follows_followee_idTousers user_follows[]              @relation("user_follows_followee_idTousers")
   user_follows_user_follows_follower_idTousers user_follows[]              @relation("user_follows_follower_idTousers")
   user_groups                                  user_groups[]
+  group_follows                                group_follows[]
   user_identities                              user_identities[]
   user_notifications                           user_notifications[]
   user_roles                                   user_roles[]

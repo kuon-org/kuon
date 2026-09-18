@@ -49,6 +49,43 @@ export class GroupsRepository {
     });
   }
 
+  findFollow(userId: string, groupId: string) {
+    return prisma.group_follows.findUnique({
+      where: { user_id_group_id: { user_id: userId, group_id: groupId } },
+    });
+  }
+
+  addFollow(userId: string, groupId: string) {
+    return prisma.group_follows.create({ data: { user_id: userId, group_id: groupId } });
+  }
+
+  removeFollow(userId: string, groupId: string) {
+    return prisma.group_follows.delete({
+      where: { user_id_group_id: { user_id: userId, group_id: groupId } },
+    });
+  }
+
+  async findFeed(page: number, limit: number) {
+    const where = { group_id: { not: null }, is_published: true, is_deleted: false, is_private: false };
+    const [totalCount, articles] = await Promise.all([
+      prisma.articles.count({ where }),
+      prisma.articles.findMany({
+        where,
+        orderBy: { created_at: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true, user_id: true, group_id: true, title: true, summary: true,
+          created_at: true, updated_at: true, like_count: true, stock_count: true,
+          users: { select: { username: true, display_name: true, avatar_url: true } },
+          groups: { select: { id: true, slug: true, display_name: true } },
+          article_tags: { select: { tags: { select: { id: true, name: true, slug: true, avatar_url: true } } } },
+        },
+      }),
+    ]);
+    return { articles, totalCount, totalPages: Math.ceil(totalCount / limit), currentPage: page, limit };
+  }
+
   create(userId: string, data: { name: string; slug: string; display_name: string; description?: string | null }) {
     return prisma.groups.create({
       data: {

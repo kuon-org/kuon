@@ -10,6 +10,7 @@ followBack: フォローバック
 reasons:
   followedTag: フォロー中のタグ
   followedUser: フォロー中のユーザー
+  followedGroup: フォロー中のグループ
 deleteAllDialog:
   title: 通知をすべて削除しますか？
   description: 既読の通知を含め、現在保存されている通知がすべて削除されます。この操作は元に戻せません。
