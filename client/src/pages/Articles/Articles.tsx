@@ -69,7 +69,7 @@ const Articles = ({ article, isLoading }: ArticlesProps) => {
               </Box>
             </Link>
             {article.groups && <Typography component="span" variant="subtitle2">
-              {" in "}<Link to="/group/$slug" params={{ slug: article.groups.slug }} search={{ page: 1 }} style={{ color: "inherit", fontWeight: "bold" }}>{article.groups.display_name}</Link>
+              {" in "}<Link to="/groups/$slug" params={{ slug: article.groups.slug }} search={{ page: 1 }} style={{ color: "inherit", fontWeight: "bold" }}>{article.groups.display_name}</Link>
             </Typography>}
           </Box>
         </Box>

@@ -241,6 +241,7 @@ class NotificationService {
           status: true,
           is_published: true,
           is_private: true,
+          visibility: true,
           users: { select: { display_name: true, username: true } },
           article_tags: { select: { tag_id: true } },
           group_id: true,
@@ -251,7 +252,8 @@ class NotificationService {
         !article ||
         article.status !== "public" ||
         article.is_published !== true ||
-        article.is_private === true
+        article.is_private === true ||
+        article.visibility !== "public"
       ) return;
 
       const reasonsByUser = new Map<string, Set<NotificationReason>>();

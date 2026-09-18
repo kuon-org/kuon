@@ -332,11 +332,14 @@ CREATE TABLE IF NOT EXISTS articles (
     status VARCHAR(10),
     is_published BOOLEAN DEFAULT FALSE,
     is_private BOOLEAN DEFAULT FALSE,
+    visibility VARCHAR(10) NOT NULL DEFAULT 'unlisted',
     is_deleted BOOLEAN DEFAULT FALSE,
     like_count INT DEFAULT 0,
     view_count INT DEFAULT 0,
     stock_count INT DEFAULT 0,
-    comment_count INT DEFAULT 0
+    comment_count INT DEFAULT 0,
+    CONSTRAINT articles_visibility_check CHECK (visibility IN ('public', 'unlisted', 'private', 'members')),
+    CONSTRAINT articles_members_group_check CHECK (visibility <> 'members' OR group_id IS NOT NULL)
 );
 
 COMMENT ON TABLE articles IS '記事';

@@ -288,6 +288,7 @@ articlesRouter.post(
  */
 articlesRouter.get(
   "/articles/:articleId/likes",
+  optionalAuth,
   articlesCtrl.getArticleLikeUserByArticleId,
 );
 

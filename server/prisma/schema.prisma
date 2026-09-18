@@ -58,6 +58,7 @@ model articles {
   status                     String?           @db.VarChar(10)
   is_published               Boolean?          @default(false)
   is_private                 Boolean?          @default(false)
+  visibility                 String            @default("unlisted") @db.VarChar(10)
   is_deleted                 Boolean?          @default(false)
   like_count                 Int?              @default(0)
   view_count                 Int?              @default(0)
@@ -74,6 +75,7 @@ model articles {
   stock_items                stock_items[]
 
   @@index([group_id], map: "idx_articles_group_id")
+  @@index([visibility], map: "idx_articles_visibility")
   @@schema("knowledge")
 }
 

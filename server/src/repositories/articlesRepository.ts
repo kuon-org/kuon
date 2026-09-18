@@ -33,6 +33,7 @@ export class ArticlesRepository {
           stock_count: true,
           is_published: true,
           is_private: true,
+          visibility: true,
           is_deleted: true,
           users: {
             select: {
@@ -85,6 +86,7 @@ export class ArticlesRepository {
     WHERE is_published = TRUE 
       AND is_deleted = FALSE 
       AND is_private = FALSE
+      AND visibility = 'public'
     ORDER BY trend_score DESC
     LIMIT ${limit} OFFSET ${skip}
   `;
@@ -95,6 +97,7 @@ export class ArticlesRepository {
         is_published: true,
         is_deleted: false,
         is_private: false,
+        visibility: "public",
       },
     });
 
@@ -127,6 +130,7 @@ export class ArticlesRepository {
         comment_count: true,
         is_published: true,
         is_private: true,
+          visibility: true,
         is_deleted: true,
         users: {
           select: {
@@ -172,6 +176,7 @@ export class ArticlesRepository {
       is_published: true,
       is_deleted: false,
       is_private: false,
+      visibility: "public",
     };
 
     if (userId) {
@@ -257,6 +262,7 @@ export class ArticlesRepository {
         stock_count: true,
         is_published: true,
         is_private: true,
+          visibility: true,
         is_deleted: true,
         status: true,
         users: { select: { username: true } },
@@ -305,6 +311,7 @@ export class ArticlesRepository {
           stock_count: true,
           is_published: true,
           is_private: true,
+          visibility: true,
           is_deleted: true,
           users: {
             select: {
@@ -353,6 +360,7 @@ export class ArticlesRepository {
         stock_count: true,
         is_published: true,
         is_private: true,
+          visibility: true,
         is_deleted: true,
         status: true,
         users: { select: { username: true } },
@@ -385,6 +393,7 @@ export class ArticlesRepository {
         summary: true,
         is_published: true,
         is_private: true,
+          visibility: true,
         is_deleted: true,
         users: {
           select: {
@@ -527,6 +536,7 @@ export class ArticlesRepository {
             comment_count: true,
             is_published: true,
             is_private: true,
+          visibility: true,
             is_deleted: true,
             users: {
               select: {
@@ -572,6 +582,7 @@ export class ArticlesRepository {
       is_published: true,
       is_deleted: false,
       is_private: false,
+      visibility: "public",
       AND: [],
     };
 

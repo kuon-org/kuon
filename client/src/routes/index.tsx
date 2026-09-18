@@ -11,7 +11,7 @@ import { userRoute, userProfileIndexRoute, userFollowerRoute, userFollowingRoute
 import { stockListRoute, stocksRoute, stocksIndexRoute, stocksNewRoute, stocksDetailsRoute, stockEditRoute } from "./stocks";
 import { tagsRoute, tagProfileRoute, tagEditRoute } from "./tags";
 import { indexRoute, searchRoute, trendRoute, timelineRoute } from "./home";
-import { groupDetailRoute, groupsRoute } from "./groups";
+import { groupDetailRoute, groupEditRoute, groupsRoute } from "./groups";
 
 export const routeTree = baseRootRoute.addChildren([
   plainLayoutRoute.addChildren([
@@ -21,7 +21,7 @@ export const routeTree = baseRootRoute.addChildren([
   layoutWithTopRoute.addChildren([
     sidebarLayoutRoute.addChildren([indexRoute, searchRoute, stockListRoute, timelineRoute, trendRoute]),
     stocksRoute.addChildren([stocksIndexRoute, stocksNewRoute, stocksDetailsRoute, stockEditRoute]),
-    tagsRoute, tagProfileRoute, tagEditRoute, groupsRoute, groupDetailRoute,
+    tagsRoute, tagProfileRoute, tagEditRoute, groupsRoute, groupDetailRoute, groupEditRoute,
     articleRoute.addChildren([articleIndexRoute, articleLikerRoute]),
     userStockRoute.addChildren([userStockIndexRoute]),
     userSettingsRoute.addChildren([accountSettingRoute, accountCustomImageRoute, publicProfileRoute, securityRoute, passwordSettingRoute, user2faSettingRoute, apiKeySettingsRoute, userWebhooksRoute, userNotificationsRoute, uploadedImagesRoute]),

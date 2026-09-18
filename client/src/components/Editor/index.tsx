@@ -67,23 +67,26 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
   const [selectedTagNames, setSelectedTagNames] = useState<string[]>(article?.article_tags?.map((item) => item.tags.name) ?? []);
   const [isPrivate, setIsPrivate] = useState(article?.is_private ?? false);
   const [groupId, setGroupId] = useState(article?.group_id ?? "");
+  const [visibility, setVisibility] = useState<"public" | "unlisted" | "private" | "members">(article?.visibility ?? (article?.is_private ? "private" : article?.is_published ? "public" : "unlisted"));
 
   const getVisibilityValue = () => {
-    if (isPrivate) return "private";
-    if (isPublished) return "public";
-    return "unlisted";
+    return visibility;
   };
 
   const handleVisibilityChange = (value: string) => {
+    setVisibility(value as typeof visibility);
     if (value === "public") {
       setIsPublished(true);
       setIsPrivate(false);
     } else if (value === "unlisted") {
       setIsPublished(false);
       setIsPrivate(false);
-    } else {
+    } else if (value === "private") {
       setIsPublished(true);
       setIsPrivate(true);
+    } else {
+      setIsPublished(true);
+      setIsPrivate(false);
     }
   };
 
@@ -109,6 +112,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
             status: mode,
             is_published: isPublished,
             is_private: isPrivate,
+            visibility,
             group_id: groupId || null,
             tagIds,
             notify_webhooks: shouldNotifyWebhooks,
@@ -134,7 +138,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
         error(t("UNKNOWN_ERROR", { ns: "errors" }));
       }
     },
-    [title, text, summary, isPublished, isPrivate, groupId, selectedTagNames, mutate, tags, canCreateTag, upsertTag, success, error, t],
+    [title, text, summary, isPublished, isPrivate, visibility, groupId, selectedTagNames, mutate, tags, canCreateTag, upsertTag, success, error, t],
   );
 
   const handleBack = () => {
@@ -196,6 +200,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
               <FormControlLabel value="public" control={<Radio />} label={t("editor.public", { ns: "articles" })} />
               <FormControlLabel value="unlisted" control={<Radio />} label={t("editor.unlisted", { ns: "articles" })} />
               <FormControlLabel value="private" control={<Radio />} label={t("editor.private", { ns: "articles" })} />
+              <FormControlLabel value="members" disabled={!groupId} control={<Radio />} label={t("editor.members", { ns: "articles", defaultValue: "グループメンバーのみ" })} />
             </RadioGroup>
           </FormControl>
           <PublishWebhookSettings disabled={isPrivate || !isPublished} />
