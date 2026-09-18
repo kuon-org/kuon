@@ -23,6 +23,7 @@ import stocksRoutes from "./routes/stocksRoutes.js";
 import pumlRouter from "./routes/plantumlRouter.js";
 import serverSettingsRouter from "./routes/serverSettingsRouter.js";
 import notificationRouter from "./routes/notificationRouter.js";
+import groupsRouter from "./routes/groupsRoutes.js";
 import serverEventRouter from "./routes/serverEventRouter.js";
 import { requireSiteAuthentication } from "./middlewares/siteAccess.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
@@ -80,6 +81,7 @@ app.use("/api", requireSiteAuthentication, contentAuthorizationRouter);
 
 // Anonymous content APIs are gated only when require_authentication is enabled.
 app.use("/api", requireSiteAuthentication, articlesRouter);
+app.use("/api", requireSiteAuthentication, groupsRouter);
 app.use("/api", requireSiteAuthentication, tagsRouter);
 app.use("/api", requireSiteAuthentication, commentsRouter);
 app.use("/api", requireSiteAuthentication, stocksRoutes);

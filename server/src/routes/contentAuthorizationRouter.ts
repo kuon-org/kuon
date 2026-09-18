@@ -21,6 +21,11 @@ contentAuthorizationRouter.post(
   requirePermission(Permissions.Article.Create),
 );
 contentAuthorizationRouter.post(
+  "/groups",
+  authenticateToken,
+  requirePermission(Permissions.Group.Create),
+);
+contentAuthorizationRouter.post(
   "/articles/:articleId/comments",
   authenticateToken,
   requirePermission(Permissions.Comment.Create),

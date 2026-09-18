@@ -49,6 +49,29 @@ COMMENT ON COLUMN users.is_active IS '有効フラグ';
 COMMENT ON COLUMN users.last_login_at IS '最終ログイン日時';
 COMMENT ON COLUMN users.created_by IS '作成者ユーザID';
 
+-- groups / user_groups
+CREATE TABLE IF NOT EXISTS groups (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(50) NOT NULL UNIQUE,
+    display_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_by UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS user_groups (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL DEFAULT 'member',
+    joined_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (user_id, group_id),
+    CONSTRAINT user_groups_role_check CHECK (role IN ('owner', 'admin', 'member'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_groups_group_id ON user_groups(group_id);
+
 -- server_events
 CREATE TABLE IF NOT EXISTS knowledge.server_events (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
@@ -289,6 +312,7 @@ COMMENT ON COLUMN user_roles.assigned_by IS '付与者ユーザID';
 CREATE TABLE IF NOT EXISTS articles (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
     user_id UUID REFERENCES users(id),
+    group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
     title VARCHAR(255),
     raw_content TEXT,
     last_published_raw_content TEXT,
@@ -324,6 +348,8 @@ COMMENT ON COLUMN articles.like_count IS 'いいね数';
 COMMENT ON COLUMN articles.view_count IS '閲覧数';
 COMMENT ON COLUMN articles.stock_count IS 'この記事が保存されているストックリストの総数';
 COMMENT ON COLUMN articles.comment_count IS 'コメント数';
+
+CREATE INDEX IF NOT EXISTS idx_articles_group_id ON articles(group_id);
 
 -- stock_lists テーブル
 CREATE TABLE IF NOT EXISTS stock_lists (

@@ -106,12 +106,15 @@ export class ArticlesService {
       summary,
       notify_webhooks = false,
       webhook_ids = [],
+      group_id = null,
     } = payload;
+    await this.validateGroupMembership(userId, group_id);
     const isPublicMode = status === "public";
 
     const article = await this.articlesRepo.createArticles(
       {
         user_id: userId,
+        group_id,
         title: payload.title,
         raw_content,
         render_content: isPublicMode ? raw_content : "",
@@ -202,10 +205,16 @@ export class ArticlesService {
       is_private,
       notify_webhooks: _notifyWebhooks,
       webhook_ids: _webhookIds,
+      group_id,
       ...otherData
     } = payload;
 
     const updateData: any = { ...otherData, updated_at: new Date() };
+
+    if (Object.prototype.hasOwnProperty.call(payload, "group_id")) {
+      await this.validateGroupMembership(existing.user_id ?? userId, group_id);
+      updateData.group_id = group_id ?? null;
+    }
 
     if (status === "public") {
       updateData.raw_content = raw_content;
@@ -240,6 +249,16 @@ export class ArticlesService {
     }
 
     return updated;
+  }
+
+  private async validateGroupMembership(userId: string, groupId: unknown) {
+    if (groupId === null || groupId === undefined || groupId === "") return;
+    if (typeof groupId !== "string" || !asUUID(groupId)) throw new Error("InvalidGroupId");
+    const membership = await prisma.user_groups.findUnique({
+      where: { user_id_group_id: { user_id: userId, group_id: groupId } },
+      select: { user_id: true },
+    });
+    if (!membership) throw new Error("GroupMembershipRequired");
   }
 
   private async dispatchArticleUpdated(articleId: string) {
