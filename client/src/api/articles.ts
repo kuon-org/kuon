@@ -11,9 +11,16 @@ export interface ArticleTag {
   tags: Tag;
 }
 
+export interface ArticleGroup {
+  id: string;
+  slug: string;
+  display_name: string;
+}
+
 export interface ArticleSummary {
   id: string;
   user_id: string;
+  group_id?: string | null;
   title: string;
   summary: string;
   created_at: string;
@@ -24,6 +31,7 @@ export interface ArticleSummary {
     display_name: string;
     avatar_url: string;
   };
+  groups?: ArticleGroup | null;
 }
 
 export interface Article {
@@ -37,12 +45,14 @@ export interface Article {
   summary: string;
   is_published: boolean;
   is_private: boolean;
+  group_id?: string | null;
   users: {
     username: string;
     display_name: string;
     avatar_url: string;
     bio: string;
   };
+  groups?: ArticleGroup | null;
   article_tags: ArticleTag[];
 }
 
@@ -58,6 +68,8 @@ export interface UserArticle {
   status: string;
   is_published: boolean;
   is_private: boolean;
+  group_id?: string | null;
+  groups?: ArticleGroup | null;
   like_count: number;
   article_tags: ArticleTag[];
 }
@@ -85,11 +97,15 @@ export interface IsOwnedResponse {
 
 export interface CreateArticleData {
   title: string;
-  content: string;
+  raw_content: string;
   summary: string;
-  isPublished: boolean;
-  isPrivate: boolean;
+  status: "draft" | "public";
+  is_published: boolean;
+  is_private: boolean;
+  group_id?: string | null;
   tagIds: string[];
+  notify_webhooks?: boolean;
+  webhook_ids?: string[];
 }
 
 export interface EditArticleData extends CreateArticleData {}

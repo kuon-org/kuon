@@ -14,6 +14,7 @@ import EditNoteIcon from "@mui/icons-material/EditNote";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import SettingsIcon from "@mui/icons-material/Settings";
 import InventoryIcon from "@mui/icons-material/Inventory";
+import GroupsIcon from "@mui/icons-material/Groups";
 import LanguageIcon from "@mui/icons-material/Language";
 import { useNavigate } from "@tanstack/react-router";
 import { ThemeSelect } from "../../common/ThemeSelect";
@@ -82,6 +83,10 @@ export const UserIcon = () => {
     navigate({ to: "/settings" });
     handleCloseMenu();
   };
+  const handleGroups = () => {
+    navigate({ to: "/groups" });
+    handleCloseMenu();
+  };
 
   const handleTrash = () => {
     navigate({ to: "/trash" });
@@ -115,6 +120,10 @@ export const UserIcon = () => {
             <MenuItem onClick={handleStocks}>
               <InventoryIcon sx={{ mr: 1 }} />
               {t("userMenu.stocks")}
+            </MenuItem>
+            <MenuItem onClick={handleGroups}>
+              <GroupsIcon sx={{ mr: 1 }} />
+              {t("userMenu.groups")}
             </MenuItem>
             <MenuItem onClick={() => setMenuView("theme")}>
               <ContrastIcon sx={{ mr: 1 }} />

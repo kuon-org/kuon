@@ -35,6 +35,10 @@ export class ArticlesController {
         return new AppError(404, "ARTICLE_PUBLISHED_VERSION_NOT_FOUND", "Published article version not found");
       case "TitleRequired":
         return new ValidationError({ title: ["ARTICLE_TITLE_REQUIRED"] });
+      case "InvalidGroupId":
+        return new ValidationError({ group_id: ["ARTICLE_GROUP_ID_INVALID"] });
+      case "GroupMembershipRequired":
+        return new AppError(403, "ARTICLE_GROUP_MEMBERSHIP_REQUIRED", "Group membership required");
       default:
         console.error(fallbackMessage, error);
         return new AppError(500, fallbackCode, fallbackMessage);
