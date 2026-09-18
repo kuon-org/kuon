@@ -1,6 +1,6 @@
 import apiClient from "./client";
 
-export type NotificationReason = "followed_tag" | "followed_user";
+export type NotificationReason = "followed_tag" | "followed_user" | "followed_group";
 
 export interface NotificationAction {
   type: "follow_back";
@@ -27,6 +27,7 @@ export interface NotificationPreferences {
   notifyOnCommentReply: boolean;
   notifyOnFollowedTagArticle: boolean;
   notifyOnFollowedUserArticle: boolean;
+  notifyOnFollowedGroupArticle: boolean;
   notifyOnUserFollow: boolean;
 }
 
