@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../prisma/client.js";
 
-export type NotificationReason = "followed_tag" | "followed_user";
+export type NotificationReason = "followed_tag" | "followed_user" | "followed_group";
 
 export type NotificationRecord = {
   id: string;
@@ -21,6 +21,7 @@ export type NotificationPreferences = {
   notifyOnCommentReply: boolean;
   notifyOnFollowedTagArticle: boolean;
   notifyOnFollowedUserArticle: boolean;
+  notifyOnFollowedGroupArticle: boolean;
   notifyOnUserFollow: boolean;
 };
 
@@ -40,7 +41,7 @@ const toNotificationRecord = (notification: {
   reasons: Array.isArray(notification.reasons)
     ? (notification.reasons.filter(
         (reason): reason is NotificationReason =>
-          reason === "followed_tag" || reason === "followed_user",
+          reason === "followed_tag" || reason === "followed_user" || reason === "followed_group",
       ) as NotificationReason[])
     : [],
 });
@@ -166,6 +167,7 @@ export class NotificationRepository {
         notify_on_comment_reply: true,
         notify_on_followed_tag_article: true,
         notify_on_followed_user_article: true,
+        notify_on_followed_group_article: true,
         notify_on_user_follow: true,
       },
     });
@@ -175,6 +177,7 @@ export class NotificationRepository {
       notifyOnCommentReply: row?.notify_on_comment_reply ?? true,
       notifyOnFollowedTagArticle: row?.notify_on_followed_tag_article ?? true,
       notifyOnFollowedUserArticle: row?.notify_on_followed_user_article ?? true,
+      notifyOnFollowedGroupArticle: row?.notify_on_followed_group_article ?? true,
       notifyOnUserFollow: row?.notify_on_user_follow ?? true,
     };
   }
@@ -188,6 +191,7 @@ export class NotificationRepository {
         notify_on_comment_reply: preferences.notifyOnCommentReply,
         notify_on_followed_tag_article: preferences.notifyOnFollowedTagArticle,
         notify_on_followed_user_article: preferences.notifyOnFollowedUserArticle,
+        notify_on_followed_group_article: preferences.notifyOnFollowedGroupArticle,
         notify_on_user_follow: preferences.notifyOnUserFollow,
       },
       update: {
@@ -195,6 +199,7 @@ export class NotificationRepository {
         notify_on_comment_reply: preferences.notifyOnCommentReply,
         notify_on_followed_tag_article: preferences.notifyOnFollowedTagArticle,
         notify_on_followed_user_article: preferences.notifyOnFollowedUserArticle,
+        notify_on_followed_group_article: preferences.notifyOnFollowedGroupArticle,
         notify_on_user_follow: preferences.notifyOnUserFollow,
         updated_at: new Date(),
       },

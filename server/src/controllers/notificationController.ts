@@ -38,6 +38,7 @@ export class NotificationController {
       notifyOnCommentReply,
       notifyOnFollowedTagArticle,
       notifyOnFollowedUserArticle,
+      notifyOnFollowedGroupArticle,
       notifyOnUserFollow,
     } = req.body;
     const fields: Record<string, string[]> = {};
@@ -46,6 +47,7 @@ export class NotificationController {
       notifyOnCommentReply,
       notifyOnFollowedTagArticle,
       notifyOnFollowedUserArticle,
+      notifyOnFollowedGroupArticle,
       notifyOnUserFollow,
     };
     for (const [key, value] of Object.entries(values)) {

@@ -72,6 +72,15 @@ CREATE TABLE IF NOT EXISTS user_groups (
 
 CREATE INDEX IF NOT EXISTS idx_user_groups_group_id ON user_groups(group_id);
 
+CREATE TABLE IF NOT EXISTS group_follows (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (user_id, group_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_group_follows_group_id ON group_follows(group_id);
+
 -- server_events
 CREATE TABLE IF NOT EXISTS knowledge.server_events (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
@@ -588,6 +597,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
     notify_on_comment_reply BOOLEAN DEFAULT TRUE,
     notify_on_followed_tag_article BOOLEAN DEFAULT TRUE,
     notify_on_followed_user_article BOOLEAN DEFAULT TRUE,
+    notify_on_followed_group_article BOOLEAN DEFAULT TRUE,
     notify_on_user_follow BOOLEAN DEFAULT TRUE,
     notify_via_email BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),

@@ -243,6 +243,8 @@ class NotificationService {
           is_private: true,
           users: { select: { display_name: true, username: true } },
           article_tags: { select: { tag_id: true } },
+          group_id: true,
+          groups: { select: { display_name: true } },
         },
       });
       if (
@@ -282,12 +284,28 @@ class NotificationService {
         reasonsByUser.set(follower.follower_id, reasons);
       }
 
+      if (article.group_id) {
+        const groupFollowers = await prisma.group_follows.findMany({
+          where: { group_id: article.group_id, user_id: { not: actorUserId } },
+          select: { user_id: true },
+        });
+        for (const follower of groupFollowers) {
+          const preferences = await this.getPreferences(follower.user_id);
+          if (!preferences.notifyOnFollowedGroupArticle) continue;
+          const reasons = reasonsByUser.get(follower.user_id) ?? new Set<NotificationReason>();
+          reasons.add("followed_group");
+          reasonsByUser.set(follower.user_id, reasons);
+        }
+      }
+
       const actorName = article.users?.display_name ?? article.users?.username ?? "ユーザー";
       await Promise.all(
         [...reasonsByUser.entries()].map(async ([userId, reasonSet]) => {
           await notificationRepository.upsertArticlePublished({
             user_id: userId,
-            title: `${actorName}さんが新しい記事を投稿しました`,
+            title: article.groups?.display_name
+              ? `${actorName}さんが${article.groups.display_name}から新しい記事を投稿しました`
+              : `${actorName}さんが新しい記事を投稿しました`,
             message: article.title,
             reference_id: article.id,
             reasons: [...reasonSet],

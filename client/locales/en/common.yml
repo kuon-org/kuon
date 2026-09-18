@@ -79,6 +79,7 @@ navigation:
   timeline: Timeline
   trend: Trending
   stocks: Stocks
+  groups: Groups
 
 search:
   placeholder: Search by keyword
