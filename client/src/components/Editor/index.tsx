@@ -102,7 +102,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
           return createdTag.id;
         }));
         const webhookPreference = getPublishWebhookPreference();
-        const shouldNotifyWebhooks = mode === "public" && isPublished && !isPrivate && webhookPreference.notify && webhookPreference.webhookIds.length > 0;
+        const shouldNotifyWebhooks = mode === "public" && visibility === "public" && webhookPreference.notify && webhookPreference.webhookIds.length > 0;
 
         await mutate(
           {
@@ -203,7 +203,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
               <FormControlLabel value="members" disabled={!groupId} control={<Radio />} label={t("editor.members", { ns: "articles", defaultValue: "グループメンバーのみ" })} />
             </RadioGroup>
           </FormControl>
-          <PublishWebhookSettings disabled={isPrivate || !isPublished} />
+          <PublishWebhookSettings disabled={visibility !== "public"} />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setIsDialogOpen(false)} color="inherit">{t("editor.back", { ns: "articles" })}</Button>
