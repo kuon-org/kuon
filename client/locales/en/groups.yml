@@ -1,0 +1,27 @@
+loading: Loading…
+notFound: Group not found
+list:
+  title: Groups
+  create: Create group
+  counts: "{{members}} members · {{articles}} articles"
+create:
+  title: Create group
+detail:
+  members: Members
+  articles: Group articles
+fields:
+  name: Internal name
+  displayName: Display name
+  slug: Slug
+  slugHint: 3–50 lowercase letters, numbers, and hyphens
+  description: Description
+  username: Username
+actions:
+  cancel: Cancel
+  create: Create
+  save: Save
+  add: Add
+  remove: Remove
+  delete: Delete group
+delete:
+  confirm: "Delete the group “{{name}}”? Its articles will remain as personal posts."

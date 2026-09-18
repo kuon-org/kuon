@@ -24,6 +24,7 @@ export class ArticlesRepository {
         select: {
           id: true,
           user_id: true,
+          group_id: true,
           title: true,
           summary: true,
           created_at: true,
@@ -41,6 +42,7 @@ export class ArticlesRepository {
               bio: true,
             },
           },
+          groups: { select: { id: true, slug: true, display_name: true } },
           article_tags: {
             select: {
               tags: {
@@ -114,6 +116,7 @@ export class ArticlesRepository {
       select: {
         id: true,
         user_id: true,
+        group_id: true,
         title: true,
         summary: true,
         created_at: true,
@@ -133,6 +136,7 @@ export class ArticlesRepository {
             bio: true,
           },
         },
+        groups: { select: { id: true, slug: true, display_name: true } },
         article_tags: {
           select: {
             tags: {
@@ -197,6 +201,7 @@ export class ArticlesRepository {
         select: {
           id: true,
           user_id: true,
+          group_id: true,
           title: true,
           summary: true,
           created_at: true,
@@ -212,6 +217,7 @@ export class ArticlesRepository {
               avatar_url: true,
             },
           },
+          groups: { select: { id: true, slug: true, display_name: true } },
           article_tags: {
             select: {
               tags: {
@@ -240,6 +246,7 @@ export class ArticlesRepository {
       select: {
         id: true,
         user_id: true,
+        group_id: true,
         title: true,
         raw_content: true,
         render_content: true,
@@ -253,6 +260,7 @@ export class ArticlesRepository {
         is_deleted: true,
         status: true,
         users: { select: { username: true } },
+        groups: { select: { id: true, slug: true, display_name: true } },
         article_tags: {
           select: {
             tags: {
@@ -288,6 +296,7 @@ export class ArticlesRepository {
         select: {
           id: true,
           user_id: true,
+          group_id: true,
           title: true,
           summary: true,
           created_at: true,
@@ -305,6 +314,7 @@ export class ArticlesRepository {
               bio: true,
             },
           },
+          groups: { select: { id: true, slug: true, display_name: true } },
           article_tags: {
             select: {
               tags: {
@@ -332,6 +342,7 @@ export class ArticlesRepository {
       select: {
         id: true,
         user_id: true,
+        group_id: true,
         title: true,
         raw_content: true,
         render_content: true,
@@ -345,6 +356,7 @@ export class ArticlesRepository {
         is_deleted: true,
         status: true,
         users: { select: { username: true } },
+        groups: { select: { id: true, slug: true, display_name: true } },
         article_tags: {
           select: {
             tags: {
@@ -369,6 +381,7 @@ export class ArticlesRepository {
         created_at: true,
         updated_at: true,
         user_id: true,
+        group_id: true,
         summary: true,
         is_published: true,
         is_private: true,
@@ -381,6 +394,7 @@ export class ArticlesRepository {
             bio: true,
           },
         },
+        groups: { select: { id: true, slug: true, display_name: true } },
         article_tags: {
           select: {
             tags: {
@@ -502,6 +516,7 @@ export class ArticlesRepository {
           select: {
             id: true,
             user_id: true,
+            group_id: true,
             title: true,
             summary: true,
             created_at: true,
@@ -521,6 +536,7 @@ export class ArticlesRepository {
                 bio: true,
               },
             },
+            groups: { select: { id: true, slug: true, display_name: true } },
             article_tags: {
               select: {
                 tags: {

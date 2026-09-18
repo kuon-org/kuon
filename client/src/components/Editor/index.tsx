@@ -17,6 +17,9 @@ import {
   FormLabel,
   RadioGroup,
   Radio,
+  MenuItem,
+  Select,
+  InputLabel,
 } from "@mui/material";
 import { type UseMutateAsyncFunction } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
@@ -31,6 +34,8 @@ import { ConfirmLeaveDialog } from "../common/ConfirmLeaveDialog";
 import { getPublishWebhookPreference, PublishWebhookSettings } from "./PublishWebhookSettings";
 import { useAuthUserQuery } from "../../hooks/auth";
 import { useMyPermissionsQuery } from "../../hooks/roles";
+import { useQuery } from "@tanstack/react-query";
+import { fetchMyGroups } from "../../api/groups";
 
 interface ArticleEditorProps {
   mutate: UseMutateAsyncFunction<any, any, any, unknown>;
@@ -50,6 +55,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
   const tagsQuery = useTagsQuery();
   const upsertTag = useUpsertTag();
   const tags = tagsQuery.data ?? [];
+  const myGroupsQuery = useQuery({ queryKey: ["groups", "me"], queryFn: fetchMyGroups, enabled: !!authUserQuery.data });
 
   const [title, setTitle] = useState(article?.title ?? "");
   const [summary, setSummary] = useState(article?.summary ?? "");
@@ -60,6 +66,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTagNames, setSelectedTagNames] = useState<string[]>(article?.article_tags?.map((item) => item.tags.name) ?? []);
   const [isPrivate, setIsPrivate] = useState(article?.is_private ?? false);
+  const [groupId, setGroupId] = useState(article?.group_id ?? "");
 
   const getVisibilityValue = () => {
     if (isPrivate) return "private";
@@ -102,6 +109,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
             status: mode,
             is_published: isPublished,
             is_private: isPrivate,
+            group_id: groupId || null,
             tagIds,
             notify_webhooks: shouldNotifyWebhooks,
             webhook_ids: shouldNotifyWebhooks ? webhookPreference.webhookIds : [],
@@ -126,7 +134,7 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
         error(t("UNKNOWN_ERROR", { ns: "errors" }));
       }
     },
-    [title, text, summary, isPublished, isPrivate, selectedTagNames, mutate, tags, canCreateTag, upsertTag, success, error, t],
+    [title, text, summary, isPublished, isPrivate, groupId, selectedTagNames, mutate, tags, canCreateTag, upsertTag, success, error, t],
   );
 
   const handleBack = () => {
@@ -175,6 +183,13 @@ export default function ArticleEditor({ mutate, isFetching, article }: ArticleEd
       <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>{t("editor.settingsTitle", { ns: "articles" })}</DialogTitle>
         <DialogContent dividers>
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel id="article-group-label">{t("editor.postAs", { ns: "articles" })}</InputLabel>
+            <Select labelId="article-group-label" label={t("editor.postAs", { ns: "articles" })} value={groupId} onChange={(event) => setGroupId(event.target.value)}>
+              <MenuItem value="">{t("editor.personal", { ns: "articles" })}</MenuItem>
+              {myGroupsQuery.data?.map(({ groups }) => <MenuItem key={groups.id} value={groups.id}>{groups.display_name}</MenuItem>)}
+            </Select>
+          </FormControl>
           <FormControl component="fieldset">
             <FormLabel component="legend" sx={{ mb: 1 }}>{t("editor.visibilityTitle", { ns: "articles" })}</FormLabel>
             <RadioGroup value={getVisibilityValue()} onChange={(e) => handleVisibilityChange(e.target.value)}>

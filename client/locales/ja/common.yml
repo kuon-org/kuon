@@ -64,6 +64,7 @@ language:
 userMenu:
   myPage: マイページ
   stocks: ストックリスト
+  groups: グループ
   theme: テーマカラー
   language: 言語
   drafts: 下書き一覧

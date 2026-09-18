@@ -66,6 +66,8 @@ editor:
   summary: 要約
   settingsTitle: 投稿設定
   visibilityTitle: 公開範囲の設定
+  postAs: 投稿元
+  personal: 個人として投稿
   public: "🌐 全体に公開（一覧に表示）"
   unlisted: "🔗 限定公開（URLを知っている人のみ）"
   private: "🔒 非公開（自分のみ閲覧）"
