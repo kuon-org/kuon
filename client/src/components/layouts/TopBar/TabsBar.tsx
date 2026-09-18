@@ -18,7 +18,7 @@ const TabsBar = () => {
     currentValue = "/trend";
   } else if (matchRoute({ to: "/timeline" })) {
     currentValue = "/timeline";
-  } else if (matchRoute({ to: "/groups" }) || matchRoute({ to: "/group/$slug", fuzzy: true })) {
+  } else if (matchRoute({ to: "/groups", fuzzy: true })) {
     currentValue = "/groups";
   } else if (
     matchRoute({ to: stockListRoute.fullPath }) ||

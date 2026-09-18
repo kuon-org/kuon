@@ -39,6 +39,8 @@ export class ArticlesController {
         return new ValidationError({ group_id: ["ARTICLE_GROUP_ID_INVALID"] });
       case "GroupMembershipRequired":
         return new AppError(403, "ARTICLE_GROUP_MEMBERSHIP_REQUIRED", "Group membership required");
+      case "GroupRequiredForMembersVisibility":
+        return new ValidationError({ group_id: ["ARTICLE_GROUP_REQUIRED_FOR_MEMBERS_VISIBILITY"] });
       default:
         console.error(fallbackMessage, error);
         return new AppError(500, fallbackCode, fallbackMessage);
@@ -145,11 +147,12 @@ export class ArticlesController {
     }
   };
 
-  getArticleLikeUserByArticleId = async (req: Request, res: Response) => {
+  getArticleLikeUserByArticleId = async (req: AuthRequest, res: Response) => {
     try {
       res.json(
         await this.articlesService.getArticleLikeUserWithCount(
           String(req.params.articleId),
+          req.user?.userId,
         ),
       );
     } catch (error) {

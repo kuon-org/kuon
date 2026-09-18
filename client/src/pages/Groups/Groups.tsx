@@ -32,7 +32,7 @@ export const Groups = () => {
       {canCreateGroup && <Button variant="contained" onClick={() => setOpen(true)}>{t("list.create")}</Button>}
     </Box>
     <Stack spacing={2}>
-      {groups.data?.map((group) => <Card key={group.id} variant="outlined" onClick={() => navigate({ to: "/group/$slug", params: { slug: group.slug }, search: { page: 1 } })} sx={{ cursor: "pointer", transition: "background-color 0.2s", "&:hover": { bgcolor: "action.hover" } }}>
+      {groups.data?.map((group) => <Card key={group.id} variant="outlined" onClick={() => navigate({ to: "/groups/$slug", params: { slug: group.slug }, search: { page: 1 } })} sx={{ cursor: "pointer", transition: "background-color 0.2s", "&:hover": { bgcolor: "action.hover" } }}>
         <CardContent>
           <Typography variant="h6">{group.display_name}</Typography>
           <Typography color="text.secondary">@{group.slug}</Typography>

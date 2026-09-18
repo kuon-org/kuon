@@ -64,6 +64,7 @@ model articles {
   stock_count                Int?              @default(0)
   comment_count              Int?              @default(0)
   group_id                   String?           @db.Uuid
+  visibility                 String            @default("unlisted") @db.VarChar(10)
   article_likes              article_likes[]
   article_pickups            article_pickups[]
   article_tags               article_tags[]
@@ -74,6 +75,7 @@ model articles {
   stock_items                stock_items[]
 
   @@index([group_id], map: "idx_articles_group_id")
+  @@index([visibility], map: "idx_articles_visibility")
   @@schema("knowledge")
 }
 
