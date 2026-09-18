@@ -58,13 +58,13 @@ model articles {
   status                     String?           @db.VarChar(10)
   is_published               Boolean?          @default(false)
   is_private                 Boolean?          @default(false)
-  visibility                 String            @default("unlisted") @db.VarChar(10)
   is_deleted                 Boolean?          @default(false)
   like_count                 Int?              @default(0)
   view_count                 Int?              @default(0)
   stock_count                Int?              @default(0)
   comment_count              Int?              @default(0)
   group_id                   String?           @db.Uuid
+  visibility                 String            @default("unlisted") @db.VarChar(10)
   article_likes              article_likes[]
   article_pickups            article_pickups[]
   article_tags               article_tags[]
