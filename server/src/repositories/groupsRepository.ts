@@ -66,7 +66,7 @@ export class GroupsRepository {
   }
 
   async findFeed(page: number, limit: number) {
-    const where = { group_id: { not: null }, is_published: true, is_deleted: false, is_private: false };
+    const where = { group_id: { not: null }, is_published: true, is_deleted: false, is_private: false, visibility: "public" };
     const [totalCount, articles] = await Promise.all([
       prisma.articles.count({ where }),
       prisma.articles.findMany({
@@ -128,8 +128,14 @@ export class GroupsRepository {
     });
   }
 
-  async findArticles(groupId: string, page: number, limit: number) {
-    const where = { group_id: groupId, is_published: true, is_deleted: false, is_private: false };
+  async findArticles(groupId: string, page: number, limit: number, isMember: boolean) {
+    const where = {
+      group_id: groupId,
+      is_published: true,
+      is_deleted: false,
+      is_private: false,
+      visibility: isMember ? { in: ["public", "members"] } : "public",
+    };
     const [totalCount, articles] = await Promise.all([
       prisma.articles.count({ where }),
       prisma.articles.findMany({
@@ -147,5 +153,17 @@ export class GroupsRepository {
       }),
     ]);
     return { articles, totalCount, totalPages: Math.ceil(totalCount / limit), currentPage: page, limit };
+  }
+
+  findFollowedByUser(userId: string) {
+    return prisma.group_follows.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: "asc" },
+      select: { groups: { include: { _count: { select: { user_groups: true, articles: true } } } } },
+    });
+  }
+
+  findJoinedByUser(userId: string) {
+    return this.findMine(userId);
   }
 }

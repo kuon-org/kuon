@@ -46,7 +46,14 @@ export class ArticlesService {
       return article;
     }
 
-    if (article.is_private) {
+    if (article.visibility === "members") {
+      if (!currentUserId || !article.group_id) throw new Error("Forbidden");
+      const membership = await prisma.user_groups.findUnique({
+        where: { user_id_group_id: { user_id: currentUserId, group_id: article.group_id } },
+        select: { user_id: true },
+      });
+      if (!membership) throw new Error("Forbidden");
+    } else if (article.visibility === "private" || article.is_private) {
       throw new Error("Forbidden");
     }
 
@@ -65,7 +72,8 @@ export class ArticlesService {
   ) {
     return await this.articlesRepo.findArticlesByUserId(userId, page, limit, q);
   }
-  async getArticleLikeUserWithCount(articleId: string) {
+  async getArticleLikeUserWithCount(articleId: string, currentUserId?: string) {
+    await this.getArticle(articleId, currentUserId);
     const likeRecords =
       await this.articlesRepo.getArticleLikeUserByArticleId(articleId);
     const likeUsers = likeRecords.map((record: any) => record.users);
@@ -80,11 +88,13 @@ export class ArticlesService {
   }
 
   async getIsLiked(articleId: string, userId: string) {
+    await this.getArticle(articleId, userId);
     const isLike = await this.articlesRepo.isLiked(articleId, userId);
     return !!isLike;
   }
 
   async toggleLike(articleId: string, userId: string) {
+    await this.getArticle(articleId, userId);
     const existing = await this.articlesRepo.isLiked(articleId, userId);
     if (existing) {
       await this.articlesRepo.removeLike(articleId, userId);
@@ -107,8 +117,11 @@ export class ArticlesService {
       notify_webhooks = false,
       webhook_ids = [],
       group_id = null,
+      visibility,
     } = payload;
     await this.validateGroupMembership(userId, group_id);
+    const resolvedVisibility = this.resolveVisibility(visibility, is_published, is_private);
+    this.validateVisibility(resolvedVisibility, group_id);
     const isPublicMode = status === "public";
 
     const article = await this.articlesRepo.createArticles(
@@ -123,6 +136,7 @@ export class ArticlesService {
         status: isPublicMode ? "public" : "draft",
         is_published: is_published ?? false,
         is_private: is_private ?? false,
+        visibility: resolvedVisibility,
       },
       tagIds,
     );
@@ -136,12 +150,12 @@ export class ArticlesService {
       selectedWebhookIds.length > 0 &&
       isPublicMode &&
       is_published === true &&
-      is_private !== true
+      resolvedVisibility === "public"
     ) {
       void this.dispatchArticlePublished(article.id, userId, selectedWebhookIds);
     }
 
-    if (isPublicMode && is_published === true && is_private !== true) {
+    if (isPublicMode && is_published === true && resolvedVisibility === "public") {
       void notificationService.articlePublished(article.id, userId);
     }
 
@@ -206,10 +220,15 @@ export class ArticlesService {
       notify_webhooks: _notifyWebhooks,
       webhook_ids: _webhookIds,
       group_id,
+      visibility,
       ...otherData
     } = payload;
 
     const updateData: any = { ...otherData, updated_at: new Date() };
+    const nextGroupId = Object.prototype.hasOwnProperty.call(payload, "group_id") ? (group_id ?? null) : existing.group_id;
+    const resolvedVisibility = this.resolveVisibility(visibility, is_published, is_private, existing.visibility);
+    this.validateVisibility(resolvedVisibility, nextGroupId);
+    updateData.visibility = resolvedVisibility;
 
     if (Object.prototype.hasOwnProperty.call(payload, "group_id")) {
       await this.validateGroupMembership(existing.user_id ?? userId, group_id);
@@ -235,20 +254,33 @@ export class ArticlesService {
     if (
       status === "public" &&
       is_published === true &&
-      is_private !== true
+      resolvedVisibility === "public"
     ) {
       void this.dispatchArticleUpdated(articleId);
 
       const wasPublic =
         existingPublicationState?.status === "public" &&
         existing.is_published === true &&
-        existing.is_private !== true;
+        existing.visibility === "public";
       if (!wasPublic) {
         void notificationService.articlePublished(articleId, userId);
       }
     }
 
     return updated;
+  }
+
+  private resolveVisibility(value: unknown, isPublished?: boolean, isPrivate?: boolean, fallback?: string) {
+    if (["public", "unlisted", "private", "members"].includes(String(value))) return String(value);
+    if (isPrivate === true) return "private";
+    if (isPublished === true) return "public";
+    return fallback ?? "unlisted";
+  }
+
+  private validateVisibility(visibility: string, groupId: unknown) {
+    if (visibility === "members" && (typeof groupId !== "string" || !asUUID(groupId))) {
+      throw new Error("GroupRequiredForMembersVisibility");
+    }
   }
 
   private async validateGroupMembership(userId: string, groupId: unknown) {

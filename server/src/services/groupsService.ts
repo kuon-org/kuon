@@ -30,9 +30,12 @@ export class GroupsService {
     const membership = currentUserId
       ? await this.repo.findMembership(currentUserId, group.id)
       : null;
-    const articles = await this.repo.findArticles(group.id, page, limit);
+    const articles = await this.repo.findArticles(group.id, page, limit, !!membership);
     return { ...group, current_user_role: membership?.role ?? null, ...articles };
   }
+
+  followedByUser(userId: string) { return this.repo.findFollowedByUser(userId); }
+  joinedByUser(userId: string) { return this.repo.findJoinedByUser(userId); }
 
   async create(userId: string, input: unknown) {
     const data = this.validateInput(input, true);

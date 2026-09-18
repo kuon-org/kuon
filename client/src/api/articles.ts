@@ -45,6 +45,7 @@ export interface Article {
   summary: string;
   is_published: boolean;
   is_private: boolean;
+  visibility: "public" | "unlisted" | "private" | "members";
   group_id?: string | null;
   users: {
     username: string;
@@ -68,6 +69,7 @@ export interface UserArticle {
   status: string;
   is_published: boolean;
   is_private: boolean;
+  visibility: "public" | "unlisted" | "private" | "members";
   group_id?: string | null;
   groups?: ArticleGroup | null;
   like_count: number;
@@ -102,6 +104,7 @@ export interface CreateArticleData {
   status: "draft" | "public";
   is_published: boolean;
   is_private: boolean;
+  visibility: "public" | "unlisted" | "private" | "members";
   group_id?: string | null;
   tagIds: string[];
   notify_webhooks?: boolean;

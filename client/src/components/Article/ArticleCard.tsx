@@ -106,7 +106,7 @@ export const ArticleCard = ({ article }: ArticleCardProps) => {
             </Link>
             {article.groups && <>
               <Typography component="span" variant="subtitle2" sx={{ mx: 0.5 }}>in</Typography>
-              <Link to="/group/$slug" params={{ slug: article.groups.slug }} search={{ page: 1 }} style={{ textDecoration: "none", color: "inherit" }} onClick={stopPropagation}>
+              <Link to="/groups/$slug" params={{ slug: article.groups.slug }} search={{ page: 1 }} style={{ textDecoration: "none", color: "inherit" }} onClick={stopPropagation}>
                 <Typography component="span" variant="subtitle2" sx={{ fontWeight: "bold", "&:hover": { textDecoration: "underline" } }}>{article.groups.display_name}</Typography>
               </Link>
             </>}

@@ -45,6 +45,14 @@ export class GroupsController {
     } catch (error) { throw this.map(error); }
   };
 
+  followedByUser = async (req: Request, res: Response) => {
+    try { res.json(await this.service.followedByUser(String(req.params.userId))); } catch (error) { throw this.map(error); }
+  };
+
+  joinedByUser = async (req: Request, res: Response) => {
+    try { res.json(await this.service.joinedByUser(String(req.params.userId))); } catch (error) { throw this.map(error); }
+  };
+
   isFollowing = async (req: AuthRequest, res: Response) => {
     const user = this.user(req);
     try { res.json(await this.service.isFollowing(String(req.params.slug), user.userId)); } catch (error) { throw this.map(error); }
