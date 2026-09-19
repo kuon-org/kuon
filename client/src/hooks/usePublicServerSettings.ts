@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchPublicServerSettings, type PublicServerSettings } from "../api/public-settings";
+import {
+  fetchPublicServerSettings,
+  type PublicServerSettings,
+} from "../api/public-settings";
 
 export type { PublicServerSettings } from "../api/public-settings";
 

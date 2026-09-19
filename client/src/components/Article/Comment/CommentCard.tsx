@@ -41,7 +41,10 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
   const authUserQuery = useAuthUserQuery();
   const user = authUserQuery.data;
   const softDelete = useSoftDeleteComment(comment.article_id);
-  const likeUsersQuery = useCommentLikeUsersQuery(comment.article_id, comment.id);
+  const likeUsersQuery = useCommentLikeUsersQuery(
+    comment.article_id,
+    comment.id,
+  );
   const isLikedQuery = useCommentIsLikedQuery(comment.article_id, comment.id);
   const toggleLike = useToggleCommentLike(comment.article_id, comment.id);
   const isReply = depth > 0;
@@ -50,7 +53,8 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
   const likeCount = likeUsersQuery.data?.like_count ?? comment.like_count;
   const isLiked = isLikedQuery.data?.isLike ?? false;
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) =>
+    setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
 
   const handleCopyLink = async () => {
@@ -66,7 +70,10 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
   };
 
   return (
-    <Box id={`comment-${comment.id}`} sx={{ ml: marginLeft, mb: 2, display: "flex", flexDirection: "column" }}>
+    <Box
+      id={`comment-${comment.id}`}
+      sx={{ ml: marginLeft, mb: 2, display: "flex", flexDirection: "column" }}
+    >
       <Box
         sx={{
           p: 2,
@@ -80,15 +87,25 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
         }}
       >
         <Box sx={{ position: "absolute", top: 8, right: 8 }}>
-          <IconButton size="small" onClick={handleMenuOpen}><MoreVertIcon fontSize="small" /></IconButton>
-          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+          <IconButton size="small" onClick={handleMenuOpen}>
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+          >
             <MenuItem onClick={handleCopyLink}>
-              <ListItemIcon><LinkIcon fontSize="small" /></ListItemIcon>
+              <ListItemIcon>
+                <LinkIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText primary={t("card.copyLink")} />
             </MenuItem>
             {isMyComment && !comment.is_deleted && (
               <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
-                <ListItemIcon><DeleteOutlineIcon fontSize="small" color="error" /></ListItemIcon>
+                <ListItemIcon>
+                  <DeleteOutlineIcon fontSize="small" color="error" />
+                </ListItemIcon>
                 <ListItemText primary={t("card.delete")} />
               </MenuItem>
             )}
@@ -101,11 +118,27 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
             params={{ username: comment.users.username }}
             style={{ textDecoration: "none", color: "inherit" }}
           >
-            <Stack direction="row" spacing={2} alignItems="center" mb={1} sx={{ pr: 4 }}>
-              <Avatar src={comment.users.avatar_url} alt={comment.users.username} sx={{ width: 32, height: 32 }} />
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+              mb={1}
+              sx={{ pr: 4 }}
+            >
+              <Avatar
+                src={comment.users.avatar_url}
+                alt={comment.users.username}
+                sx={{ width: 32, height: 32 }}
+              />
               <Box sx={{ display: "flex" }}>
-                <Typography variant="subtitle2">@{comment.users.username}</Typography>
-                <Typography variant="subtitle2" component="span" sx={{ ml: 1, fontWeight: "bold" }}>
+                <Typography variant="subtitle2">
+                  @{comment.users.username}
+                </Typography>
+                <Typography
+                  variant="subtitle2"
+                  component="span"
+                  sx={{ ml: 1, fontWeight: "bold" }}
+                >
                   ({comment.users.display_name})
                 </Typography>
               </Box>
@@ -113,9 +146,14 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
           </Link>
         )}
 
-        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", color: "text.primary", mb: 1, pr: 1 }}>
+        <Typography
+          variant="body2"
+          sx={{ whiteSpace: "pre-wrap", color: "text.primary", mb: 1, pr: 1 }}
+        >
           {comment.is_deleted ? (
-            <span style={{ fontStyle: "italic", color: "gray" }}>{t("card.deleted")}</span>
+            <span style={{ fontStyle: "italic", color: "gray" }}>
+              {t("card.deleted")}
+            </span>
           ) : (
             comment.body
           )}
@@ -124,12 +162,24 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
         <Stack direction="row" alignItems="center">
           {!comment.is_deleted && (
             <>
-              <LikeButton isLiked={isLiked} isLikePending={toggleLike.isPending} likeCount={likeCount} mutateLike={toggleLike.mutate} />
+              <LikeButton
+                isLiked={isLiked}
+                isLikePending={toggleLike.isPending}
+                likeCount={likeCount}
+                mutateLike={toggleLike.mutate}
+              />
               <Typography sx={{ fontSize: "0.9rem" }}>{likeCount}</Typography>
             </>
           )}
-          <Typography variant="caption" color="text.secondary" ml={comment.is_deleted ? 0 : 2}>
-            {new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(comment.created_at))}
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            ml={comment.is_deleted ? 0 : 2}
+          >
+            {new Intl.DateTimeFormat(i18n.language, {
+              dateStyle: "medium",
+              timeStyle: "short",
+            }).format(new Date(comment.created_at))}
           </Typography>
           {!comment.is_deleted && user && (
             <Button
@@ -150,14 +200,18 @@ export const CommentCard = ({ comment, depth = 0 }: CommentCardProps) => {
             articleId={comment.article_id}
             parentCommentId={comment.id}
             onSuccess={() => setIsReplyOpen(false)}
-            placeholder={t("editor.replyPlaceholder", { name: comment.users.display_name })}
+            placeholder={t("editor.replyPlaceholder", {
+              name: comment.users.display_name,
+            })}
           />
         </Box>
       )}
 
       {comment.replies && comment.replies.length > 0 && (
         <Box sx={{ mt: 1 }}>
-          {comment.replies.map((reply) => <CommentCard key={reply.id} comment={reply} depth={depth + 1} />)}
+          {comment.replies.map((reply) => (
+            <CommentCard key={reply.id} comment={reply} depth={depth + 1} />
+          ))}
         </Box>
       )}
     </Box>

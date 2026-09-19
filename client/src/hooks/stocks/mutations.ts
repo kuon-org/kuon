@@ -41,8 +41,13 @@ export const useUpdateStockList = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ listId, payload }: { listId: string; payload: StockListPayload }) =>
-      updateStockList(listId, payload),
+    mutationFn: ({
+      listId,
+      payload,
+    }: {
+      listId: string;
+      payload: StockListPayload;
+    }) => updateStockList(listId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: stockKeys.lists() });
       queryClient.invalidateQueries({ queryKey: stockKeys.details() });

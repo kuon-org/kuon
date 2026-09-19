@@ -166,7 +166,11 @@ export const OAuth2TemplateForm = ({
               sx={{ mt: 3, mb: 2 }}
               disabled={!canSubmit}
             >
-              {isSubmitting ? <CircularProgress size={24} /> : t("common.update")}
+              {isSubmitting ? (
+                <CircularProgress size={24} />
+              ) : (
+                t("common.update")
+              )}
             </Button>
           )}
         </form.Subscribe>

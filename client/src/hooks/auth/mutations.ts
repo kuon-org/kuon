@@ -39,9 +39,13 @@ export const useLogin = () => {
       }
     },
     onError: (apiError: ApiError) => {
-      setServerError(getApiErrorMessage(apiError, i18n.t("auth:login.failed"), {
-        EMAIL_VERIFICATION_REQUIRED: i18n.t("auth:login.emailVerificationRequired"),
-      }));
+      setServerError(
+        getApiErrorMessage(apiError, i18n.t("auth:login.failed"), {
+          EMAIL_VERIFICATION_REQUIRED: i18n.t(
+            "auth:login.emailVerificationRequired",
+          ),
+        }),
+      );
     },
   });
   return { mutation, serverError };
@@ -95,7 +99,9 @@ export const useVerifySetup2FA = () => {
       await queryClient.invalidateQueries({ queryKey: authKeys.user });
     },
     onError: (apiError: ApiError) => {
-      error(getApiErrorMessage(apiError, i18n.t("settings:twoFactor.verifyFailed")));
+      error(
+        getApiErrorMessage(apiError, i18n.t("settings:twoFactor.verifyFailed")),
+      );
     },
   });
 };
@@ -115,14 +121,20 @@ export const useUpdateUserInfo = () => {
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const mutation = useMutation({
-    mutationFn: ({ displayName, bio }: { displayName: string; bio: string }) => updateUserInfo(displayName, bio),
-    onMutate: () => { setServerError(null); setSuccessMessage(null); },
+    mutationFn: ({ displayName, bio }: { displayName: string; bio: string }) =>
+      updateUserInfo(displayName, bio),
+    onMutate: () => {
+      setServerError(null);
+      setSuccessMessage(null);
+    },
     onSuccess: async () => {
       setSuccessMessage(i18n.t("settings:profile.updated"));
       await queryClient.invalidateQueries({ queryKey: authKeys.user });
     },
     onError: (apiError: ApiError) => {
-      setServerError(getApiErrorMessage(apiError, i18n.t("settings:profile.updateFailed")));
+      setServerError(
+        getApiErrorMessage(apiError, i18n.t("settings:profile.updateFailed")),
+      );
     },
   });
   return { mutation, serverError, successMessage };
@@ -133,17 +145,29 @@ export const useUpdateUsername = () => {
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const mutation = useMutation({
-    mutationFn: ({ username }: { username: string }) => updateUsername(username),
-    onMutate: () => { setServerError(null); setSuccessMessage(null); },
+    mutationFn: ({ username }: { username: string }) =>
+      updateUsername(username),
+    onMutate: () => {
+      setServerError(null);
+      setSuccessMessage(null);
+    },
     onSuccess: async () => {
       setSuccessMessage(i18n.t("settings:account.usernameUpdated"));
       await queryClient.invalidateQueries({ queryKey: authKeys.user });
     },
     onError: (apiError: ApiError) => {
-      setServerError(getApiErrorMessage(apiError, i18n.t("settings:account.usernameUpdateFailed"), {
-        USERNAME_ALREADY_EXISTS: i18n.t("settings:account.usernameAlreadyExists"),
-        USERNAME_RESERVED: i18n.t("settings:account.usernameReserved"),
-      }));
+      setServerError(
+        getApiErrorMessage(
+          apiError,
+          i18n.t("settings:account.usernameUpdateFailed"),
+          {
+            USERNAME_ALREADY_EXISTS: i18n.t(
+              "settings:account.usernameAlreadyExists",
+            ),
+            USERNAME_RESERVED: i18n.t("settings:account.usernameReserved"),
+          },
+        ),
+      );
     },
   });
   return { mutation, serverError, successMessage };
@@ -173,7 +197,10 @@ export const useUnlinkIdentity = () => {
       await queryClient.invalidateQueries({ queryKey: authKeys.idpInfo });
       success(i18n.t("settings:account.unlinked"));
     },
-    onError: (apiError: ApiError) => error(getApiErrorMessage(apiError, i18n.t("settings:account.unlinkFailed"))),
+    onError: (apiError: ApiError) =>
+      error(
+        getApiErrorMessage(apiError, i18n.t("settings:account.unlinkFailed")),
+      ),
   });
 };
 
@@ -189,7 +216,9 @@ export const useUploadLocalAvatar = () => {
     },
     onError: (apiError: ApiError) => {
       console.error(apiError);
-      error(getApiErrorMessage(apiError, i18n.t("settings:avatarUpload.failed")));
+      error(
+        getApiErrorMessage(apiError, i18n.t("settings:avatarUpload.failed")),
+      );
     },
   });
 };
@@ -227,7 +256,10 @@ export const useCreateApiKey = () => {
       queryClient.invalidateQueries({ queryKey: authKeys.apiKeys });
       success(i18n.t("settings:apiKeys.created"));
     },
-    onError: (apiError: ApiError) => error(getApiErrorMessage(apiError, i18n.t("settings:apiKeys.createFailed"))),
+    onError: (apiError: ApiError) =>
+      error(
+        getApiErrorMessage(apiError, i18n.t("settings:apiKeys.createFailed")),
+      ),
   });
 };
 
@@ -240,6 +272,9 @@ export const useRevokeApiKey = () => {
       queryClient.invalidateQueries({ queryKey: authKeys.apiKeys });
       success(i18n.t("settings:apiKeys.revoked"));
     },
-    onError: (apiError: ApiError) => error(getApiErrorMessage(apiError, i18n.t("settings:apiKeys.revokeFailed"))),
+    onError: (apiError: ApiError) =>
+      error(
+        getApiErrorMessage(apiError, i18n.t("settings:apiKeys.revokeFailed")),
+      ),
   });
 };

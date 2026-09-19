@@ -7,7 +7,13 @@ import {
   ListSubheader,
   Typography,
 } from "@mui/material";
-import { Link, Navigate, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import {
+  Link,
+  Navigate,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import {
   adminBackupRestoreRoute,
@@ -47,12 +53,18 @@ export const AdminIndex = () => {
 
   const sections: AdminNavSection[] = [
     {
-      items: [{ path: adminTopRoute.to, label: t("dashboard.title"), visible: true }],
+      items: [
+        { path: adminTopRoute.to, label: t("dashboard.title"), visible: true },
+      ],
     },
     {
       label: t("serverSettings.title"),
       items: [
-        { path: adminServerSettingsRoute.to, label: t("serverSettings.title"), visible: can("system.settings.manage") },
+        {
+          path: adminServerSettingsRoute.to,
+          label: t("serverSettings.title"),
+          visible: can("system.settings.manage"),
+        },
       ],
     },
     {
@@ -68,29 +80,54 @@ export const AdminIndex = () => {
     {
       label: t("users.title"),
       items: [
-        { path: adminUserManagementRoute.to, label: t("users.title"), visible: can("user.read") },
-        { path: adminRoleManagementRoute.to, label: t("roles.title"), visible: can("role.read") },
+        {
+          path: adminUserManagementRoute.to,
+          label: t("users.title"),
+          visible: can("user.read"),
+        },
+        {
+          path: adminRoleManagementRoute.to,
+          label: t("roles.title"),
+          visible: can("role.read"),
+        },
       ],
     },
     {
       label: t("webhooks.title"),
       items: [
-        { path: adminWebhooksRoute.to, label: t("webhooks.title"), visible: can("system.webhook.manage") },
+        {
+          path: adminWebhooksRoute.to,
+          label: t("webhooks.title"),
+          visible: can("system.webhook.manage"),
+        },
       ],
     },
     {
       label: t("serverEvents.title"),
       items: [
-        { path: adminBackupRestoreRoute.to, label: t("backup.title"), visible: can("system.backup.execute") },
-        { path: adminServerEventsRoute.to, label: t("serverEvents.title"), visible: can("eventlog.read") },
+        {
+          path: adminBackupRestoreRoute.to,
+          label: t("backup.title"),
+          visible: can("system.backup.execute"),
+        },
+        {
+          path: adminServerEventsRoute.to,
+          label: t("serverEvents.title"),
+          visible: can("eventlog.read"),
+        },
       ],
     },
   ]
-    .map((section) => ({ ...section, items: section.items.filter((item) => item.visible) }))
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => item.visible),
+    }))
     .filter((section) => section.items.length > 0);
 
   const routes = sections.flatMap((section) => section.items);
-  const selectedLabel = routes.find((route) => route.path === location.pathname)?.label;
+  const selectedLabel = routes.find(
+    (route) => route.path === location.pathname,
+  )?.label;
   const hasAdminAccess = permissions.some(
     (permission) =>
       permission.startsWith("system.") ||
@@ -133,7 +170,10 @@ export const AdminIndex = () => {
         >
           <List disablePadding>
             {sections.map((section, sectionIndex) => (
-              <Box key={section.label ?? "top"} sx={{ mb: sectionIndex === sections.length - 1 ? 0 : 1.5 }}>
+              <Box
+                key={section.label ?? "top"}
+                sx={{ mb: sectionIndex === sections.length - 1 ? 0 : 1.5 }}
+              >
                 {section.label && (
                   <ListSubheader
                     disableSticky

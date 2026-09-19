@@ -13,7 +13,10 @@ export const FollowButton = ({
   username: string;
 }) => {
   const authUserQuery = useAuthUserQuery();
-  const isFollowingQuery = useUserFollowingStateQuery(followeeId, !!authUserQuery.data);
+  const isFollowingQuery = useUserFollowingStateQuery(
+    followeeId,
+    !!authUserQuery.data,
+  );
   const follow = useFollowUser(authUserQuery.data?.id);
   const { error } = useNotify();
   const { t } = useTranslation("common");
@@ -38,7 +41,9 @@ export const FollowButton = ({
         textTransform: "none",
       }}
     >
-      {isFollowingQuery.data?.isFollow ? t("follow.following") : t("follow.follow")}
+      {isFollowingQuery.data?.isFollow
+        ? t("follow.following")
+        : t("follow.follow")}
     </Button>
   );
 };

@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import type { UseKeyOptions } from "./types";
 /**
@@ -16,7 +15,7 @@ import type { UseKeyOptions } from "./types";
 export function useKey(
   keyOrKeys: string | string[],
   callback: () => void,
-  options: UseKeyOptions = {}
+  options: UseKeyOptions = {},
 ) {
   const {
     preventDefault = false,
@@ -46,5 +45,13 @@ export function useKey(
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [callback, keys.join(","), preventDefault, ctrlKey, shiftKey, altKey, once]);
+  }, [
+    callback,
+    keys.join(","),
+    preventDefault,
+    ctrlKey,
+    shiftKey,
+    altKey,
+    once,
+  ]);
 }

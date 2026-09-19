@@ -27,4 +27,8 @@ export const updateSmtpSettings = async (input: UpdateSmtpSettingsInput) =>
   (await apiClient.put<SmtpSettings>("/admin/settings/smtp", input)).data;
 
 export const sendSmtpTest = async (to: string) =>
-  (await apiClient.post<{ message: string }>("/admin/settings/smtp/test", { to })).data;
+  (
+    await apiClient.post<{ message: string }>("/admin/settings/smtp/test", {
+      to,
+    })
+  ).data;

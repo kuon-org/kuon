@@ -1,4 +1,8 @@
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   fetchArticle,
   fetchArticleIsLiked,
@@ -13,8 +17,13 @@ import {
 } from "../../api/articles";
 import { articleKeys } from "./keys";
 
-const getNextPageParam = (lastPage: { currentPage: number; totalPages: number }) =>
-  lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
+const getNextPageParam = (lastPage: {
+  currentPage: number;
+  totalPages: number;
+}) =>
+  lastPage.currentPage < lastPage.totalPages
+    ? lastPage.currentPage + 1
+    : undefined;
 
 export const useArticleQuery = (articleId?: string) =>
   useQuery({

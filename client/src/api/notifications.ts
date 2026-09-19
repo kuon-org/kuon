@@ -1,6 +1,7 @@
 import apiClient from "./client";
 
-export type NotificationReason = "followed_tag" | "followed_user" | "followed_group";
+export type NotificationReason =
+  "followed_tag" | "followed_user" | "followed_group";
 
 export interface NotificationAction {
   type: "follow_back";
@@ -32,19 +33,24 @@ export interface NotificationPreferences {
 }
 
 export const fetchNotifications = async () => {
-  const { data } = await apiClient.get<AppNotification[]>("/notifications?limit=10");
+  const { data } = await apiClient.get<AppNotification[]>(
+    "/notifications?limit=10",
+  );
   return data;
 };
 
 export const fetchUnreadCount = async () => {
-  const { data } = await apiClient.get<{ count: number }>("/notifications/unread-count");
+  const { data } = await apiClient.get<{ count: number }>(
+    "/notifications/unread-count",
+  );
   return data.count;
 };
 
 export const markNotificationRead = (notificationId: string) =>
   apiClient.patch(`/notifications/${notificationId}/read`);
 
-export const markAllNotificationsRead = () => apiClient.patch("/notifications/read-all");
+export const markAllNotificationsRead = () =>
+  apiClient.patch("/notifications/read-all");
 
 export const deleteNotification = (notificationId: string) =>
   apiClient.delete(`/notifications/${notificationId}`);
@@ -52,18 +58,28 @@ export const deleteNotification = (notificationId: string) =>
 export const deleteAllNotifications = () => apiClient.delete("/notifications");
 
 export const followBack = async (targetUserId: string) => {
-  const { data } = await apiClient.post<{ isFollow: boolean }>("/users/follow", {
-    followeeId: targetUserId,
-  });
+  const { data } = await apiClient.post<{ isFollow: boolean }>(
+    "/users/follow",
+    {
+      followeeId: targetUserId,
+    },
+  );
   return data;
 };
 
 export const fetchNotificationPreferences = async () => {
-  const { data } = await apiClient.get<NotificationPreferences>("/notifications/preferences");
+  const { data } = await apiClient.get<NotificationPreferences>(
+    "/notifications/preferences",
+  );
   return data;
 };
 
-export const updateNotificationPreferences = async (preferences: NotificationPreferences) => {
-  const { data } = await apiClient.put<NotificationPreferences>("/notifications/preferences", preferences);
+export const updateNotificationPreferences = async (
+  preferences: NotificationPreferences,
+) => {
+  const { data } = await apiClient.put<NotificationPreferences>(
+    "/notifications/preferences",
+    preferences,
+  );
   return data;
 };

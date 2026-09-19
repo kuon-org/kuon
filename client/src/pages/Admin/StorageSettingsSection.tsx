@@ -100,7 +100,9 @@ export const StorageSettingsSection = () => {
       setAzureAccountKey("");
       setMessage("Storage設定を保存しました");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Storage設定の保存に失敗しました");
+      setError(
+        e instanceof Error ? e.message : "Storage設定の保存に失敗しました",
+      );
     }
   };
 
@@ -118,15 +120,25 @@ export const StorageSettingsSection = () => {
         File Storage
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        アップロードファイルの保存先と配信方式を設定します。Providerを変更しても既存ファイルは自動移行されないため、移行時はBackup / Restoreを利用してください。
+        アップロードファイルの保存先と配信方式を設定します。Providerを変更しても既存ファイルは自動移行されないため、移行時はBackup
+        / Restoreを利用してください。
       </Typography>
       {readOnly && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Source: Environment — Storage関連の環境変数が設定されているため、この画面では読み取り専用です。
+          Source: Environment —
+          Storage関連の環境変数が設定されているため、この画面では読み取り専用です。
         </Alert>
       )}
-      {message && <Alert severity="success" sx={{ mb: 2 }}>{message}</Alert>}
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {message && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {message}
+        </Alert>
+      )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
       <Stack spacing={2}>
         <FormControl fullWidth disabled={readOnly}>
@@ -165,7 +177,9 @@ export const StorageSettingsSection = () => {
             label="Signed URL expires in (seconds)"
             type="number"
             value={signedUrlExpiresInSeconds}
-            onChange={(event) => setSignedUrlExpiresInSeconds(event.target.value)}
+            onChange={(event) =>
+              setSignedUrlExpiresInSeconds(event.target.value)
+            }
             inputProps={{ min: 1, max: 604800 }}
             disabled={readOnly}
             fullWidth
@@ -184,22 +198,61 @@ export const StorageSettingsSection = () => {
 
         {provider === "s3" && (
           <>
-            <TextField label="Endpoint" value={s3Endpoint} onChange={(event) => setS3Endpoint(event.target.value)} disabled={readOnly} helperText="AWS S3では空欄。R2 / MOS3 / その他S3互換Storageではendpointを指定します。" fullWidth />
-            <TextField label="Region" value={s3Region} onChange={(event) => setS3Region(event.target.value)} disabled={readOnly} fullWidth />
-            <TextField label="Bucket" value={s3Bucket} onChange={(event) => setS3Bucket(event.target.value)} disabled={readOnly} fullWidth />
-            <TextField label="Access Key ID" value={s3AccessKeyId} onChange={(event) => setS3AccessKeyId(event.target.value)} disabled={readOnly} fullWidth />
+            <TextField
+              label="Endpoint"
+              value={s3Endpoint}
+              onChange={(event) => setS3Endpoint(event.target.value)}
+              disabled={readOnly}
+              helperText="AWS S3では空欄。R2 / MOS3 / その他S3互換Storageではendpointを指定します。"
+              fullWidth
+            />
+            <TextField
+              label="Region"
+              value={s3Region}
+              onChange={(event) => setS3Region(event.target.value)}
+              disabled={readOnly}
+              fullWidth
+            />
+            <TextField
+              label="Bucket"
+              value={s3Bucket}
+              onChange={(event) => setS3Bucket(event.target.value)}
+              disabled={readOnly}
+              fullWidth
+            />
+            <TextField
+              label="Access Key ID"
+              value={s3AccessKeyId}
+              onChange={(event) => setS3AccessKeyId(event.target.value)}
+              disabled={readOnly}
+              fullWidth
+            />
             <TextField
               label="Secret Access Key"
               type="password"
               value={s3SecretAccessKey}
               onChange={(event) => setS3SecretAccessKey(event.target.value)}
-              placeholder={settings?.s3.secretAccessKeyConfigured ? "設定済み" : ""}
-              helperText={settings?.s3.secretAccessKeyConfigured ? "空欄のまま保存すると現在のSecretを維持します。" : undefined}
+              placeholder={
+                settings?.s3.secretAccessKeyConfigured ? "設定済み" : ""
+              }
+              helperText={
+                settings?.s3.secretAccessKeyConfigured
+                  ? "空欄のまま保存すると現在のSecretを維持します。"
+                  : undefined
+              }
               disabled={readOnly}
               fullWidth
             />
             <FormControlLabel
-              control={<Switch checked={s3ForcePathStyle} onChange={(event) => setS3ForcePathStyle(event.target.checked)} disabled={readOnly} />}
+              control={
+                <Switch
+                  checked={s3ForcePathStyle}
+                  onChange={(event) =>
+                    setS3ForcePathStyle(event.target.checked)
+                  }
+                  disabled={readOnly}
+                />
+              }
               label="Force path-style access"
             />
           </>
@@ -207,19 +260,44 @@ export const StorageSettingsSection = () => {
 
         {provider === "azure" && (
           <>
-            <TextField label="Account Name" value={azureAccountName} onChange={(event) => setAzureAccountName(event.target.value)} disabled={readOnly} fullWidth />
+            <TextField
+              label="Account Name"
+              value={azureAccountName}
+              onChange={(event) => setAzureAccountName(event.target.value)}
+              disabled={readOnly}
+              fullWidth
+            />
             <TextField
               label="Account Key"
               type="password"
               value={azureAccountKey}
               onChange={(event) => setAzureAccountKey(event.target.value)}
-              placeholder={settings?.azure.accountKeyConfigured ? "設定済み" : ""}
-              helperText={settings?.azure.accountKeyConfigured ? "空欄のまま保存すると現在のAccount Keyを維持します。" : undefined}
+              placeholder={
+                settings?.azure.accountKeyConfigured ? "設定済み" : ""
+              }
+              helperText={
+                settings?.azure.accountKeyConfigured
+                  ? "空欄のまま保存すると現在のAccount Keyを維持します。"
+                  : undefined
+              }
               disabled={readOnly}
               fullWidth
             />
-            <TextField label="Container" value={azureContainer} onChange={(event) => setAzureContainer(event.target.value)} disabled={readOnly} fullWidth />
-            <TextField label="Endpoint" value={azureEndpoint} onChange={(event) => setAzureEndpoint(event.target.value)} disabled={readOnly} helperText="Azure Blob Storageでは空欄。Azurite等を利用する場合に指定します。" fullWidth />
+            <TextField
+              label="Container"
+              value={azureContainer}
+              onChange={(event) => setAzureContainer(event.target.value)}
+              disabled={readOnly}
+              fullWidth
+            />
+            <TextField
+              label="Endpoint"
+              value={azureEndpoint}
+              onChange={(event) => setAzureEndpoint(event.target.value)}
+              disabled={readOnly}
+              helperText="Azure Blob Storageでは空欄。Azurite等を利用する場合に指定します。"
+              fullWidth
+            />
           </>
         )}
 

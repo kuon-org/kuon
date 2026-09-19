@@ -7,7 +7,11 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import { type Tag, useTagFollowStateQuery, useToggleTagFollow } from "../../hooks/tags";
+import {
+  type Tag,
+  useTagFollowStateQuery,
+  useToggleTagFollow,
+} from "../../hooks/tags";
 import { useAuthUserQuery } from "../../hooks/auth";
 import { useMyPermissionsQuery } from "../../hooks/roles";
 import { MoreHButton } from "../common/MoreHbutton";
@@ -41,33 +45,79 @@ export const TagDetailCard = ({ tag, slug }: TagDetailCardProps) => {
   };
 
   return (
-    <Paper sx={{ width: { xs: "100%", sm: "360px" }, maxWidth: { xs: "100%", sm: "360px" }, minHeight: "400px", display: "flex", flexDirection: "column" }}>
+    <Paper
+      sx={{
+        width: { xs: "100%", sm: "360px" },
+        maxWidth: { xs: "100%", sm: "360px" },
+        minHeight: "400px",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {canManageTag && (
         <Box sx={{ display: "flex", justifyContent: "end" }}>
-          <MoreHButton anchorOrigin={{ vertical: "bottom", horizontal: "right" }} transformOrigin={{ vertical: "top", horizontal: "right" }}>
+          <MoreHButton
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+          >
             <MenuItem onClick={handleEdit}>{t("detail.edit")}</MenuItem>
           </MoreHButton>
         </Box>
       )}
-      <Box sx={{ mx: "auto", mt: 6, display: "flex", flexDirection: "column", textAlign: "center" }}>
-        <Avatar src={tag.avatar_url} sx={{ mx: "auto", width: "56px", height: "56px", bgcolor: "grey.200" }} />
-        <Box sx={{ mt: 2 }}><Typography variant="h5">{tag.name}</Typography></Box>
+      <Box
+        sx={{
+          mx: "auto",
+          mt: 6,
+          display: "flex",
+          flexDirection: "column",
+          textAlign: "center",
+        }}
+      >
+        <Avatar
+          src={tag.avatar_url}
+          sx={{
+            mx: "auto",
+            width: "56px",
+            height: "56px",
+            bgcolor: "grey.200",
+          }}
+        />
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="h5">{tag.name}</Typography>
+        </Box>
       </Box>
-      <Box sx={{ mt: 3, mx: "auto", display: "flex", flexDirection: "row", gap: 2 }}>
-        <Box sx={{ display: "flex", flexDirection: "column", textAlign: "center" }}>
+      <Box
+        sx={{
+          mt: 3,
+          mx: "auto",
+          display: "flex",
+          flexDirection: "row",
+          gap: 2,
+        }}
+      >
+        <Box
+          sx={{ display: "flex", flexDirection: "column", textAlign: "center" }}
+        >
           <Typography variant="caption">{tag.articleCount}</Typography>
           <Typography variant="caption">{t("detail.articles")}</Typography>
         </Box>
         <Divider orientation="vertical" />
-        <Box sx={{ display: "flex", flexDirection: "column", textAlign: "center" }}>
+        <Box
+          sx={{ display: "flex", flexDirection: "column", textAlign: "center" }}
+        >
           <Typography variant="caption">{tag.followCount}</Typography>
           <Typography variant="caption">{t("detail.followers")}</Typography>
         </Box>
       </Box>
       {user && (
         <Box sx={{ display: "flex", mt: 4, mx: "auto" }}>
-          <Button variant={followState.data?.isFollow ? "outlined" : "contained"} onClick={() => toggleFollow.mutate(slug)}>
-            {followState.data?.isFollow ? t("detail.following") : t("detail.follow")}
+          <Button
+            variant={followState.data?.isFollow ? "outlined" : "contained"}
+            onClick={() => toggleFollow.mutate(slug)}
+          >
+            {followState.data?.isFollow
+              ? t("detail.following")
+              : t("detail.follow")}
           </Button>
         </Box>
       )}

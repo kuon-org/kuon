@@ -122,12 +122,21 @@ export interface PaginatedArticles {
 }
 
 export const createArticle = async (payload: CreateArticleData) => {
-  const { data } = await apiClient.post<{ id: string }>("/articles/create", payload);
+  const { data } = await apiClient.post<{ id: string }>(
+    "/articles/create",
+    payload,
+  );
   return data;
 };
 
-export const editArticle = async (articleId: string, payload: EditArticleData) => {
-  const { data } = await apiClient.patch(`/articles/${articleId}/edit`, payload);
+export const editArticle = async (
+  articleId: string,
+  payload: EditArticleData,
+) => {
+  const { data } = await apiClient.patch(
+    `/articles/${articleId}/edit`,
+    payload,
+  );
   return data;
 };
 
@@ -137,37 +146,52 @@ export const fetchArticle = async (articleId: string) => {
 };
 
 export const fetchArticles = async (page: number) => {
-  const { data } = await apiClient.get<PaginatedArticles>("/articles", { params: { page, limit: 10 } });
+  const { data } = await apiClient.get<PaginatedArticles>("/articles", {
+    params: { page, limit: 10 },
+  });
   return data;
 };
 
 export const fetchRecommendedArticles = async (page: number) => {
-  const { data } = await apiClient.get<PaginatedArticles>("/articles/recommends", { params: { page, limit: 10 } });
+  const { data } = await apiClient.get<PaginatedArticles>(
+    "/articles/recommends",
+    { params: { page, limit: 10 } },
+  );
   return data;
 };
 
 export const fetchTrendArticles = async (page: number) => {
-  const { data } = await apiClient.get<PaginatedArticles>("/articles/trends", { params: { page, limit: 10 } });
+  const { data } = await apiClient.get<PaginatedArticles>("/articles/trends", {
+    params: { page, limit: 10 },
+  });
   return data;
 };
 
 export const fetchArticleOwnership = async (articleId: string) => {
-  const { data } = await apiClient.get<IsOwnedResponse>(`/articles/${articleId}/isowned`);
+  const { data } = await apiClient.get<IsOwnedResponse>(
+    `/articles/${articleId}/isowned`,
+  );
   return data;
 };
 
 export const fetchArticleLikeUsers = async (articleId: string) => {
-  const { data } = await apiClient.get<LikeUserResponse>(`/articles/${articleId}/likes`);
+  const { data } = await apiClient.get<LikeUserResponse>(
+    `/articles/${articleId}/likes`,
+  );
   return data;
 };
 
 export const fetchArticleIsLiked = async (articleId: string) => {
-  const { data } = await apiClient.get<IsLikedResponse>(`/articles/${articleId}/islike`);
+  const { data } = await apiClient.get<IsLikedResponse>(
+    `/articles/${articleId}/islike`,
+  );
   return data;
 };
 
 export const toggleArticleLike = async (articleId: string) => {
-  const { data } = await apiClient.post<{ isLike: boolean; message: string }>(`/articles/${articleId}/like`);
+  const { data } = await apiClient.post<{ isLike: boolean; message: string }>(
+    `/articles/${articleId}/like`,
+  );
   return data;
 };
 
@@ -179,9 +203,13 @@ export const fetchUserArticles = async () => {
 export const uploadArticleImage = async (file: File) => {
   const formData = new FormData();
   formData.append("image", file);
-  const { data } = await apiClient.post<{ url: string }>("/articles/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await apiClient.post<{ url: string }>(
+    "/articles/upload",
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
   return data;
 };
 

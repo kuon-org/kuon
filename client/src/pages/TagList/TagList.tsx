@@ -40,22 +40,66 @@ const TagList = () => {
 
   return (
     <Paper sx={{ mt: 2, mx: "auto", width: { md: 1100 }, p: 4 }}>
-      <Typography variant="h5" fontWeight="bold" mb={4}>{t("list.title")}</Typography>
+      <Typography variant="h5" fontWeight="bold" mb={4}>
+        {t("list.title")}
+      </Typography>
       <Grid container spacing={1}>
         {tags.map((tag: TagListItem) => (
           <Grid size={{ xs: 6, sm: 6, md: 3 }} key={tag.id}>
             <Card
               variant="outlined"
               onClick={() => handleNavigate(tag.slug)}
-              sx={{ height: 30, width: "fit-content", display: "flex", alignItems: "center", px: 1, borderRadius: "6px", backgroundColor: "background.paper", transition: "0.2s", cursor: "pointer", "&:hover": { boxShadow: 1, borderColor: "primary.light", backgroundColor: "rgba(0, 0, 0, 0.02)" } }}
+              sx={{
+                height: 30,
+                width: "fit-content",
+                display: "flex",
+                alignItems: "center",
+                px: 1,
+                borderRadius: "6px",
+                backgroundColor: "background.paper",
+                transition: "0.2s",
+                cursor: "pointer",
+                "&:hover": {
+                  boxShadow: 1,
+                  borderColor: "primary.light",
+                  backgroundColor: "rgba(0, 0, 0, 0.02)",
+                },
+              }}
             >
-              <Avatar src={tag.avatar_url || undefined} sx={{ width: 20, height: 20, mr: 1, fontSize: "0.65rem", bgcolor: "white", color: "text.primary" }}>
+              <Avatar
+                src={tag.avatar_url || undefined}
+                sx={{
+                  width: 20,
+                  height: 20,
+                  mr: 1,
+                  fontSize: "0.65rem",
+                  bgcolor: "white",
+                  color: "text.primary",
+                }}
+              >
                 {tag.name.substring(0, 1)}
               </Avatar>
-              <Typography variant="body2" sx={{ fontSize: "0.85rem", fontWeight: 500, flexGrow: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
+                  flexGrow: 1,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {tag.name}
               </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", ml: 0.5, minWidth: "fit-content" }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.secondary",
+                  ml: 0.5,
+                  minWidth: "fit-content",
+                }}
+              >
                 {t("list.articleCount", { count: tag.articleCount })}
               </Typography>
             </Card>

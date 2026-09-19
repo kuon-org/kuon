@@ -10,4 +10,16 @@ import tags from "../../../locales/ja/tags.yml";
 import users from "../../../locales/ja/users.yml";
 import groups from "../../../locales/ja/groups.yml";
 
-export default { admin, articles, auth, comments, common, errors, groups, notifications, settings, tags, users };
+export default {
+  admin,
+  articles,
+  auth,
+  comments,
+  common,
+  errors,
+  groups,
+  notifications,
+  settings,
+  tags,
+  users,
+};

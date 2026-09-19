@@ -1,5 +1,5 @@
 import { Chip } from "@mui/material";
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 
 interface CommentJumpProps {
   articleId: string;
@@ -18,8 +18,10 @@ export const CommentJump = ({ articleId, commentCount }: CommentJumpProps) => {
 
   return (
     <Chip
-      icon={<ChatBubbleOutlineIcon sx={{ fontSize: '1rem' }} />}
-      label={commentCount !== undefined ? `コメント ${commentCount}` : "コメント"}
+      icon={<ChatBubbleOutlineIcon sx={{ fontSize: "1rem" }} />}
+      label={
+        commentCount !== undefined ? `コメント ${commentCount}` : "コメント"
+      }
       onClick={handleClick}
       variant="outlined"
       clickable

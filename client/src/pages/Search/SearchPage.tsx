@@ -35,9 +35,7 @@ export const SearchPage = () => {
       <Divider sx={{ mb: 4 }} />
 
       <Typography variant="h5" sx={{ mb: 3, fontWeight: "bold" }}>
-        {q
-          ? t("search.results", { query: q })
-          : t("search.enterKeyword")}
+        {q ? t("search.results", { query: q }) : t("search.enterKeyword")}
       </Typography>
 
       {isLoading ? (

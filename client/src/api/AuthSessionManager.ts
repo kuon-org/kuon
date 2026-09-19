@@ -28,9 +28,7 @@ class AuthSessionManager {
     };
   }
 
-  shouldRefreshAccessToken(
-    bufferMs = ACCESS_TOKEN_EXPIRY_BUFFER_MS,
-  ): boolean {
+  shouldRefreshAccessToken(bufferMs = ACCESS_TOKEN_EXPIRY_BUFFER_MS): boolean {
     if (!this.metadata) return false;
     if (this.isRefreshTokenExpired()) return false;
 

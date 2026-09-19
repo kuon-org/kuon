@@ -8,7 +8,7 @@
 
 /* marker文字は見えなくする（でも innerText には残る） */
 .drawio-token.collapsed {
-  font-size: 0;        /* ★これが肝。markerだけ不可視化 */
+  font-size: 0; /* ★これが肝。markerだけ不可視化 */
   cursor: pointer;
   user-select: text;
   position: relative;
@@ -17,9 +17,9 @@
 /* 見せたいのはこっち（固定で ```drawio ...```） */
 .drawio-token.collapsed::before {
   content: "```drawio ...```";
-  font-size: 14px;     /* ここで復活 */
+  font-size: 14px; /* ここで復活 */
   line-height: 1.5;
-  color: inherit;      /* ちゃんとテーマ色に追従 */
+  color: inherit; /* ちゃんとテーマ色に追従 */
   white-space: pre;
 }
 
@@ -46,7 +46,7 @@
   /* プレーンテキストのみ許可 */
   -webkit-user-modify: read-write-plaintext-only;
   -moz-user-modify: read-write; /* Firefox用（完全ではないが編集可能にする） */
-  
+
   /* 基本レイアウト */
   width: 100%;
   height: 100%;
@@ -55,9 +55,9 @@
   outline: none;
   white-space: pre-wrap;
   word-break: break-word;
-  
+
   /* デザイン */
-  font-family: 'Roboto Mono', 'Fira Code', monospace;
+  font-family: "Roboto Mono", "Fira Code", monospace;
   font-size: 14px;
   line-height: 1.5;
   background-color: transparent;

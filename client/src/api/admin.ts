@@ -81,9 +81,15 @@ export const fetchIdpList = async () => {
   return data;
 };
 
-export const updateIdpConfig = async (values: { provider_name: string; [key: string]: unknown }) => {
+export const updateIdpConfig = async (values: {
+  provider_name: string;
+  [key: string]: unknown;
+}) => {
   const { provider_name, ...rest } = values;
-  const { data } = await apiClient.post("/admin/idp_settings", { provider_name, ...rest });
+  const { data } = await apiClient.post("/admin/idp_settings", {
+    provider_name,
+    ...rest,
+  });
   return data;
 };
 
@@ -98,12 +104,16 @@ export const toggleIdpActive = (providerName: string) =>
   apiClient.post(`/admin/idp_settings/toggle_active/${providerName}`);
 
 export const testIdpConnectivity = async (providerName: string) => {
-  const { data } = await apiClient.post(`/admin/idp_settings/${providerName}/test`);
+  const { data } = await apiClient.post(
+    `/admin/idp_settings/${providerName}/test`,
+  );
   return data as IdpConnectivityResult;
 };
 
 export const cleanupIdpRegistry = async (providerName: string) => {
-  const { data } = await apiClient.delete(`/admin/idp_registry/${providerName}`);
+  const { data } = await apiClient.delete(
+    `/admin/idp_registry/${providerName}`,
+  );
   return data;
 };
 
@@ -114,11 +124,16 @@ export const deleteIdpConfig = (providerName: string) =>
   apiClient.delete(`/admin/idp_settings/${providerName}`);
 
 export const fetchServerSettings = async () => {
-  const { data } = await apiClient.get<ServerSetting[]>("/admin/settings/server");
+  const { data } = await apiClient.get<ServerSetting[]>(
+    "/admin/settings/server",
+  );
   return data;
 };
 
-export const updateServerSetting = async (setting: { key: string; value: string }) => {
+export const updateServerSetting = async (setting: {
+  key: string;
+  value: string;
+}) => {
   const { data } = await apiClient.put("/admin/settings/server", setting);
   return data as ServerSetting;
 };

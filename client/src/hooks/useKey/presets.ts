@@ -26,15 +26,19 @@ export const useEnterShortcut = (callback: () => void) => {
 };
 
 /**
- * Ctrl キー + ○キーで処理 
+ * Ctrl キー + ○キーで処理
  */
 export const useWithCtrlShortcut = (key: string, callback: () => void) => {
-    useKey(key, callback, { preventDefault: true, ctrlKey: true })
+  useKey(key, callback, { preventDefault: true, ctrlKey: true });
 };
 
 /**
  * 複数キー同時監視用（例: Enter または Escape）
  */
-export const useMultiKeyShortcut = (keys: string[], callback: () => void, options?: UseKeyOptions) => {
+export const useMultiKeyShortcut = (
+  keys: string[],
+  callback: () => void,
+  options?: UseKeyOptions,
+) => {
   useKey(keys, callback, options);
 };

@@ -51,10 +51,7 @@ export const baseRootRoute = createRootRouteWithContext<MyRouterContext>()({
       throw redirect({ to: "/maintenance" });
     }
 
-    if (
-      !context.maintenanceMode &&
-      location.pathname === "/maintenance"
-    ) {
+    if (!context.maintenanceMode && location.pathname === "/maintenance") {
       throw redirect({ to: "/" });
     }
 

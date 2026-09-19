@@ -9,7 +9,11 @@ interface ShareButtonProps {
   summary?: string;
 }
 
-export const ShareButton = ({ articleId, title, summary }: ShareButtonProps) => {
+export const ShareButton = ({
+  articleId,
+  title,
+  summary,
+}: ShareButtonProps) => {
   const { t } = useTranslation("articles");
   const { success, error } = useNotify();
 
@@ -26,7 +30,10 @@ export const ShareButton = ({ articleId, title, summary }: ShareButtonProps) => 
         await navigator.share(shareData);
         return;
       } catch (shareError) {
-        if (shareError instanceof DOMException && shareError.name === "AbortError") {
+        if (
+          shareError instanceof DOMException &&
+          shareError.name === "AbortError"
+        ) {
           return;
         }
         error(t("share.failed"));
@@ -44,7 +51,11 @@ export const ShareButton = ({ articleId, title, summary }: ShareButtonProps) => 
 
   return (
     <Tooltip title={t("share.tooltip")}>
-      <IconButton aria-label={t("share.ariaLabel")} onClick={handleShare} sx={{ color: "text.secondary" }}>
+      <IconButton
+        aria-label={t("share.ariaLabel")}
+        onClick={handleShare}
+        sx={{ color: "text.secondary" }}
+      >
         <ShareIcon />
       </IconButton>
     </Tooltip>

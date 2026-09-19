@@ -38,7 +38,14 @@ const Articles = ({ article, isLoading }: ArticlesProps) => {
           bgcolor: "background.paper",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", borderRadius: 2, gap: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            borderRadius: 2,
+            gap: 2,
+          }}
+        >
           <Link
             to="/$username"
             params={{ username: article.users.username }}
@@ -68,9 +75,19 @@ const Articles = ({ article, isLoading }: ArticlesProps) => {
                 </Typography>
               </Box>
             </Link>
-            {article.groups && <Typography component="span" variant="subtitle2">
-              {" in "}<Link to="/groups/$slug" params={{ slug: article.groups.slug }} search={{ page: 1 }} style={{ color: "inherit", fontWeight: "bold" }}>{article.groups.display_name}</Link>
-            </Typography>}
+            {article.groups && (
+              <Typography component="span" variant="subtitle2">
+                {" in "}
+                <Link
+                  to="/groups/$slug"
+                  params={{ slug: article.groups.slug }}
+                  search={{ page: 1 }}
+                  style={{ color: "inherit", fontWeight: "bold" }}
+                >
+                  {article.groups.display_name}
+                </Link>
+              </Typography>
+            )}
           </Box>
         </Box>
 
@@ -92,13 +109,18 @@ const Articles = ({ article, isLoading }: ArticlesProps) => {
               verticalAlign: "center",
             }}
           >
-            {article.updated_at && article.updated_at !== article.created_at && (
-              <Typography variant="subtitle2" color="text.secondary">
-                {t("dates.updatedAt", { date: formatDateTime(article.updated_at) })}
-              </Typography>
-            )}
+            {article.updated_at &&
+              article.updated_at !== article.created_at && (
+                <Typography variant="subtitle2" color="text.secondary">
+                  {t("dates.updatedAt", {
+                    date: formatDateTime(article.updated_at),
+                  })}
+                </Typography>
+              )}
             <Typography variant="subtitle2" color="text.secondary">
-              {t("dates.createdAt", { date: formatDateTime(article.created_at) })}
+              {t("dates.createdAt", {
+                date: formatDateTime(article.created_at),
+              })}
             </Typography>
           </Box>
         </Box>
