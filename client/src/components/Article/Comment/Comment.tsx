@@ -1,4 +1,10 @@
-import { Box, Divider, Typography, Stack, CircularProgress } from "@mui/material";
+import {
+  Box,
+  Divider,
+  Typography,
+  Stack,
+  CircularProgress,
+} from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { CommentCard } from "./CommentCard";
 import { useCommentsQuery } from "../../../hooks/comments";
@@ -38,11 +44,15 @@ export const Comment = ({ articleId }: CommentProps) => {
         gap: 2,
       }}
     >
-      <Typography variant="h6">{t("list.title", { count: comments.length })}</Typography>
+      <Typography variant="h6">
+        {t("list.title", { count: comments.length })}
+      </Typography>
       <Divider />
       <Stack spacing={1} sx={{ mt: 2 }}>
         {comments.length > 0 ? (
-          comments.map((comment) => <CommentCard key={comment.id} comment={comment} />)
+          comments.map((comment) => (
+            <CommentCard key={comment.id} comment={comment} />
+          ))
         ) : (
           <Typography variant="body2" color="text.secondary">
             {t("list.empty")}

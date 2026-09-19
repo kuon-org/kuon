@@ -78,13 +78,19 @@ export const AdvancedSearchBar = ({ initialValue = "" }) => {
           <ListItemText>{t("search.filters.user")}</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => insertPrefix("title:")}>
-          <ListItemText sx={{ ml: 4 }}>{t("search.filters.title")}</ListItemText>
+          <ListItemText sx={{ ml: 4 }}>
+            {t("search.filters.title")}
+          </ListItemText>
         </MenuItem>
         <MenuItem onClick={() => insertPrefix("created:>=")}>
-          <ListItemText sx={{ ml: 4 }}>{t("search.filters.created")}</ListItemText>
+          <ListItemText sx={{ ml: 4 }}>
+            {t("search.filters.created")}
+          </ListItemText>
         </MenuItem>
         <MenuItem onClick={() => insertPrefix("updated:>=")}>
-          <ListItemText sx={{ ml: 4 }}>{t("search.filters.updated")}</ListItemText>
+          <ListItemText sx={{ ml: 4 }}>
+            {t("search.filters.updated")}
+          </ListItemText>
         </MenuItem>
       </Menu>
     </Paper>

@@ -22,10 +22,7 @@ export const SyncButton = ({ isSync, setIsSync }: SyncButtonProps) => {
         isSync ? t("editor.disableScrollSync") : t("editor.enableScrollSync")
       }
     >
-      <IconButton
-        onClick={handleClick}
-        color={isSync ? "primary" : "default"}
-      >
+      <IconButton onClick={handleClick} color={isSync ? "primary" : "default"}>
         {isSync ? <SyncIcon /> : <SyncDisabledIcon />}
       </IconButton>
     </Tooltip>

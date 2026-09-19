@@ -67,9 +67,9 @@ export interface ThemeSelectProviderProps {
  * @property {string} [customLabel] カスタムカラーのラベル（デフォルト："Custom"）
  */
 export interface ColorSelectProps {
-    label?: string;
-    defaultLabel?: string;
-    customLabel?: string;
+  label?: string;
+  defaultLabel?: string;
+  customLabel?: string;
 }
 
 /**

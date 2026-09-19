@@ -32,12 +32,15 @@ export interface UpdateRoleInput {
 }
 
 export const fetchMyPermissions = async () => {
-  const { data } = await apiClient.get<{ permissions: string[] }>("/permissions/me");
+  const { data } = await apiClient.get<{ permissions: string[] }>(
+    "/permissions/me",
+  );
   return data;
 };
 
 export const fetchPermissionCatalog = async () => {
-  const { data } = await apiClient.get<PermissionDefinition[]>("/admin/permissions");
+  const { data } =
+    await apiClient.get<PermissionDefinition[]>("/admin/permissions");
   return data;
 };
 
@@ -56,11 +59,18 @@ export const updateRole = async ({ roleId, ...body }: UpdateRoleInput) => {
   return data as RoleDefinition;
 };
 
-export const deleteRole = (roleId: string) => apiClient.delete(`/admin/roles/${roleId}`);
+export const deleteRole = (roleId: string) =>
+  apiClient.delete(`/admin/roles/${roleId}`);
 
-export const assignRoles = async (input: { userId: string; roleIds: string[] }) => {
-  const { data } = await apiClient.put(`/admin/settings/users/${input.userId}/roles`, {
-    roleIds: input.roleIds,
-  });
+export const assignRoles = async (input: {
+  userId: string;
+  roleIds: string[];
+}) => {
+  const { data } = await apiClient.put(
+    `/admin/settings/users/${input.userId}/roles`,
+    {
+      roleIds: input.roleIds,
+    },
+  );
   return data as { roleIds: string[] };
 };

@@ -7,9 +7,25 @@ export const DevelopmentTotpHelper = () => {
   const url = new URL("/api/dev/totp?flow=login", window.location.origin).href;
 
   return (
-    <Box sx={{ mx: "auto", my: 2, p: 2, maxWidth: 480, textAlign: "center", border: "1px dashed", borderColor: "warning.main", bgcolor: "action.hover" }}>
+    <Box
+      sx={{
+        mx: "auto",
+        my: 2,
+        p: 2,
+        maxWidth: 480,
+        textAlign: "center",
+        border: "1px dashed",
+        borderColor: "warning.main",
+        bgcolor: "action.hover",
+      }}
+    >
       <Typography variant="subtitle2">Development TOTP Helper</Typography>
-      <Link href={url} target="_blank" rel="noopener noreferrer" sx={{ overflowWrap: "anywhere" }}>
+      <Link
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        sx={{ overflowWrap: "anywhere" }}
+      >
         {url} ↗
       </Link>
     </Box>

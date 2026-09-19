@@ -30,7 +30,14 @@ const UserProfile = () => {
         <FollowingTags userId={user.id} username={username} />
         <UserGroups userId={user.id} />
       </Box>
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: { xs: "100%", md: "auto" } }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          width: { xs: "100%", md: "auto" },
+        }}
+      >
         <Outlet />
       </Box>
     </Container>

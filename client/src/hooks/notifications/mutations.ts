@@ -11,17 +11,24 @@ import { notificationKeys } from "./keys";
 
 const useInvalidateNotifications = () => {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+  return () =>
+    queryClient.invalidateQueries({ queryKey: notificationKeys.all });
 };
 
 export const useMarkNotificationRead = () => {
   const invalidate = useInvalidateNotifications();
-  return useMutation({ mutationFn: markNotificationRead, onSuccess: invalidate });
+  return useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: invalidate,
+  });
 };
 
 export const useMarkAllNotificationsRead = () => {
   const invalidate = useInvalidateNotifications();
-  return useMutation({ mutationFn: markAllNotificationsRead, onSuccess: invalidate });
+  return useMutation({
+    mutationFn: markAllNotificationsRead,
+    onSuccess: invalidate,
+  });
 };
 
 export const useDeleteNotification = () => {
@@ -31,7 +38,10 @@ export const useDeleteNotification = () => {
 
 export const useDeleteAllNotifications = () => {
   const invalidate = useInvalidateNotifications();
-  return useMutation({ mutationFn: deleteAllNotifications, onSuccess: invalidate });
+  return useMutation({
+    mutationFn: deleteAllNotifications,
+    onSuccess: invalidate,
+  });
 };
 
 export const useFollowBack = () => {
@@ -41,7 +51,9 @@ export const useFollowBack = () => {
     onSuccess: async (_data, targetUserId) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: notificationKeys.all }),
-        queryClient.invalidateQueries({ queryKey: ["isFollowing", targetUserId] }),
+        queryClient.invalidateQueries({
+          queryKey: ["isFollowing", targetUserId],
+        }),
         queryClient.invalidateQueries({ queryKey: ["following"] }),
         queryClient.invalidateQueries({ queryKey: ["follower"] }),
       ]);
@@ -53,6 +65,7 @@ export const useUpdateNotificationPreferences = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updateNotificationPreferences,
-    onSuccess: (data) => queryClient.setQueryData(notificationKeys.preferences(), data),
+    onSuccess: (data) =>
+      queryClient.setQueryData(notificationKeys.preferences(), data),
   });
 };

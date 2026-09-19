@@ -3,10 +3,9 @@ declare module "@akebifiky/remark-simple-plantuml" {
     baseUrl?: string;
   }
 
-  type RemarkSimplePlantumlPlugin = (options?: RemarkSimplePlantumlOptions) => (
-    tree: unknown,
-    file: unknown
-  ) => void;
+  type RemarkSimplePlantumlPlugin = (
+    options?: RemarkSimplePlantumlOptions,
+  ) => (tree: unknown, file: unknown) => void;
 
   const remarkSimplePlantuml: RemarkSimplePlantumlPlugin;
 

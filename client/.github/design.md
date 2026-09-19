@@ -75,141 +75,169 @@
 # ページ一覧
 
 ## `/`
+
 - 役割: ホーム画面、最新/おすすめ/トレンド記事の表示
 - 使用API: `useArticles` / `/articles/recommends` / `/articles/trends`
 - 使用Component: `Home`, `ArticleCard`, `ArticlesSkeleton`, `Link`
 
 ## `/trend`
+
 - 役割: トレンド記事一覧表示
 - 使用API: `useArticles` / `/articles/trends`
 - 使用Component: `Trends`, `ArticleCard`, `ArticlesSkeleton`
 
 ## `/timeline`
+
 - 役割: タイムライン記事表示
 - 使用API: `useArticles` / おそらく `/articles/timeline` 系（実装から類推）
 - 使用Component: `Timeline`, `ArticleCard`
 
 ## `/search`
+
 - 役割: 検索 UI と検索結果表示
 - 使用API: `apiClient.get('/articles', { q, page, limit })`
 - 使用Component: `SearchPage`, `AdvancedSearchBar`, `SearchPagination`, `ArticleCard`, `ArticlesSkeleton`
 
 ## `/login`
+
 - 役割: ログインフォーム
 - 使用API: `apiClient.post('/login')`
 - 使用Component: `Login`
 
 ## `/login/2fa`
+
 - 役割: 二段階認証コード入力
 - 使用API: `apiClient.post('/login/verify-2fa')`
 - 使用Component: `Login2FA`
 
 ## `/register`
+
 - 役割: アカウント登録
 - 使用API: `fetch('/api/register')`（ページ内直接呼び出し）
 - 使用Component: `Register`
 
 ## `/drafts/new`
+
 - 役割: 新規記事作成
 - 使用API: `useArticles.createArticle`, `/articles/create`
 - 使用Component: `Editor/New`, `FastEditor` 系または `MarkdownEditor`
 
 ## `/drafts`
+
 - 役割: 下書き一覧
 - 使用API: `useArticles.userArticles` / `useArticles.trashArticles` など
 - 使用Component: `Drafts`
 
 ## `/trash`
+
 - 役割: ゴミ箱一覧・復元・完全削除
 - 使用API: `/articles/trash/list`, `/articles/:id/restore`, `/articles/:id/hard`
 - 使用Component: `Trash`
 
 ## `/$username/$articleId`
+
 - 役割: 記事詳細表示
 - 使用API: `queryClient.ensureQueryData([...], apiClient.get('/articles/:id'))`
 - 使用Component: `ArticleLayout`, `Articles`, `Markdown`, `BottomUserCard`, `Comment`, `LikeButton`, `StockButton`, `More`, `TocList`, `CommentJump`
 
 ## `/$username/$articleId/liker`
+
 - 役割: いいねしたユーザー一覧表示
 - 使用API: `/articles/:id/likes`
 - 使用Component: `ArticleLiker`
 
 ## `/$username`
+
 - 役割: ユーザープロフィール親ページ
 - 使用API: `useUsers.userQuery`, `/users/:username`
 - 使用Component: `UserProfile`, `UserDetailCard`, `FollowingTags`, `Outlet`
 
 ## `/$username/follower`
+
 - 役割: フォロワー一覧
 - 使用API: `/users/:id/follower`
 - 使用Component: `FollowerList`
 
 ## `/$username/following`
+
 - 役割: フォロー中一覧
 - 使用API: `/users/:id/follow`
 - 使用Component: `FollowingList`
 
 ## `/$username/following-tags`
+
 - 役割: フォロー中タグ一覧
 - 使用API: `/users/:id/following_tags`
 - 使用Component: `FollowingTagsPage`
 
 ## `/settings` 配下
+
 - 役割: ユーザー設定ページの親
 - 使用API: `/me`, 各設定 API
 - 使用Component: `UserSettings`, `Account`, `AvatarUpload`, `PublicProfile`, `Security`, `TwoFASetting`, `APIKeySettings`, `UploadedImages`
 
 ## `/stocks`
+
 - 役割: 自分のストックリスト管理
 - 使用API: `useStocks` / `/stocks/mylists`, `/stocks/lists`, `/stocks/lists/:id`, `/stocks/lists/:id/articles` など
 - 使用Component: `StockLayout`, `StockDetail`, `StockEditWrapper`, `StockListCard`, `StockSearchBar`
 
 ## `/stocks/new`
+
 - 役割: 新規ストックリスト作成
 - 使用API: `/stocks/lists`
 - 使用Component: `StockEditWrapper`, `StockEditPages`
 
 ## `/stocks/$listId`
+
 - 役割: ストックリスト詳細
 - 使用API: `/stocks/lists/:listId`, `/stocks/alllists`
 - 使用Component: `StockDetail`, `ArticleCard`
 
 ## `/stocks/$listId/edit`
+
 - 役割: ストックリスト編集
 - 使用API: `/stocks/lists/:listId`
 - 使用Component: `StockEditWrapper`, `StockEditPages`
 
 ## `/stock-feed`
+
 - 役割: 公開ストックリストのフィード
 - 使用API: `/stocks/lists`
 - 使用Component: `PublicStocksPage`, `StockListCard`
 
 ## `/tags`
+
 - 役割: タグ一覧
 - 使用API: `/tags`
 - 使用Component: `TagList`
 
 ## `/tags/$slug`
+
 - 役割: タグ詳細表示
 - 使用API: `/tags/:slug`, `/articles`, `/tags/:slug/isFollowing`
 - 使用Component: `TagProfile`, `TagDetailCard`, `TagArticles`
 
 ## `/tags/$slug/edit`
+
 - 役割: タグ編集
 - 使用API: `/tags`, `/tags/:slug/upload_avatar`
 - 使用Component: `TagEdit`
 
 ## `/admin`
+
 - 役割: 管理者トップページ
 - 使用API: `/admin/settings/users`, `/admin/idp_settings`, `/admin/idp_list`
 - 使用Component: `AdminIndex`, `Security`, `UserManagement`
 
 ## `/admin/security`
+
 - 役割: 管理者セキュリティ設定
 - 使用API: IDP 取得・更新
 - 使用Component: `Security`
 
 ## `/admin/users`
+
 - 役割: 管理者ユーザー管理
 - 使用API: 管理者用ユーザー一覧・有効化
 - 使用Component: `UserManagement`
@@ -219,6 +247,7 @@
 # Component一覧
 
 ## `AppRouter`
+
 - 責務: 認証状態を読み込み、ルーターを初期化して `RouterProvider` を描画する
 - Props: なし
 - State: なし
@@ -227,6 +256,7 @@
 - 子Component: `RouterProvider`, `NotificationManager`, `TanStackRouterDevtools`
 
 ## `TopBar`
+
 - 責務: ナビゲーション、検索、認証ボタン表示
 - Props: なし
 - State: `searchValue`, `showSearch`
@@ -235,6 +265,7 @@
 - 子Component: `NavButton`, `KuonLogo`, `UserIcon`
 
 ## `TabsBar`
+
 - 責務: 画面上部のタブ切り替え UI（ルーティングタブ）
 - Props: なし
 - State: なし
@@ -243,6 +274,7 @@
 - 子Component: MUI タブ要素
 
 ## `LeftSection` / `RightSection`
+
 - 責務: サイドバー用コンテナ。コンテンツを貼り付けるためのレイアウトを提供する。
 - Props: `children`, `sticky`
 - State: なし
@@ -251,6 +283,7 @@
 - 子Component: 任意の子要素
 
 ## `Footer`
+
 - 責務: フッターを表示する
 - Props: なし
 - State: なし
@@ -259,6 +292,7 @@
 - 子Component: なし
 
 ## `ArticleLayout`
+
 - 責務: 記事詳細ページのレイアウト管理、サイドバーアクション、コメント/目次表示
 - Props: なし
 - State: なし
@@ -267,6 +301,7 @@
 - 子Component: `LeftSection`, `RightSection`, `BottomBar`, `LikeButton`, `StockButton`, `More`, `TocList`, `CommentJump`, `Articles`
 
 ## `Articles`
+
 - 責務: 記事本文表示とメタ情報（著者、タグ、日付、コメント）
 - Props: `article`, `isLoading`
 - State: なし
@@ -275,6 +310,7 @@
 - 子Component: `Markdown`, `BottomUserCard`, `Comment`, `TagChip`
 
 ## `SearchPage`
+
 - 責務: 検索クエリの解釈、API 検索、結果リストの描画
 - Props: なし
 - State: なし
@@ -283,6 +319,7 @@
 - 子Component: `AdvancedSearchBar`, `SearchPagination`, `ArticleCard`, `ArticlesSkeleton`
 
 ## `StockDetail`
+
 - 責務: ストックリスト詳細の取得・検索・ページング
 - Props: なし
 - State: なし
@@ -291,6 +328,7 @@
 - 子Component: `StockSearchBar`, `ArticleCard`, `Pagination`
 
 ## `TagProfile`
+
 - 責務: タグ詳細表示と説明の展開、記事一覧表示
 - Props: なし
 - State: `isExpanded`
@@ -299,6 +337,7 @@
 - 子Component: `TagDetailCard`, `TagArticles`
 
 ## `UserProfile`
+
 - 責務: ユーザープロフィールページ全体のレイアウトと子ページ切り替え
 - Props: なし
 - State: なし
@@ -307,6 +346,7 @@
 - 子Component: `UserDetailCard`, `FollowingTags`, `Outlet`
 
 ## `NotificationManager`
+
 - 責務: Redux 通知キューから通知を表示・削除する
 - Props: なし
 - State: なし
@@ -315,6 +355,7 @@
 - 子Component: 通知表示 UI
 
 ## `Loading` / `ArticlesSkeleton`
+
 - 責務: ページやコンテンツのローディング表示
 - Props: なし
 - State: なし
@@ -365,6 +406,7 @@
 # API呼び出し一覧
 
 ## API クライアント
+
 - `src/api/client.ts`
   - 共通 API 用 `apiClient`
   - baseURL: `/api`
@@ -375,6 +417,7 @@
   - baseURL: `/auth`
 
 ## 認証 / ユーザー
+
 - `GET /me`
 - `POST /login`
 - `POST /login/verify-2fa`
@@ -408,6 +451,7 @@
 - `GET /users/ranking/all`
 
 ## 記事 / ナレッジ
+
 - `GET /articles`
 - `GET /articles/:id`
 - `GET /articles/:id/likes`
@@ -434,6 +478,7 @@
 - `POST /articles/:articleId/comments/:commentId/like`
 
 ## タグ
+
 - `GET /tags`
 - `GET /tags/:slug`
 - `POST /tags`
@@ -442,6 +487,7 @@
 - `POST /tags/:slug/upload_avatar`
 
 ## ストック
+
 - `GET /stocks/mylists`
 - `GET /stocks/lists`
 - `GET /stocks/lists/:listId`
@@ -455,6 +501,7 @@
 - `POST /stocks/lists/:listId/like`
 
 ## 管理者
+
 - `GET /admin/settings/users`
 - `GET /admin/idp_settings/:provider_name`
 - `GET /admin/idp_list`
@@ -662,7 +709,8 @@ graph LR
 9. `UserSettings` 系ページ
    - `/settings` のネスト構造と認証前提条件が複雑
 10. `NotificationManager`
-   - UI 表示と Redux 依存を跨ぐ
+
+- UI 表示と Redux 依存を跨ぐ
 
 ---
 

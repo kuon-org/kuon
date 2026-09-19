@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchMyPermissions, fetchPermissionCatalog, fetchRoles } from "../../api/roles";
+import {
+  fetchMyPermissions,
+  fetchPermissionCatalog,
+  fetchRoles,
+} from "../../api/roles";
 import { roleKeys } from "./keys";
 
 export const useMyPermissionsQuery = (enabled = true) =>

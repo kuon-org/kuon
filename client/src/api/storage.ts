@@ -42,5 +42,7 @@ export type UpdateStorageSettingsInput = {
 export const fetchStorageSettings = async () =>
   (await apiClient.get<StorageSettings>("/admin/settings/storage")).data;
 
-export const updateStorageSettings = async (input: UpdateStorageSettingsInput) =>
+export const updateStorageSettings = async (
+  input: UpdateStorageSettingsInput,
+) =>
   (await apiClient.put<StorageSettings>("/admin/settings/storage", input)).data;

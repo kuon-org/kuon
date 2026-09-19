@@ -14,4 +14,8 @@ export {
   useToggleDefaultStock,
   useUpdateStockList,
 } from "./mutations";
-export type { StockList, StockListDetail, StockListPayload } from "../../api/stocks";
+export type {
+  StockList,
+  StockListDetail,
+  StockListPayload,
+} from "../../api/stocks";

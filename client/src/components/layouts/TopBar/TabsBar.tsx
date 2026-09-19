@@ -81,7 +81,15 @@ const TabsBar = () => {
             aria-label={t("navigation.stocks")}
             sx={{ minHeight: 44 }}
           />
-          <Tab label={t("navigation.groups")} value="/groups" component={Link as any} to="/groups" search={{ page: 1 }} aria-label={t("navigation.groups")} sx={{ minHeight: 44 }} />
+          <Tab
+            label={t("navigation.groups")}
+            value="/groups"
+            component={Link as any}
+            to="/groups"
+            search={{ page: 1 }}
+            aria-label={t("navigation.groups")}
+            sx={{ minHeight: 44 }}
+          />
         </Tabs>
       </Toolbar>
     </AppBar>

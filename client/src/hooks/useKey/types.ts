@@ -12,4 +12,4 @@ export interface UseKeyOptions {
   shiftKey?: boolean;
   altKey?: boolean;
   once?: boolean;
-};
+}

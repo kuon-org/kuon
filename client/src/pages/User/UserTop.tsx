@@ -15,5 +15,10 @@ export const UserTop = () => {
 
   const isMe = authUserQuery.data?.id === user?.id;
   if (!user) return <>{t("profile.notFound")}</>;
-  return <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}><PickupArticles userId={user.id} isMe={isMe} /><UserArticles userId={user.id} /></Box>;
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <PickupArticles userId={user.id} isMe={isMe} />
+      <UserArticles userId={user.id} />
+    </Box>
+  );
 };

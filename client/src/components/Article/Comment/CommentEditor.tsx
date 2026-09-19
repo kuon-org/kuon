@@ -29,11 +29,30 @@ export const CommentEditor = ({
 
   if (!user) {
     return (
-      <Paper sx={{ bgcolor: "background.default", mx: "auto", py: 2, width: "70%", gap: 2, display: "flex", flexDirection: "column", textAlign: "center" }}>
+      <Paper
+        sx={{
+          bgcolor: "background.default",
+          mx: "auto",
+          py: 2,
+          width: "70%",
+          gap: 2,
+          display: "flex",
+          flexDirection: "column",
+          textAlign: "center",
+        }}
+      >
         <Typography variant="body1">{t("editor.loginPrompt")}</Typography>
         <Box sx={{ display: "flex", mx: "auto" }}>
-          <NavButton path="/login" message={t("editor.login")} variant="outlined" />
-          <NavButton path="/register" message={t("editor.register")} variant="contained" />
+          <NavButton
+            path="/login"
+            message={t("editor.login")}
+            variant="outlined"
+          />
+          <NavButton
+            path="/register"
+            message={t("editor.register")}
+            variant="contained"
+          />
         </Box>
       </Paper>
     );
@@ -81,16 +100,30 @@ export const CommentEditor = ({
             },
           }}
         >
-          <FastEditor ref={editorRef} value={content} onChange={setContent} placeholder={resolvedPlaceholder} />
+          <FastEditor
+            ref={editorRef}
+            value={content}
+            onChange={setContent}
+            placeholder={resolvedPlaceholder}
+          />
         </Box>
         <Stack direction="row" justifyContent="flex-end" alignItems="center">
           <Button
             variant="contained"
             disabled={!content.trim() || createComment.isPending}
             onClick={handlePost}
-            sx={{ borderRadius: "20px", px: 3, textTransform: "none", fontWeight: "bold" }}
+            sx={{
+              borderRadius: "20px",
+              px: 3,
+              textTransform: "none",
+              fontWeight: "bold",
+            }}
           >
-            {createComment.isPending ? t("editor.sending") : parentCommentId ? t("editor.reply") : t("editor.submit")}
+            {createComment.isPending
+              ? t("editor.sending")
+              : parentCommentId
+                ? t("editor.reply")
+                : t("editor.submit")}
           </Button>
         </Stack>
       </Stack>

@@ -1,11 +1,56 @@
 import { useState } from "react";
-import { Alert, Box, Button, Chip, CircularProgress, Dialog, DialogContent, DialogTitle, MenuItem, Pagination, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
+  Pagination,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { useServerEventsQuery, type ServerEvent, type ServerEventCategory, type ServerEventLevel } from "../../hooks/server-events";
+import {
+  useServerEventsQuery,
+  type ServerEvent,
+  type ServerEventCategory,
+  type ServerEventLevel,
+} from "../../hooks/server-events";
 import { useTranslation } from "react-i18next";
 
-const levelColor = (level: ServerEventLevel): "default" | "info" | "warning" | "error" => level === "error" ? "error" : level === "warning" ? "warning" : "info";
-const JsonBlock = ({ value }: { value: unknown }) => <Box component="pre" sx={{ m: 0, p: 1.5, borderRadius: 1, bgcolor: "action.hover", overflowX: "auto", fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{JSON.stringify(value ?? {}, null, 2)}</Box>;
+const levelColor = (
+  level: ServerEventLevel,
+): "default" | "info" | "warning" | "error" =>
+  level === "error" ? "error" : level === "warning" ? "warning" : "info";
+const JsonBlock = ({ value }: { value: unknown }) => (
+  <Box
+    component="pre"
+    sx={{
+      m: 0,
+      p: 1.5,
+      borderRadius: 1,
+      bgcolor: "action.hover",
+      overflowX: "auto",
+      fontSize: 12,
+      whiteSpace: "pre-wrap",
+      wordBreak: "break-word",
+    }}
+  >
+    {JSON.stringify(value ?? {}, null, 2)}
+  </Box>
+);
 
 export const ServerEvents = () => {
   const { t, i18n } = useTranslation("admin");
@@ -16,29 +61,265 @@ export const ServerEvents = () => {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [selected, setSelected] = useState<ServerEvent | null>(null);
-  const query = useServerEventsQuery({ page, limit: 50, level, category, eventType, from: from ? new Date(from).toISOString() : undefined, to: to ? new Date(to).toISOString() : undefined });
-  const formatDate = (value: string) => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  const query = useServerEventsQuery({
+    page,
+    limit: 50,
+    level,
+    category,
+    eventType,
+    from: from ? new Date(from).toISOString() : undefined,
+    to: to ? new Date(to).toISOString() : undefined,
+  });
+  const formatDate = (value: string) =>
+    new Intl.DateTimeFormat(i18n.language, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
 
-  return <Box sx={{ width: "100%", minWidth: 0 }}>
-    <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1} sx={{ mb: 2 }}>
-      <Box><Typography variant="h5" gutterBottom>{t("serverEvents.title")}</Typography><Typography variant="body2" color="text.secondary">{t("serverEvents.description")}</Typography></Box>
-      <Button variant="outlined" startIcon={query.isFetching ? <CircularProgress size={16} /> : <RefreshIcon />} onClick={() => void query.refetch()} disabled={query.isFetching}>{t("serverEvents.refresh")}</Button>
-    </Stack>
-    <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-      <Stack direction={{ xs: "column", lg: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
-        <TextField select size="small" label={t("serverEvents.level")} value={level} onChange={(e) => { setLevel(e.target.value as ServerEventLevel | ""); setPage(1); }} sx={{ minWidth: 140 }}><MenuItem value="">{t("serverEvents.all")}</MenuItem><MenuItem value="info">info</MenuItem><MenuItem value="warning">warning</MenuItem><MenuItem value="error">error</MenuItem></TextField>
-        <TextField select size="small" label={t("serverEvents.category")} value={category} onChange={(e) => { setCategory(e.target.value as ServerEventCategory | ""); setPage(1); }} sx={{ minWidth: 140 }}><MenuItem value="">{t("serverEvents.all")}</MenuItem><MenuItem value="system">system</MenuItem><MenuItem value="audit">audit</MenuItem></TextField>
-        <TextField size="small" label={t("serverEvents.eventType")} value={eventType} onChange={(e) => { setEventType(e.target.value); setPage(1); }} placeholder="backup.completed" sx={{ minWidth: 220 }} />
-        <TextField size="small" label={t("serverEvents.from")} type="datetime-local" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }} slotProps={{ inputLabel: { shrink: true } }} />
-        <TextField size="small" label={t("serverEvents.to")} type="datetime-local" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); }} slotProps={{ inputLabel: { shrink: true } }} />
+  return (
+    <Box sx={{ width: "100%", minWidth: 0 }}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "flex-start", sm: "center" }}
+        spacing={1}
+        sx={{ mb: 2 }}
+      >
+        <Box>
+          <Typography variant="h5" gutterBottom>
+            {t("serverEvents.title")}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {t("serverEvents.description")}
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          startIcon={
+            query.isFetching ? <CircularProgress size={16} /> : <RefreshIcon />
+          }
+          onClick={() => void query.refetch()}
+          disabled={query.isFetching}
+        >
+          {t("serverEvents.refresh")}
+        </Button>
       </Stack>
-    </Paper>
-    {query.isLoading && <Box sx={{ py: 6, textAlign: "center" }}><CircularProgress /></Box>}
-    {query.isError && <Alert severity="error">{t("serverEvents.loadFailed")}</Alert>}
-    {query.data && <><TableContainer component={Paper} variant="outlined"><Table size="small"><TableHead><TableRow><TableCell>{t("serverEvents.datetime")}</TableCell><TableCell>{t("serverEvents.level")}</TableCell><TableCell>{t("serverEvents.category")}</TableCell><TableCell>{t("serverEvents.eventType")}</TableCell><TableCell>{t("serverEvents.source")}</TableCell><TableCell>{t("serverEvents.message")}</TableCell></TableRow></TableHead><TableBody>
-      {query.data.events.map((event) => <TableRow key={event.id} hover onClick={() => setSelected(event)} sx={{ cursor: "pointer" }}><TableCell sx={{ whiteSpace: "nowrap" }}>{formatDate(event.created_at)}</TableCell><TableCell><Chip size="small" label={event.level} color={levelColor(event.level)} /></TableCell><TableCell><Chip size="small" label={event.category} variant="outlined" /></TableCell><TableCell>{event.event_type}</TableCell><TableCell>{event.source ?? "-"}</TableCell><TableCell>{event.message}</TableCell></TableRow>)}
-      {query.data.events.length === 0 && <TableRow><TableCell colSpan={6} align="center">{t("serverEvents.empty")}</TableCell></TableRow>}
-    </TableBody></Table></TableContainer>{query.data.totalPages > 1 && <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}><Pagination page={query.data.page} count={query.data.totalPages} onChange={(_e, value) => setPage(value)} /></Box>}</>}
-    <Dialog open={!!selected} onClose={() => setSelected(null)} fullWidth maxWidth="md"><DialogTitle>{t("serverEvents.detailTitle")}</DialogTitle><DialogContent>{selected && <Stack spacing={2} sx={{ mt: 1 }}><Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap><Chip label={selected.level} color={levelColor(selected.level)} /><Chip label={selected.category} variant="outlined" /><Chip label={selected.event_type} variant="outlined" />{selected.source && <Chip label={selected.source} variant="outlined" />}</Stack><Typography>{selected.message}</Typography><Typography variant="caption" color="text.secondary">{formatDate(selected.created_at)} / {selected.id}</Typography><Box><Typography variant="subtitle2" gutterBottom>{t("serverEvents.metadata")}</Typography><JsonBlock value={selected.metadata} /></Box>{(selected.before_data !== null || selected.after_data !== null) && <Stack direction={{ xs: "column", md: "row" }} spacing={2}><Box sx={{ flex: 1 }}><Typography variant="subtitle2" gutterBottom>{t("serverEvents.before")}</Typography><JsonBlock value={selected.before_data} /></Box><Box sx={{ flex: 1 }}><Typography variant="subtitle2" gutterBottom>{t("serverEvents.after")}</Typography><JsonBlock value={selected.after_data} /></Box></Stack>}{(selected.actor_user_id || selected.subject_type || selected.correlation_id) && <Box><Typography variant="subtitle2" gutterBottom>{t("serverEvents.context")}</Typography><JsonBlock value={{ actorUserId: selected.actor_user_id, ipAddress: selected.ip_address, subjectType: selected.subject_type, subjectId: selected.subject_id, correlationId: selected.correlation_id }} /></Box>}</Stack>}</DialogContent></Dialog>
-  </Box>;
+      <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+        <Stack
+          direction={{ xs: "column", lg: "row" }}
+          spacing={2}
+          flexWrap="wrap"
+          useFlexGap
+        >
+          <TextField
+            select
+            size="small"
+            label={t("serverEvents.level")}
+            value={level}
+            onChange={(e) => {
+              setLevel(e.target.value as ServerEventLevel | "");
+              setPage(1);
+            }}
+            sx={{ minWidth: 140 }}
+          >
+            <MenuItem value="">{t("serverEvents.all")}</MenuItem>
+            <MenuItem value="info">info</MenuItem>
+            <MenuItem value="warning">warning</MenuItem>
+            <MenuItem value="error">error</MenuItem>
+          </TextField>
+          <TextField
+            select
+            size="small"
+            label={t("serverEvents.category")}
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value as ServerEventCategory | "");
+              setPage(1);
+            }}
+            sx={{ minWidth: 140 }}
+          >
+            <MenuItem value="">{t("serverEvents.all")}</MenuItem>
+            <MenuItem value="system">system</MenuItem>
+            <MenuItem value="audit">audit</MenuItem>
+          </TextField>
+          <TextField
+            size="small"
+            label={t("serverEvents.eventType")}
+            value={eventType}
+            onChange={(e) => {
+              setEventType(e.target.value);
+              setPage(1);
+            }}
+            placeholder="backup.completed"
+            sx={{ minWidth: 220 }}
+          />
+          <TextField
+            size="small"
+            label={t("serverEvents.from")}
+            type="datetime-local"
+            value={from}
+            onChange={(e) => {
+              setFrom(e.target.value);
+              setPage(1);
+            }}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+          <TextField
+            size="small"
+            label={t("serverEvents.to")}
+            type="datetime-local"
+            value={to}
+            onChange={(e) => {
+              setTo(e.target.value);
+              setPage(1);
+            }}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+        </Stack>
+      </Paper>
+      {query.isLoading && (
+        <Box sx={{ py: 6, textAlign: "center" }}>
+          <CircularProgress />
+        </Box>
+      )}
+      {query.isError && (
+        <Alert severity="error">{t("serverEvents.loadFailed")}</Alert>
+      )}
+      {query.data && (
+        <>
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>{t("serverEvents.datetime")}</TableCell>
+                  <TableCell>{t("serverEvents.level")}</TableCell>
+                  <TableCell>{t("serverEvents.category")}</TableCell>
+                  <TableCell>{t("serverEvents.eventType")}</TableCell>
+                  <TableCell>{t("serverEvents.source")}</TableCell>
+                  <TableCell>{t("serverEvents.message")}</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {query.data.events.map((event) => (
+                  <TableRow
+                    key={event.id}
+                    hover
+                    onClick={() => setSelected(event)}
+                    sx={{ cursor: "pointer" }}
+                  >
+                    <TableCell sx={{ whiteSpace: "nowrap" }}>
+                      {formatDate(event.created_at)}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        label={event.level}
+                        color={levelColor(event.level)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        label={event.category}
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>{event.event_type}</TableCell>
+                    <TableCell>{event.source ?? "-"}</TableCell>
+                    <TableCell>{event.message}</TableCell>
+                  </TableRow>
+                ))}
+                {query.data.events.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      {t("serverEvents.empty")}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          {query.data.totalPages > 1 && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Pagination
+                page={query.data.page}
+                count={query.data.totalPages}
+                onChange={(_e, value) => setPage(value)}
+              />
+            </Box>
+          )}
+        </>
+      )}
+      <Dialog
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>{t("serverEvents.detailTitle")}</DialogTitle>
+        <DialogContent>
+          {selected && (
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Chip
+                  label={selected.level}
+                  color={levelColor(selected.level)}
+                />
+                <Chip label={selected.category} variant="outlined" />
+                <Chip label={selected.event_type} variant="outlined" />
+                {selected.source && (
+                  <Chip label={selected.source} variant="outlined" />
+                )}
+              </Stack>
+              <Typography>{selected.message}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {formatDate(selected.created_at)} / {selected.id}
+              </Typography>
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  {t("serverEvents.metadata")}
+                </Typography>
+                <JsonBlock value={selected.metadata} />
+              </Box>
+              {(selected.before_data !== null ||
+                selected.after_data !== null) && (
+                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      {t("serverEvents.before")}
+                    </Typography>
+                    <JsonBlock value={selected.before_data} />
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      {t("serverEvents.after")}
+                    </Typography>
+                    <JsonBlock value={selected.after_data} />
+                  </Box>
+                </Stack>
+              )}
+              {(selected.actor_user_id ||
+                selected.subject_type ||
+                selected.correlation_id) && (
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {t("serverEvents.context")}
+                  </Typography>
+                  <JsonBlock
+                    value={{
+                      actorUserId: selected.actor_user_id,
+                      ipAddress: selected.ip_address,
+                      subjectType: selected.subject_type,
+                      subjectId: selected.subject_id,
+                      correlationId: selected.correlation_id,
+                    }}
+                  />
+                </Box>
+              )}
+            </Stack>
+          )}
+        </DialogContent>
+      </Dialog>
+    </Box>
+  );
 };

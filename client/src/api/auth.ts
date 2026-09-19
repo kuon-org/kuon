@@ -139,12 +139,17 @@ export const delete2FA = async () => {
 };
 
 export const fetchUploadedImages = async () => {
-  const { data } = await apiClient.get<UploadedImage[]>("/users/settings/uploaded_images");
+  const { data } = await apiClient.get<UploadedImage[]>(
+    "/users/settings/uploaded_images",
+  );
   return data;
 };
 
 export const updateUserInfo = async (displayName: string, bio: string) => {
-  const { data } = await apiClient.put("/users/update/info", { displayName, bio });
+  const { data } = await apiClient.put("/users/update/info", {
+    displayName,
+    bio,
+  });
   return data;
 };
 
@@ -197,16 +202,26 @@ export const logoutSession = async (sessionId: string) => {
 };
 
 export const fetchApiKeys = async () => {
-  const { data } = await apiClient.get<UserApiKey[]>("/users/settings/api-keys");
+  const { data } = await apiClient.get<UserApiKey[]>(
+    "/users/settings/api-keys",
+  );
   return data;
 };
 
-export const createApiKey = async (payload: { name: string; expiresAt: string | null }) => {
-  const { data } = await apiClient.post<CreateApiKeyResponse>("/users/settings/api-keys", payload);
+export const createApiKey = async (payload: {
+  name: string;
+  expiresAt: string | null;
+}) => {
+  const { data } = await apiClient.post<CreateApiKeyResponse>(
+    "/users/settings/api-keys",
+    payload,
+  );
   return data;
 };
 
 export const revokeApiKey = async (apiKeyId: string) => {
-  const { data } = await apiClient.delete(`/users/settings/api-keys/${apiKeyId}`);
+  const { data } = await apiClient.delete(
+    `/users/settings/api-keys/${apiKeyId}`,
+  );
   return data;
 };

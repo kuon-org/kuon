@@ -13,18 +13,25 @@ export const useCommentsQuery = (articleId?: string) =>
     enabled: !!articleId,
   });
 
-export const useCommentLikeUsersQuery = (articleId?: string, commentId?: string) =>
+export const useCommentLikeUsersQuery = (
+  articleId?: string,
+  commentId?: string,
+) =>
   useQuery({
     queryKey: commentId ? commentKeys.likeUsers(commentId) : commentKeys.all,
     queryFn: () => fetchCommentLikeUsers(articleId!, commentId!),
     enabled: !!articleId && !!commentId,
   });
 
-export const useCommentIsLikedQuery = (articleId?: string, commentId?: string) => {
+export const useCommentIsLikedQuery = (
+  articleId?: string,
+  commentId?: string,
+) => {
   const queryClient = useQueryClient();
   return useQuery({
     queryKey: commentId ? commentKeys.isLiked(commentId) : commentKeys.all,
     queryFn: () => fetchCommentIsLiked(articleId!, commentId!),
-    enabled: !!articleId && !!commentId && !!queryClient.getQueryData(["authUser"]),
+    enabled:
+      !!articleId && !!commentId && !!queryClient.getQueryData(["authUser"]),
   });
 };

@@ -23,7 +23,12 @@ export interface GroupDetail extends GroupSummary {
   user_groups: Array<{
     role: GroupRole;
     joined_at: string;
-    users: { id: string; username: string; display_name: string; avatar_url: string };
+    users: {
+      id: string;
+      username: string;
+      display_name: string;
+      avatar_url: string;
+    };
   }>;
   articles: ArticleSummary[];
   totalCount: number;
@@ -39,23 +44,61 @@ export interface GroupFeed {
   limit: number;
 }
 
-export const fetchGroups = async () => (await apiClient.get<GroupSummary[]>("/groups")).data;
-export const fetchMyGroups = async () => (await apiClient.get<MyGroupMembership[]>("/groups/me")).data;
-export const fetchFollowedGroupsByUser = async (userId: string) => (await apiClient.get<Array<{ groups: GroupSummary }>>(`/groups/users/${userId}/following`)).data;
-export const fetchJoinedGroupsByUser = async (userId: string) => (await apiClient.get<MyGroupMembership[]>(`/groups/users/${userId}/joined`)).data;
-export const fetchGroupFeed = async (page = 1) => (await apiClient.get<GroupFeed>("/groups/feed", { params: { page, limit: 10 } })).data;
-export const fetchGroupFollowing = async (slug: string) => (await apiClient.get<{ isFollowing: boolean }>(`/groups/${slug}/is-following`)).data;
-export const toggleGroupFollowing = async (slug: string) => (await apiClient.post<{ isFollowing: boolean }>(`/groups/${slug}/follow`)).data;
+export const fetchGroups = async () =>
+  (await apiClient.get<GroupSummary[]>("/groups")).data;
+export const fetchMyGroups = async () =>
+  (await apiClient.get<MyGroupMembership[]>("/groups/me")).data;
+export const fetchFollowedGroupsByUser = async (userId: string) =>
+  (
+    await apiClient.get<Array<{ groups: GroupSummary }>>(
+      `/groups/users/${userId}/following`,
+    )
+  ).data;
+export const fetchJoinedGroupsByUser = async (userId: string) =>
+  (await apiClient.get<MyGroupMembership[]>(`/groups/users/${userId}/joined`))
+    .data;
+export const fetchGroupFeed = async (page = 1) =>
+  (
+    await apiClient.get<GroupFeed>("/groups/feed", {
+      params: { page, limit: 10 },
+    })
+  ).data;
+export const fetchGroupFollowing = async (slug: string) =>
+  (
+    await apiClient.get<{ isFollowing: boolean }>(
+      `/groups/${slug}/is-following`,
+    )
+  ).data;
+export const toggleGroupFollowing = async (slug: string) =>
+  (await apiClient.post<{ isFollowing: boolean }>(`/groups/${slug}/follow`))
+    .data;
 export const fetchGroup = async (slug: string, page = 1) =>
-  (await apiClient.get<GroupDetail>(`/groups/${slug}`, { params: { page, limit: 10 } })).data;
-export const createGroup = async (data: { name: string; slug: string; display_name: string; description?: string }) =>
-  (await apiClient.post<GroupSummary>("/groups", data)).data;
-export const updateGroup = async (slug: string, data: { name?: string; display_name?: string; description?: string }) =>
-  (await apiClient.patch<GroupSummary>(`/groups/${slug}`, data)).data;
-export const deleteGroup = async (slug: string) => apiClient.delete(`/groups/${slug}`);
-export const addGroupMember = async (slug: string, username: string, role: GroupRole) =>
-  apiClient.post(`/groups/${slug}/members`, { username, role });
-export const updateGroupMember = async (slug: string, userId: string, role: GroupRole) =>
-  apiClient.patch(`/groups/${slug}/members/${userId}`, { role });
+  (
+    await apiClient.get<GroupDetail>(`/groups/${slug}`, {
+      params: { page, limit: 10 },
+    })
+  ).data;
+export const createGroup = async (data: {
+  name: string;
+  slug: string;
+  display_name: string;
+  description?: string;
+}) => (await apiClient.post<GroupSummary>("/groups", data)).data;
+export const updateGroup = async (
+  slug: string,
+  data: { name?: string; display_name?: string; description?: string },
+) => (await apiClient.patch<GroupSummary>(`/groups/${slug}`, data)).data;
+export const deleteGroup = async (slug: string) =>
+  apiClient.delete(`/groups/${slug}`);
+export const addGroupMember = async (
+  slug: string,
+  username: string,
+  role: GroupRole,
+) => apiClient.post(`/groups/${slug}/members`, { username, role });
+export const updateGroupMember = async (
+  slug: string,
+  userId: string,
+  role: GroupRole,
+) => apiClient.patch(`/groups/${slug}/members/${userId}`, { role });
 export const removeGroupMember = async (slug: string, userId: string) =>
   apiClient.delete(`/groups/${slug}/members/${userId}`);

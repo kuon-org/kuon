@@ -14,4 +14,9 @@ export {
   useFollowUser,
 } from "./mutations";
 export { userKeys } from "./keys";
-export type { FollowState, RankingUser, RelatedUser, User } from "../../api/users";
+export type {
+  FollowState,
+  RankingUser,
+  RelatedUser,
+  User,
+} from "../../api/users";

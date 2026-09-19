@@ -68,13 +68,18 @@ export type PublishWebhookOption = {
   scope: "system" | "user";
 };
 export type PreviewInput = { payloadTemplate: unknown; eventType?: string };
-export type WebhookTestInput = Pick<WebhookInput, "url" | "headers" | "payloadTemplate"> & { eventType?: string };
+export type WebhookTestInput = Pick<
+  WebhookInput,
+  "url" | "headers" | "payloadTemplate"
+> & { eventType?: string };
 
 const basePath = (scope: WebhookScope) =>
   scope === "admin" ? "/admin/webhooks" : "/users/settings/webhooks";
 
 export const fetchWebhookMetadata = async (scope: WebhookScope) => {
-  const { data } = await apiClient.get<WebhookMetadata>(`${basePath(scope)}/metadata`);
+  const { data } = await apiClient.get<WebhookMetadata>(
+    `${basePath(scope)}/metadata`,
+  );
   const targetScope = scope === "admin" ? "system" : "user";
   return {
     ...data,
@@ -89,16 +94,25 @@ export const fetchWebhook = async (scope: WebhookScope, id: string) =>
   (await apiClient.get<WebhookDetail>(`${basePath(scope)}/${id}`)).data;
 
 export const fetchWebhookDeliveries = async (scope: WebhookScope, id: string) =>
-  (await apiClient.get<WebhookDelivery[]>(`${basePath(scope)}/${id}/deliveries`)).data;
+  (
+    await apiClient.get<WebhookDelivery[]>(
+      `${basePath(scope)}/${id}/deliveries`,
+    )
+  ).data;
 
 export const fetchPublishWebhookOptions = async () =>
-  (await apiClient.get<PublishWebhookOption[]>("/webhooks/available/article-published")).data;
+  (
+    await apiClient.get<PublishWebhookOption[]>(
+      "/webhooks/available/article-published",
+    )
+  ).data;
 
 export const saveWebhook = async (
   scope: WebhookScope,
   input: { id?: string; input: WebhookInput | UserWebhookInput },
 ) => {
-  if (!input.id) return (await apiClient.post(basePath(scope), input.input)).data;
+  if (!input.id)
+    return (await apiClient.post(basePath(scope), input.input)).data;
   const current = await fetchWebhook(scope, input.id);
   return (
     await apiClient.put(`${basePath(scope)}/${input.id}`, {
@@ -114,9 +128,17 @@ export const deleteWebhook = async (scope: WebhookScope, id: string) =>
 export const setWebhookActive = async (
   scope: WebhookScope,
   input: { id: string; isActive: boolean },
-) => (await apiClient.patch(`${basePath(scope)}/${input.id}/active`, { isActive: input.isActive })).data;
+) =>
+  (
+    await apiClient.patch(`${basePath(scope)}/${input.id}/active`, {
+      isActive: input.isActive,
+    })
+  ).data;
 
-export const previewWebhookPayload = async (scope: WebhookScope, input: PreviewInput | unknown) => {
+export const previewWebhookPayload = async (
+  scope: WebhookScope,
+  input: PreviewInput | unknown,
+) => {
   const body =
     typeof input === "object" && input !== null && "payloadTemplate" in input
       ? input
@@ -124,5 +146,7 @@ export const previewWebhookPayload = async (scope: WebhookScope, input: PreviewI
   return (await apiClient.post(`${basePath(scope)}/preview`, body)).data;
 };
 
-export const testWebhook = async (scope: WebhookScope, input: WebhookTestInput) =>
-  (await apiClient.post(`${basePath(scope)}/test`, input)).data;
+export const testWebhook = async (
+  scope: WebhookScope,
+  input: WebhookTestInput,
+) => (await apiClient.post(`${basePath(scope)}/test`, input)).data;

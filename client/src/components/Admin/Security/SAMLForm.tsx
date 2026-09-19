@@ -73,7 +73,9 @@ export const SAMLForm = ({
         "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
       signature_algorithm: initialData.signature_algorithm || "sha256",
       digest_algorithm:
-        initialData.digest_algorithm || initialData.signature_algorithm || "sha256",
+        initialData.digest_algorithm ||
+        initialData.signature_algorithm ||
+        "sha256",
       mapping: {
         id: initialData.mapping?.id || "nameID",
         username: initialData.mapping?.username || "email",
@@ -144,7 +146,8 @@ export const SAMLForm = ({
               fullWidth
               size="small"
               value={
-                initialData.redirect_uri || t("security.idp.saml.generatedAfterSave")
+                initialData.redirect_uri ||
+                t("security.idp.saml.generatedAfterSave")
               }
               disabled
               InputProps={{
@@ -287,7 +290,9 @@ export const SAMLForm = ({
                                 }
                               />
                             }
-                            label={t("security.idp.saml.requireAssertionSignature")}
+                            label={t(
+                              "security.idp.saml.requireAssertionSignature",
+                            )}
                           />
                         )}
                       </form.Field>
@@ -302,7 +307,9 @@ export const SAMLForm = ({
                                 }
                               />
                             }
-                            label={t("security.idp.saml.requireResponseSignature")}
+                            label={t(
+                              "security.idp.saml.requireResponseSignature",
+                            )}
                           />
                         )}
                       </form.Field>
@@ -317,7 +324,9 @@ export const SAMLForm = ({
                                 }
                               />
                             }
-                            label={t("security.idp.saml.disableRequestedAuthnContext")}
+                            label={t(
+                              "security.idp.saml.disableRequestedAuthnContext",
+                            )}
                           />
                         )}
                       </form.Field>
@@ -378,7 +387,9 @@ export const SAMLForm = ({
                     </form.Field>
                   </Grid>
 
-                  <form.Subscribe selector={(state) => state.values.signAuthnRequest}>
+                  <form.Subscribe
+                    selector={(state) => state.values.signAuthnRequest}
+                  >
                     {(signAuthnRequest) =>
                       signAuthnRequest ? (
                         <>
@@ -392,7 +403,9 @@ export const SAMLForm = ({
                                   rows={8}
                                   size="small"
                                   value={field.state.value}
-                                  onChange={(e) => field.handleChange(e.target.value)}
+                                  onChange={(e) =>
+                                    field.handleChange(e.target.value)
+                                  }
                                   placeholder="-----BEGIN PRIVATE KEY----- ..."
                                   helperText="DB設定では暗号化して保存され、APIからは返却されません。空欄のまま保存すると既存の秘密鍵を維持します。"
                                   sx={{
@@ -415,7 +428,9 @@ export const SAMLForm = ({
                                   rows={8}
                                   size="small"
                                   value={field.state.value}
-                                  onChange={(e) => field.handleChange(e.target.value)}
+                                  onChange={(e) =>
+                                    field.handleChange(e.target.value)
+                                  }
                                   placeholder="-----BEGIN CERTIFICATE----- ..."
                                   helperText="秘密鍵に対応する証明書です。SP Metadataにも公開されます。"
                                   sx={{
