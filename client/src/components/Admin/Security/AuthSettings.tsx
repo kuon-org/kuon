@@ -22,7 +22,8 @@ export const AuthSettings = () => {
   const [cleanupError, setCleanupError] = useState<string | null>(null);
   const idpListQuery = useIdpListQuery();
   const cleanupIdpRegistry = useCleanupIdpRegistry();
-  const orphanProviders = idpListQuery.data?.filter((provider) => provider.orphaned) ?? [];
+  const orphanProviders =
+    idpListQuery.data?.filter((provider) => provider.orphaned) ?? [];
 
   const handleMainTabChange = (
     _event: React.SyntheticEvent,
@@ -132,14 +133,17 @@ export const AuthSettings = () => {
                   <Button
                     color="inherit"
                     size="small"
-                    disabled={!provider.canCleanup || cleanupIdpRegistry.isPending}
+                    disabled={
+                      !provider.canCleanup || cleanupIdpRegistry.isPending
+                    }
                     onClick={() => handleCleanup(provider.provider_name)}
                   >
                     {t("security.idp.registry.cleanup")}
                   </Button>
                 }
               >
-                <strong>{provider.provider_name}</strong> ({provider.provider_type})
+                <strong>{provider.provider_name}</strong> (
+                {provider.provider_type})
                 {provider.userIdentityCount > 0
                   ? t("security.idp.registry.inUse", {
                       count: provider.userIdentityCount,

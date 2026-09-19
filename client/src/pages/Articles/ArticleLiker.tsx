@@ -1,6 +1,9 @@
 import { Box, Paper, Typography } from "@mui/material";
 import { UserList } from "../../components/UserList/UserList";
-import { useArticleLikeUsersQuery, useArticleQuery } from "../../hooks/articles";
+import {
+  useArticleLikeUsersQuery,
+  useArticleQuery,
+} from "../../hooks/articles";
 import { articleRoute } from "../../routes";
 import { Link } from "@tanstack/react-router";
 import LoadingSkelton from "../../components/common/Loading/LoadingSkelton";
@@ -43,7 +46,11 @@ export const ArticleLiker = () => {
         </Link>{" "}
         にいいねした人
       </Typography>
-      {articleQuery.isLoading || likeUsersQuery.isLoading ? <LoadingSkelton /> : <UserList users={likeUsers}></UserList>}
+      {articleQuery.isLoading || likeUsersQuery.isLoading ? (
+        <LoadingSkelton />
+      ) : (
+        <UserList users={likeUsers}></UserList>
+      )}
     </Paper>
   );
 };

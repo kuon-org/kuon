@@ -1,6 +1,10 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import { localeLoaders, supportedLocales, type SupportedLocale } from "./localeLoaders";
+import {
+  localeLoaders,
+  supportedLocales,
+  type SupportedLocale,
+} from "./localeLoaders";
 
 export const defaultLocale: SupportedLocale = "ja";
 export const enabledLocales: SupportedLocale[] = ["ja", "en"];

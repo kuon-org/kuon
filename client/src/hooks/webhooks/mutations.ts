@@ -16,10 +16,14 @@ import { webhookKeys } from "./keys";
 export const useSaveWebhook = (scope: WebhookScope) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { id?: string; input: WebhookInput | UserWebhookInput }) =>
-      saveWebhook(scope, input),
+    mutationFn: (input: {
+      id?: string;
+      input: WebhookInput | UserWebhookInput;
+    }) => saveWebhook(scope, input),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: webhookKeys.list(scope) });
+      await queryClient.invalidateQueries({
+        queryKey: webhookKeys.list(scope),
+      });
     },
   });
 };
@@ -29,7 +33,9 @@ export const useDeleteWebhook = (scope: WebhookScope) => {
   return useMutation({
     mutationFn: (id: string) => deleteWebhook(scope, id),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: webhookKeys.list(scope) });
+      await queryClient.invalidateQueries({
+        queryKey: webhookKeys.list(scope),
+      });
     },
   });
 };
@@ -37,15 +43,23 @@ export const useDeleteWebhook = (scope: WebhookScope) => {
 export const useSetWebhookActive = (scope: WebhookScope) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { id: string; isActive: boolean }) => setWebhookActive(scope, input),
+    mutationFn: (input: { id: string; isActive: boolean }) =>
+      setWebhookActive(scope, input),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: webhookKeys.list(scope) });
+      await queryClient.invalidateQueries({
+        queryKey: webhookKeys.list(scope),
+      });
     },
   });
 };
 
 export const usePreviewWebhookPayload = (scope: WebhookScope) =>
-  useMutation({ mutationFn: (input: PreviewInput | unknown) => previewWebhookPayload(scope, input) });
+  useMutation({
+    mutationFn: (input: PreviewInput | unknown) =>
+      previewWebhookPayload(scope, input),
+  });
 
 export const useTestWebhook = (scope: WebhookScope) =>
-  useMutation({ mutationFn: (input: WebhookTestInput) => testWebhook(scope, input) });
+  useMutation({
+    mutationFn: (input: WebhookTestInput) => testWebhook(scope, input),
+  });

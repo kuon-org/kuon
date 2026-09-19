@@ -1,9 +1,5 @@
 import { lazy, Suspense } from "react";
-import {
-  createRoute,
-  isRedirect,
-  redirect,
-} from "@tanstack/react-router";
+import { createRoute, isRedirect, redirect } from "@tanstack/react-router";
 import { layoutWithTopRoute, plainLayoutRoute } from "./__root";
 import Loading from "../components/common/Loading/Loading";
 import queryClient from "../utils/queryClient";

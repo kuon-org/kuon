@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
 import { ThemeProvider, createTheme } from "@mui/material";
 import chroma from "chroma-js";
 import type { ThemeContextProps, ThemeSelectProviderProps } from "./types";
@@ -12,7 +18,8 @@ const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
  */
 export const useThemeContext = () => {
   const context = useContext(ThemeContext);
-  if (!context) throw new Error("useThemeContext must be used within ThemeSelectProvider");
+  if (!context)
+    throw new Error("useThemeContext must be used within ThemeSelectProvider");
   return context;
 };
 
@@ -35,14 +42,18 @@ export const ThemeSelectProvider: React.FC<ThemeSelectProviderProps> = ({
     const saved = localStorage.getItem(LOCAL_STORAGE_THEME_KEY);
     if (saved && themes.find((t) => t.name === saved)) return saved;
 
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
     const darkTheme = themes.find((t) => t.name.toLowerCase().includes("dark"));
     if (prefersDark && darkTheme) return darkTheme.name;
 
     return themes[0].name;
   });
 
-  const currentBaseTheme = themes.find((t) => t.name === currentThemeName)!.theme;
+  const currentBaseTheme = themes.find(
+    (t) => t.name === currentThemeName,
+  )!.theme;
 
   const [primaryColor, setPrimaryColorState] = useState(() => {
     const savedColor = localStorage.getItem(LOCAL_STORAGE_COLOR_KEY);
@@ -69,7 +80,6 @@ export const ThemeSelectProvider: React.FC<ThemeSelectProviderProps> = ({
     localStorage.setItem(LOCAL_STORAGE_COLOR_KEY, color);
     setPrimaryColorState(color);
   };
-
 
   const setUseCustomColor = (value: boolean) => {
     localStorage.setItem(LOCAL_STORAGE_USE_CUSTOM_COLOR_KEY, value.toString());
@@ -105,10 +115,25 @@ export const ThemeSelectProvider: React.FC<ThemeSelectProviderProps> = ({
       ...currentBaseTheme,
       palette: {
         ...currentBaseTheme.palette,
-        primary: { ...currentBaseTheme.palette.primary, main: primaryColor, contrastText },
-        secondary: { ...currentBaseTheme.palette.secondary, main: secondaryColor },
-        background: { ...currentBaseTheme.palette.background, default: backgroundDefault, paper: backgroundPaper },
-        text: { ...currentBaseTheme.palette.text, primary: dynamicTextPrimary, secondary: dynamicTextSecondary },
+        primary: {
+          ...currentBaseTheme.palette.primary,
+          main: primaryColor,
+          contrastText,
+        },
+        secondary: {
+          ...currentBaseTheme.palette.secondary,
+          main: secondaryColor,
+        },
+        background: {
+          ...currentBaseTheme.palette.background,
+          default: backgroundDefault,
+          paper: backgroundPaper,
+        },
+        text: {
+          ...currentBaseTheme.palette.text,
+          primary: dynamicTextPrimary,
+          secondary: dynamicTextSecondary,
+        },
       },
     });
   }, [currentBaseTheme, primaryColor, useCustomColor]);

@@ -1,4 +1,10 @@
-import { FormControl, InputLabel, MenuItem, Select, type SelectChangeEvent } from "@mui/material";
+import {
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  type SelectChangeEvent,
+} from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { changeLocale, enabledLocales } from "../../i18n";
 import type { SupportedLocale } from "../../i18n/localeLoaders";
@@ -8,10 +14,15 @@ interface LanguageSelectProps {
   fullWidth?: boolean;
 }
 
-export const LanguageSelect = ({ label, fullWidth = false }: LanguageSelectProps) => {
+export const LanguageSelect = ({
+  label,
+  fullWidth = false,
+}: LanguageSelectProps) => {
   const { t, i18n } = useTranslation("common");
   const selectLabel = label ?? t("language.label");
-  const currentLocale = (i18n.resolvedLanguage ?? i18n.language).split("-")[0] as SupportedLocale;
+  const currentLocale = (i18n.resolvedLanguage ?? i18n.language).split(
+    "-",
+  )[0] as SupportedLocale;
 
   const handleChange = (event: SelectChangeEvent<SupportedLocale>) => {
     void changeLocale(event.target.value as SupportedLocale);

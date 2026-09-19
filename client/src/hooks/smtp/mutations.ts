@@ -12,5 +12,4 @@ export const useUpdateSmtpSettings = () => {
   });
 };
 
-export const useSendSmtpTest = () =>
-  useMutation({ mutationFn: sendSmtpTest });
+export const useSendSmtpTest = () => useMutation({ mutationFn: sendSmtpTest });

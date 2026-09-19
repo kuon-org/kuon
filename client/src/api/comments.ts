@@ -62,31 +62,59 @@ const convertToTree = (comments: Comment[]): Comment[] => {
 };
 
 export const fetchComments = async (articleId: string) => {
-  const { data } = await apiClient.get<Comment[]>(`/articles/${articleId}/comments`);
+  const { data } = await apiClient.get<Comment[]>(
+    `/articles/${articleId}/comments`,
+  );
   return convertToTree(data);
 };
 
-export const createComment = async (articleId: string, payload: CreateCommentPayload) => {
-  const { data } = await apiClient.post(`/articles/${articleId}/comments`, payload);
+export const createComment = async (
+  articleId: string,
+  payload: CreateCommentPayload,
+) => {
+  const { data } = await apiClient.post(
+    `/articles/${articleId}/comments`,
+    payload,
+  );
   return data;
 };
 
-export const softDeleteComment = async (articleId: string, commentId: string) => {
-  const { data } = await apiClient.delete(`/articles/${articleId}/comments/${commentId}`);
+export const softDeleteComment = async (
+  articleId: string,
+  commentId: string,
+) => {
+  const { data } = await apiClient.delete(
+    `/articles/${articleId}/comments/${commentId}`,
+  );
   return data;
 };
 
-export const fetchCommentLikeUsers = async (articleId: string, commentId: string) => {
-  const { data } = await apiClient.get<LikeUserResponse>(`/articles/${articleId}/comments/${commentId}/likes`);
+export const fetchCommentLikeUsers = async (
+  articleId: string,
+  commentId: string,
+) => {
+  const { data } = await apiClient.get<LikeUserResponse>(
+    `/articles/${articleId}/comments/${commentId}/likes`,
+  );
   return data;
 };
 
-export const fetchCommentIsLiked = async (articleId: string, commentId: string) => {
-  const { data } = await apiClient.get<IsLikedResponse>(`/articles/${articleId}/comments/${commentId}/islike`);
+export const fetchCommentIsLiked = async (
+  articleId: string,
+  commentId: string,
+) => {
+  const { data } = await apiClient.get<IsLikedResponse>(
+    `/articles/${articleId}/comments/${commentId}/islike`,
+  );
   return data;
 };
 
-export const toggleCommentLike = async (articleId: string, commentId: string) => {
-  const { data } = await apiClient.post<{ isLike: boolean }>(`/articles/${articleId}/comments/${commentId}/like`);
+export const toggleCommentLike = async (
+  articleId: string,
+  commentId: string,
+) => {
+  const { data } = await apiClient.post<{ isLike: boolean }>(
+    `/articles/${articleId}/comments/${commentId}/like`,
+  );
   return data;
 };

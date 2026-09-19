@@ -13,7 +13,12 @@ export const StockEditWrapper = () => {
 const EditDataLoader = ({ listId }: { listId: string }) => {
   const { t } = useTranslation("articles");
   const listDetail = useStockListDetail(listId);
-  if (listDetail.isLoading) return <Box sx={{ display: "flex", justifyContent: "center", p: 10 }}><CircularProgress /></Box>;
+  if (listDetail.isLoading)
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 10 }}>
+        <CircularProgress />
+      </Box>
+    );
   if (!listDetail.data) return <div>{t("stock.notFound")}</div>;
   return <StockEditPages initialData={listDetail.data} />;
 };

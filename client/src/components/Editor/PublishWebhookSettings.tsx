@@ -21,9 +21,13 @@ export const getPublishWebhookPreference = () => {
   const notify = localStorage.getItem(PUBLISH_WEBHOOK_NOTIFY_KEY) === "true";
   let webhookIds: string[] = [];
   try {
-    const parsed = JSON.parse(localStorage.getItem(PUBLISH_WEBHOOK_IDS_KEY) ?? "[]");
+    const parsed = JSON.parse(
+      localStorage.getItem(PUBLISH_WEBHOOK_IDS_KEY) ?? "[]",
+    );
     if (Array.isArray(parsed)) {
-      webhookIds = parsed.filter((value): value is string => typeof value === "string");
+      webhookIds = parsed.filter(
+        (value): value is string => typeof value === "string",
+      );
     }
   } catch {
     webhookIds = [];
@@ -38,7 +42,11 @@ const providerLabel: Record<PublishWebhookOption["provider"], string> = {
   teams: "Microsoft Teams",
 };
 
-export const PublishWebhookSettings = ({ disabled = false }: { disabled?: boolean }) => {
+export const PublishWebhookSettings = ({
+  disabled = false,
+}: {
+  disabled?: boolean;
+}) => {
   const { t } = useTranslation("articles");
   const publishWebhooksQuery = usePublishWebhookOptionsQuery();
   const options = publishWebhooksQuery.data ?? [];
@@ -51,7 +59,9 @@ export const PublishWebhookSettings = ({ disabled = false }: { disabled?: boolea
 
   useEffect(() => {
     if (isLoading) return;
-    const validIds = selectedIds.filter((id) => options.some((option) => option.id === id));
+    const validIds = selectedIds.filter((id) =>
+      options.some((option) => option.id === id),
+    );
     if (validIds.length !== selectedIds.length) {
       setSelectedIds(validIds);
       localStorage.setItem(PUBLISH_WEBHOOK_IDS_KEY, JSON.stringify(validIds));
@@ -71,26 +81,53 @@ export const PublishWebhookSettings = ({ disabled = false }: { disabled?: boolea
 
   return (
     <Box sx={{ mt: 3 }}>
-      <Typography variant="subtitle2" sx={{ mb: 0.5 }}>{t("editor.webhook.title")}</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{t("editor.webhook.description")}</Typography>
+      <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+        {t("editor.webhook.title")}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        {t("editor.webhook.description")}
+      </Typography>
       <FormControlLabel
-        control={<Switch checked={notify} disabled={disabled || options.length === 0} onChange={(_, checked) => changeNotify(checked)} />}
+        control={
+          <Switch
+            checked={notify}
+            disabled={disabled || options.length === 0}
+            onChange={(_, checked) => changeNotify(checked)}
+          />
+        }
         label={t("editor.webhook.enable")}
       />
-      {options.length === 0 && !isLoading && <Alert severity="info" sx={{ mt: 1 }}>{t("editor.webhook.noTargets")}</Alert>}
+      {options.length === 0 && !isLoading && (
+        <Alert severity="info" sx={{ mt: 1 }}>
+          {t("editor.webhook.noTargets")}
+        </Alert>
+      )}
       {notify && options.length > 0 && (
         <Autocomplete
           multiple
           sx={{ mt: 1 }}
           options={options}
           value={selected}
-          getOptionLabel={(option) => `${option.name} (${providerLabel[option.provider]})`}
+          getOptionLabel={(option) =>
+            `${option.name} (${providerLabel[option.provider]})`
+          }
           isOptionEqualToValue={(option, value) => option.id === value.id}
           onChange={(_, values) => changeTargets(values)}
-          renderInput={(params) => <TextField {...params} label={t("editor.webhook.targets")} placeholder={t("editor.webhook.targetPlaceholder")} helperText={t("editor.webhook.multiple")} />}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label={t("editor.webhook.targets")}
+              placeholder={t("editor.webhook.targetPlaceholder")}
+              helperText={t("editor.webhook.multiple")}
+            />
+          )}
         />
       )}
-      {notify && options.length > 0 && selected.length === 0 && <Alert severity="warning" sx={{ mt: 1 }}>{t("editor.webhook.noSelection")}</Alert>}
+      {notify && options.length > 0 && selected.length === 0 && (
+        <Alert severity="warning" sx={{ mt: 1 }}>
+          {t("editor.webhook.noSelection")}
+        </Alert>
+      )}
     </Box>
   );
 };

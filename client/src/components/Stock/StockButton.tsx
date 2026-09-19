@@ -3,12 +3,17 @@ import { IconButton, Tooltip, Box, CircularProgress } from "@mui/material";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import { useTranslation } from "react-i18next";
 import { StockManageDialog } from "./StockManageDialog";
-import { useArticleStockLists, useToggleDefaultStock } from "../../hooks/stocks";
+import {
+  useArticleStockLists,
+  useToggleDefaultStock,
+} from "../../hooks/stocks";
 import { useAuthUserQuery } from "../../hooks/auth";
 import { useNotify } from "../../hooks/useNotify";
 import { useLongPress } from "../../hooks/useLongPress";
 
-interface StockButtonProps { articleId: string; }
+interface StockButtonProps {
+  articleId: string;
+}
 
 export const StockButton = ({ articleId }: StockButtonProps) => {
   const { t } = useTranslation("articles");
@@ -35,21 +40,48 @@ export const StockButton = ({ articleId }: StockButtonProps) => {
   }, [isAuth, error, t, stockLists, toggleDefaultStock]);
 
   const longPressEvents = useLongPress({
-    onLongPress: () => { openDetail(); if (navigator.vibrate) navigator.vibrate(50); },
+    onLongPress: () => {
+      openDetail();
+      if (navigator.vibrate) navigator.vibrate(50);
+    },
     onClick: handleClick,
     threshold: 500,
   });
 
   return (
     <>
-      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <Tooltip title={isStoredInDefault ? t("stock.unstock") : t("stock.stock")} placement="right">
-          <IconButton {...longPressEvents} onContextMenu={(e) => { e.preventDefault(); openDetail(); }} sx={{ color: isStoredInDefault ? "primary.main" : "text.secondary", "&:hover": { color: "primary.main" } }}>
-            {toggleDefaultStock.isPending || stockLists.isFetching ? <CircularProgress size={24} color="inherit" /> : <InventoryIcon />}
+      <Box
+        sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+      >
+        <Tooltip
+          title={isStoredInDefault ? t("stock.unstock") : t("stock.stock")}
+          placement="right"
+        >
+          <IconButton
+            {...longPressEvents}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              openDetail();
+            }}
+            sx={{
+              color: isStoredInDefault ? "primary.main" : "text.secondary",
+              "&:hover": { color: "primary.main" },
+            }}
+          >
+            {toggleDefaultStock.isPending || stockLists.isFetching ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              <InventoryIcon />
+            )}
           </IconButton>
         </Tooltip>
       </Box>
-      <StockManageDialog key={articleId} open={open} onClose={() => setOpen(false)} articleId={articleId} />
+      <StockManageDialog
+        key={articleId}
+        open={open}
+        onClose={() => setOpen(false)}
+        articleId={articleId}
+      />
     </>
   );
 };

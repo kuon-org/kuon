@@ -20,7 +20,11 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { AuthSettingForm } from "./AuthSettingForm";
-import { useDeleteIdpConfig, useIdpListQuery, useUpdateIdpConfig } from "../../../hooks/admin";
+import {
+  useDeleteIdpConfig,
+  useIdpListQuery,
+  useUpdateIdpConfig,
+} from "../../../hooks/admin";
 import { useNotify } from "../../../hooks/useNotify";
 
 export const SAMLManager = () => {

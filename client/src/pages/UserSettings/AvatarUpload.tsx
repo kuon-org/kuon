@@ -23,25 +23,115 @@ export const AvatarUpload = () => {
     }
   };
   const handleUpload = () => {
-    if (!selectedFile) { error(t("avatarUpload.selectRequired")); return; }
-    localAvatarUpload.mutate(selectedFile, { onSuccess: () => { navigate({ to: accountSettingRoute.to }); } });
+    if (!selectedFile) {
+      error(t("avatarUpload.selectRequired"));
+      return;
+    }
+    localAvatarUpload.mutate(selectedFile, {
+      onSuccess: () => {
+        navigate({ to: accountSettingRoute.to });
+      },
+    });
   };
-  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
+  useEffect(
+    () => () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    },
+    [previewUrl],
+  );
 
   return (
-    <Paper elevation={0} sx={{ mx: "auto", p: 3, minWidth: { xs: "100%", md: "600px", lg: "850px" }, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
-      <Typography variant="h6" sx={{ mb: 3, fontWeight: "bold" }}>{t("avatarUpload.title")}</Typography>
-      <Box onClick={() => fileInputRef.current?.click()} sx={{ display: "flex", alignItems: "center", gap: 3, cursor: "pointer", p: 2, borderRadius: 1, transition: "background 0.2s", "&:hover": { bgcolor: "action.hover" } }}>
-        <Avatar src={previewUrl || undefined} alt="preview" sx={{ width: 80, height: 80, bgcolor: "grey.200", border: "1px solid", borderColor: "divider" }} />
+    <Paper
+      elevation={0}
+      sx={{
+        mx: "auto",
+        p: 3,
+        minWidth: { xs: "100%", md: "600px", lg: "850px" },
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 2,
+      }}
+    >
+      <Typography variant="h6" sx={{ mb: 3, fontWeight: "bold" }}>
+        {t("avatarUpload.title")}
+      </Typography>
+      <Box
+        onClick={() => fileInputRef.current?.click()}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 3,
+          cursor: "pointer",
+          p: 2,
+          borderRadius: 1,
+          transition: "background 0.2s",
+          "&:hover": { bgcolor: "action.hover" },
+        }}
+      >
+        <Avatar
+          src={previewUrl || undefined}
+          alt="preview"
+          sx={{
+            width: 80,
+            height: 80,
+            bgcolor: "grey.200",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        />
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{ bgcolor: "grey.700", color: "white", px: 2, py: 0.8, borderRadius: 1, fontSize: "0.875rem", fontWeight: "medium" }}>{t("avatarUpload.chooseFile")}</Box>
-          <Typography variant="body2" sx={{ color: selectedFile ? "text.primary" : "text.secondary", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedFile ? selectedFile.name : t("avatarUpload.notSelected")}</Typography>
+          <Box
+            sx={{
+              bgcolor: "grey.700",
+              color: "white",
+              px: 2,
+              py: 0.8,
+              borderRadius: 1,
+              fontSize: "0.875rem",
+              fontWeight: "medium",
+            }}
+          >
+            {t("avatarUpload.chooseFile")}
+          </Box>
+          <Typography
+            variant="body2"
+            sx={{
+              color: selectedFile ? "text.primary" : "text.secondary",
+              maxWidth: "200px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {selectedFile ? selectedFile.name : t("avatarUpload.notSelected")}
+          </Typography>
         </Box>
-        <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} style={{ display: "none" }} />
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          style={{ display: "none" }}
+        />
       </Box>
       <Box sx={{ display: "flex", gap: 2 }}>
-        <Button variant="contained" sx={{ mt: 4, px: 4, py: 1 }} onClick={handleUpload} disabled={localAvatarUpload.isPending || !selectedFile}>{localAvatarUpload.isPending ? t("avatarUpload.uploading") : t("avatarUpload.submit")}</Button>
-        <Button variant="outlined" sx={{ mt: 4, px: 4, py: 1 }} onClick={() => navigate({ to: accountSettingRoute.to })}>{t("common.cancel")}</Button>
+        <Button
+          variant="contained"
+          sx={{ mt: 4, px: 4, py: 1 }}
+          onClick={handleUpload}
+          disabled={localAvatarUpload.isPending || !selectedFile}
+        >
+          {localAvatarUpload.isPending
+            ? t("avatarUpload.uploading")
+            : t("avatarUpload.submit")}
+        </Button>
+        <Button
+          variant="outlined"
+          sx={{ mt: 4, px: 4, py: 1 }}
+          onClick={() => navigate({ to: accountSettingRoute.to })}
+        >
+          {t("common.cancel")}
+        </Button>
       </Box>
     </Paper>
   );

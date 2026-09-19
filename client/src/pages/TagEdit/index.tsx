@@ -1,6 +1,10 @@
 import { Container } from "@mui/material";
 import Loading from "../../components/common/Loading/Loading";
-import { useTagQuery, useUpsertTag, useUploadTagAvatar } from "../../hooks/tags";
+import {
+  useTagQuery,
+  useUpsertTag,
+  useUploadTagAvatar,
+} from "../../hooks/tags";
 import { tagEditRoute, tagProfileRoute } from "../../routes";
 import { TagEditForm } from "./TagEditForm";
 import { useAuthUserQuery } from "../../hooks/auth";
@@ -24,7 +28,13 @@ export const TagEdit = () => {
   if (permissionsQuery.isLoading) return <Loading />;
   if (!canManageTag) {
     error(t("edit.permissionDenied"));
-    return <Navigate to={tagProfileRoute.to} search={{ page: 1 }} params={{ slug }} />;
+    return (
+      <Navigate
+        to={tagProfileRoute.to}
+        search={{ page: 1 }}
+        params={{ slug }}
+      />
+    );
   }
   if (tagQuery.isLoading) return <Loading />;
   if (tagQuery.isError || !tagQuery.data) return <>{t("detail.loadError")}</>;

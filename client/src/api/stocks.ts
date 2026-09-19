@@ -120,7 +120,9 @@ export const deleteStockList = async (listId: string) => {
 };
 
 export const toggleDefaultStock = async (articleId: string) => {
-  const { data } = await apiClient.post("/stocks/default/articles", { articleId });
+  const { data } = await apiClient.post("/stocks/default/articles", {
+    articleId,
+  });
   return data;
 };
 

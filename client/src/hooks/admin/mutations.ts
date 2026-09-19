@@ -16,7 +16,9 @@ export const useUpdateIdpConfig = (providerName?: string) => {
     mutationFn: updateIdpConfig,
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: adminKeys.idpConfig(providerName) }),
+        queryClient.invalidateQueries({
+          queryKey: adminKeys.idpConfig(providerName),
+        }),
         queryClient.invalidateQueries({ queryKey: adminKeys.idps }),
       ]);
     },
@@ -29,7 +31,9 @@ export const useToggleIdpActive = (providerName?: string) => {
     mutationFn: toggleIdpActive,
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: adminKeys.idpConfig(providerName) }),
+        queryClient.invalidateQueries({
+          queryKey: adminKeys.idpConfig(providerName),
+        }),
         queryClient.invalidateQueries({ queryKey: adminKeys.idps }),
       ]);
     },
@@ -43,7 +47,8 @@ export const useCleanupIdpRegistry = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: cleanupIdpRegistry,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminKeys.idps }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: adminKeys.idps }),
   });
 };
 
@@ -51,7 +56,8 @@ export const useToggleAdminUserActive = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: toggleAdminUserActive,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminKeys.users }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: adminKeys.users }),
   });
 };
 
@@ -62,7 +68,9 @@ export const useDeleteIdpConfig = () => {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminKeys.idps }),
-        queryClient.invalidateQueries({ queryKey: ["admin", "idps", "config"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin", "idps", "config"],
+        }),
       ]);
     },
   });
@@ -76,7 +84,9 @@ export const useUpdateServerSetting = () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminKeys.serverSettings }),
         queryClient.invalidateQueries({ queryKey: ["publicServerSettings"] }),
-        queryClient.invalidateQueries({ queryKey: ["localRegistrationStatus"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["localRegistrationStatus"],
+        }),
       ]);
     },
   });

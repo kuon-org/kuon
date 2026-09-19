@@ -4,7 +4,9 @@ import i18n from "../../i18n";
 export const isApiError = (error: unknown): error is ApiError => {
   if (!error || typeof error !== "object") return false;
   const candidate = error as Partial<ApiError>;
-  return typeof candidate.status === "number" && typeof candidate.code === "string";
+  return (
+    typeof candidate.status === "number" && typeof candidate.code === "string"
+  );
 };
 
 export const getErrorStatus = (error: unknown): number | undefined =>

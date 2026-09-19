@@ -148,7 +148,11 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
           {articleId && MarpMenuItem}
         </MoreHButton>
         {tocDrawer}
-        <MarpSlideDialog articleId={articleId} open={openMarp} onClose={() => setOpenMarp(false)} />
+        <MarpSlideDialog
+          articleId={articleId}
+          open={openMarp}
+          onClose={() => setOpenMarp(false)}
+        />
       </Box>
     );
 
@@ -193,7 +197,11 @@ export const More = ({ username, articleId, isOwned, content }: MoreProps) => {
         </MenuItem>
       </MoreHButton>
       {tocDrawer}
-      <MarpSlideDialog articleId={articleId} open={openMarp} onClose={() => setOpenMarp(false)} />
+      <MarpSlideDialog
+        articleId={articleId}
+        open={openMarp}
+        onClose={() => setOpenMarp(false)}
+      />
     </Box>
   );
 };

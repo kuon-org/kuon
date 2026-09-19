@@ -32,7 +32,9 @@ export const AuthSettingForm = ({ provider_name }: AuthSettingFormProps) => {
   const toggleIdpActive = useToggleIdpActive(provider_name);
   const testIdpConnectivity = useTestIdpConnectivity();
   const idpConf = idpConfigQuery.data;
-  const [testResult, setTestResult] = useState<IdpConnectivityResult | null>(null);
+  const [testResult, setTestResult] = useState<IdpConnectivityResult | null>(
+    null,
+  );
   const [testError, setTestError] = useState<string | null>(null);
 
   if (idpConfigQuery.isLoading) return <Loading />;

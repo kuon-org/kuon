@@ -55,7 +55,9 @@ export const useEditArticle = (articleId: string) => {
     mutationFn: (payload: EditArticleData) => editArticle(articleId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: articleKeys.all });
-      queryClient.invalidateQueries({ queryKey: articleKeys.detail(articleId) });
+      queryClient.invalidateQueries({
+        queryKey: articleKeys.detail(articleId),
+      });
       queryClient.invalidateQueries({ queryKey: articleKeys.mine() });
     },
     onError: (apiError: ApiError) => {
@@ -73,21 +75,34 @@ export const useToggleArticleLike = (articleId: string) => {
   return useMutation({
     mutationFn: () => toggleArticleLike(articleId),
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: articleKeys.detail(articleId) });
-      await queryClient.cancelQueries({ queryKey: articleKeys.isLiked(articleId) });
-      await queryClient.cancelQueries({ queryKey: articleKeys.likeUsers(articleId) });
+      await queryClient.cancelQueries({
+        queryKey: articleKeys.detail(articleId),
+      });
+      await queryClient.cancelQueries({
+        queryKey: articleKeys.isLiked(articleId),
+      });
+      await queryClient.cancelQueries({
+        queryKey: articleKeys.likeUsers(articleId),
+      });
 
-      const prevArticle = queryClient.getQueryData<Article>(articleKeys.detail(articleId));
-      const prevIsLiked = queryClient.getQueryData<IsLikedResponse>(articleKeys.isLiked(articleId));
+      const prevArticle = queryClient.getQueryData<Article>(
+        articleKeys.detail(articleId),
+      );
+      const prevIsLiked = queryClient.getQueryData<IsLikedResponse>(
+        articleKeys.isLiked(articleId),
+      );
 
       if (prevArticle && prevIsLiked) {
         queryClient.setQueryData<Article>(articleKeys.detail(articleId), {
           ...prevArticle,
           like_count: prevArticle.like_count + (prevIsLiked.isLike ? -1 : 1),
         });
-        queryClient.setQueryData<IsLikedResponse>(articleKeys.isLiked(articleId), {
-          isLike: !prevIsLiked.isLike,
-        });
+        queryClient.setQueryData<IsLikedResponse>(
+          articleKeys.isLiked(articleId),
+          {
+            isLike: !prevIsLiked.isLike,
+          },
+        );
       }
 
       return { prevArticle, prevIsLiked };
@@ -95,17 +110,31 @@ export const useToggleArticleLike = (articleId: string) => {
     onError: (_error, _variables, context) => {
       error(t("notifications.likeFailed"));
       if (context?.prevArticle) {
-        queryClient.setQueryData(articleKeys.detail(articleId), context.prevArticle);
+        queryClient.setQueryData(
+          articleKeys.detail(articleId),
+          context.prevArticle,
+        );
       }
       if (context?.prevIsLiked) {
-        queryClient.setQueryData(articleKeys.isLiked(articleId), context.prevIsLiked);
+        queryClient.setQueryData(
+          articleKeys.isLiked(articleId),
+          context.prevIsLiked,
+        );
       }
     },
     onSuccess: (data) => {
-      success(data.isLike ? t("notifications.liked") : t("notifications.unliked"));
-      queryClient.invalidateQueries({ queryKey: articleKeys.detail(articleId) });
-      queryClient.invalidateQueries({ queryKey: articleKeys.likeUsers(articleId) });
-      queryClient.invalidateQueries({ queryKey: articleKeys.isLiked(articleId) });
+      success(
+        data.isLike ? t("notifications.liked") : t("notifications.unliked"),
+      );
+      queryClient.invalidateQueries({
+        queryKey: articleKeys.detail(articleId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: articleKeys.likeUsers(articleId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: articleKeys.isLiked(articleId),
+      });
     },
   });
 };
@@ -132,7 +161,9 @@ export const useRollbackArticle = (articleId?: string) => {
     mutationFn: rollbackArticle,
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: articleKeys.mine() });
-      queryClient.invalidateQueries({ queryKey: articleKeys.detail(articleId ?? id) });
+      queryClient.invalidateQueries({
+        queryKey: articleKeys.detail(articleId ?? id),
+      });
       success(t("notifications.rollbackSuccess"));
     },
   });

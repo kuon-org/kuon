@@ -37,7 +37,12 @@ export const AppRouter = () => {
   const maintenanceMode = publicSettings.data?.maintenanceMode ?? false;
 
   useEffect(() => {
-    if (authUserQuery.isLoading || permissionsQuery.isLoading || publicSettings.isLoading) return;
+    if (
+      authUserQuery.isLoading ||
+      permissionsQuery.isLoading ||
+      publicSettings.isLoading
+    )
+      return;
     void router.invalidate();
   }, [
     user?.id,
@@ -62,7 +67,12 @@ export const AppRouter = () => {
       );
   }, [publicSettings.refetch]);
 
-  if (authUserQuery.isLoading || permissionsQuery.isLoading || publicSettings.isLoading) return null;
+  if (
+    authUserQuery.isLoading ||
+    permissionsQuery.isLoading ||
+    publicSettings.isLoading
+  )
+    return null;
 
   return (
     <RouterProvider

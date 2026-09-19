@@ -141,7 +141,9 @@ export const UserIcon = () => {
             </MenuItem>
             <MenuItem onClick={handleLogout}>
               <LogoutIcon sx={{ mr: 1 }} />
-              {logout.isPending ? t("userMenu.loggingOut") : t("userMenu.logout")}
+              {logout.isPending
+                ? t("userMenu.loggingOut")
+                : t("userMenu.logout")}
             </MenuItem>
           </Box>
         ) : (

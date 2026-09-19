@@ -40,32 +40,44 @@ export const fetchUser = async (username: string) => {
 };
 
 export const fetchIsFollowing = async (userId: string) => {
-  const { data } = await apiClient.get<FollowState>(`/users/${userId}/isfollowing`);
+  const { data } = await apiClient.get<FollowState>(
+    `/users/${userId}/isfollowing`,
+  );
   return data;
 };
 
 export const fetchFollowing = async (userId: string) => {
-  const { data } = await apiClient.get<RelatedUser[]>(`/users/${userId}/follow`);
+  const { data } = await apiClient.get<RelatedUser[]>(
+    `/users/${userId}/follow`,
+  );
   return data;
 };
 
 export const fetchFollowers = async (userId: string) => {
-  const { data } = await apiClient.get<RelatedUser[]>(`/users/${userId}/follower`);
+  const { data } = await apiClient.get<RelatedUser[]>(
+    `/users/${userId}/follower`,
+  );
   return data;
 };
 
 export const fetchUserCommentCount = async (userId: string) => {
-  const { data } = await apiClient.get<{ commentCount: number }>(`/users/${userId}/comments`);
+  const { data } = await apiClient.get<{ commentCount: number }>(
+    `/users/${userId}/comments`,
+  );
   return data.commentCount;
 };
 
 export const fetchUserArticleCount = async (userId: string) => {
-  const { data } = await apiClient.get<{ articleCount: number }>(`/users/${userId}/articles`);
+  const { data } = await apiClient.get<{ articleCount: number }>(
+    `/users/${userId}/articles`,
+  );
   return data.articleCount;
 };
 
 export const followUser = async (followeeId: string) => {
-  const { data } = await apiClient.post<FollowState>("/users/follow", { followeeId });
+  const { data } = await apiClient.post<FollowState>("/users/follow", {
+    followeeId,
+  });
   return data;
 };
 

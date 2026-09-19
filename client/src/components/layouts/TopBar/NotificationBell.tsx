@@ -134,7 +134,10 @@ export const NotificationBell = ({ enabled }: NotificationBellProps) => {
           {notifications.length > 0 && (
             <Box sx={{ display: "flex", gap: 0.5 }}>
               {unreadCount > 0 ? (
-                <Button size="small" onClick={() => void markAllRead.mutateAsync()}>
+                <Button
+                  size="small"
+                  onClick={() => void markAllRead.mutateAsync()}
+                >
                   {t("markAllRead")}
                 </Button>
               ) : (

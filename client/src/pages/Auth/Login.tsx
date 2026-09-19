@@ -30,7 +30,9 @@ const Login: React.FC = () => {
   const passwordResetStatus = useQuery({
     queryKey: ["passwordResetStatus"],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ available: boolean }>("/password-reset/status");
+      const { data } = await apiClient.get<{ available: boolean }>(
+        "/password-reset/status",
+      );
       return data;
     },
     retry: false,
@@ -137,10 +139,19 @@ const Login: React.FC = () => {
               form.handleSubmit();
             }}
           >
-            {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
+            {serverError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {serverError}
+              </Alert>
+            )}
             {needsEmailVerification && (
               <Box sx={{ mb: 2 }}>
-                <NavButton fullWidth path="/verify-email" message={t("login.resendVerification")} variant="outlined" />
+                <NavButton
+                  fullWidth
+                  path="/verify-email"
+                  message={t("login.resendVerification")}
+                  variant="outlined"
+                />
               </Box>
             )}
             <form.Field name="identifier">
@@ -170,7 +181,9 @@ const Login: React.FC = () => {
                 />
               )}
             </form.Field>
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
               {([canSubmit, isSubmitting]) => (
                 <Button
                   type="submit"
@@ -179,19 +192,33 @@ const Login: React.FC = () => {
                   sx={{ mt: 3, mb: 2 }}
                   disabled={!canSubmit || loginMutation.isPending}
                 >
-                  {loginMutation.isPending || isSubmitting ? <CircularProgress size={24} /> : t("login.submit")}
+                  {loginMutation.isPending || isSubmitting ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    t("login.submit")
+                  )}
                 </Button>
               )}
             </form.Subscribe>
           </form>
           {passwordResetStatus.data?.available && (
             <Box sx={{ mb: 2 }}>
-              <NavButton fullWidth path="/forgot-password" message={t("login.forgotPassword")} variant="text" />
+              <NavButton
+                fullWidth
+                path="/forgot-password"
+                message={t("login.forgotPassword")}
+                variant="text"
+              />
             </Box>
           )}
           {localRegistrationAllowed && (
             <Box sx={{ display: "flex", mx: "auto", justifyContent: "center" }}>
-              <NavButton fullWidth path="/register" message={t("login.createAccount")} variant="outlined" />
+              <NavButton
+                fullWidth
+                path="/register"
+                message={t("login.createAccount")}
+                variant="outlined"
+              />
             </Box>
           )}
         </Box>

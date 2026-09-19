@@ -92,7 +92,11 @@ const SlideViewer = ({
         color: "white",
       }}
     >
-      <Stack direction="row" spacing={1} sx={{ position: "absolute", top: 20, right: 20, zIndex: 10 }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ position: "absolute", top: 20, right: 20, zIndex: 10 }}
+      >
         <IconButton
           onClick={(e) => {
             e.stopPropagation();
@@ -117,7 +121,9 @@ const SlideViewer = ({
       <Box
         onClick={(e) => {
           e.stopPropagation();
-          const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+          const rect = (
+            e.currentTarget as HTMLDivElement
+          ).getBoundingClientRect();
           const clickX = e.clientX - rect.left;
           const ratio = clickX / rect.width;
           if (ratio > 0.55) handleNext();
@@ -194,21 +200,47 @@ const SlideViewer = ({
                 backdropFilter: "blur(4px)",
               }}
             >
-              <IconButton onClick={(e) => { e.stopPropagation(); handleBack(); }} disabled={page === 0} sx={{ color: "white" }}>
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBack();
+                }}
+                disabled={page === 0}
+                sx={{ color: "white" }}
+              >
                 <NavigateBeforeIcon />
               </IconButton>
 
-              <Typography variant="body2" sx={{ minWidth: "40px", textAlign: "center" }}>
+              <Typography
+                variant="body2"
+                sx={{ minWidth: "40px", textAlign: "center" }}
+              >
                 {page + 1} / {totalPages}
               </Typography>
 
-              <IconButton onClick={(e) => { e.stopPropagation(); handleNext(); }} disabled={page === totalPages - 1} sx={{ color: "white" }}>
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNext();
+                }}
+                disabled={page === totalPages - 1}
+                sx={{ color: "white" }}
+              >
                 <NavigateNextIcon />
               </IconButton>
             </Stack>
           )}
 
-          <Box sx={{ position: "fixed", bottom: 0, left: 0, width: "100%", height: 3, backgroundColor: "transparent" }}>
+          <Box
+            sx={{
+              position: "fixed",
+              bottom: 0,
+              left: 0,
+              width: "100%",
+              height: 3,
+              backgroundColor: "transparent",
+            }}
+          >
             <Box
               sx={{
                 width: `${((page + 1) / totalPages) * 100}%`,

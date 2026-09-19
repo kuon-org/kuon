@@ -29,7 +29,11 @@ export const BottomUserCard = ({
       }}
     >
       <Link to="/$username" params={{ username }}>
-        <Avatar src={image_src} alt={display_name} sx={{ width: 56, height: 56, bgcolor: "grey.200" }} />
+        <Avatar
+          src={image_src}
+          alt={display_name}
+          sx={{ width: 56, height: 56, bgcolor: "grey.200" }}
+        />
       </Link>
 
       <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -45,7 +49,10 @@ export const BottomUserCard = ({
               "&:focus *": { textDecoration: "underline" },
             }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", display: "inline-block" }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: "bold", display: "inline-block" }}
+            >
               @{username} ({display_name})
             </Typography>
           </Box>

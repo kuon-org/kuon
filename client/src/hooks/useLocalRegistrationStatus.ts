@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchLocalRegistrationStatus, type LocalRegistrationStatus } from "../api/public-settings";
+import {
+  fetchLocalRegistrationStatus,
+  type LocalRegistrationStatus,
+} from "../api/public-settings";
 
 export type { LocalRegistrationStatus } from "../api/public-settings";
 

@@ -45,7 +45,8 @@ export const fetchServerEvents = async (filters: ServerEventFilters) => {
   if (filters.limit) params.set("limit", String(filters.limit));
   if (filters.level) params.set("level", filters.level);
   if (filters.category) params.set("category", filters.category);
-  if (filters.eventType?.trim()) params.set("eventType", filters.eventType.trim());
+  if (filters.eventType?.trim())
+    params.set("eventType", filters.eventType.trim());
   if (filters.from) params.set("from", filters.from);
   if (filters.to) params.set("to", filters.to);
 

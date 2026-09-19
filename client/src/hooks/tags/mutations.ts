@@ -18,7 +18,8 @@ export const useUpsertTag = (slug?: string) => {
         queryClient.invalidateQueries({ queryKey: tagKeys.detail(slug) }),
       ]);
     },
-    onError: (apiError: ApiError) => error(getApiErrorMessage(apiError, t("notifications.saveFailed"))),
+    onError: (apiError: ApiError) =>
+      error(getApiErrorMessage(apiError, t("notifications.saveFailed"))),
   });
 };
 
@@ -30,11 +31,19 @@ export const useToggleTagFollow = (slug?: string) => {
     mutationFn: toggleTagFollow,
     onSuccess: async (data, targetSlug) => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: tagKeys.followState(targetSlug) }),
+        queryClient.invalidateQueries({
+          queryKey: tagKeys.followState(targetSlug),
+        }),
         queryClient.invalidateQueries({ queryKey: tagKeys.myFollowing() }),
-        queryClient.invalidateQueries({ queryKey: tagKeys.detail(slug ?? targetSlug) }),
+        queryClient.invalidateQueries({
+          queryKey: tagKeys.detail(slug ?? targetSlug),
+        }),
       ]);
-      notify(data.isFollow ? t("notifications.followed") : t("notifications.unfollowed"));
+      notify(
+        data.isFollow
+          ? t("notifications.followed")
+          : t("notifications.unfollowed"),
+      );
     },
   });
 };
@@ -44,6 +53,7 @@ export const useUploadTagAvatar = (slug: string) => {
   const { error } = useNotify();
   return useMutation({
     mutationFn: (file: File) => uploadTagAvatar(slug, file),
-    onError: (apiError: ApiError) => error(getApiErrorMessage(apiError, t("notifications.uploadFailed"))),
+    onError: (apiError: ApiError) =>
+      error(getApiErrorMessage(apiError, t("notifications.uploadFailed"))),
   });
 };

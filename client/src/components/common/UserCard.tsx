@@ -29,7 +29,11 @@ export const UserCard = ({
       }}
     >
       <Link to="/$username" params={{ username }}>
-        <Avatar src={image_src} alt={display_name} sx={{ width: 56, height: 56, bgcolor: "grey.200" }} />
+        <Avatar
+          src={image_src}
+          alt={display_name}
+          sx={{ width: 56, height: 56, bgcolor: "grey.200" }}
+        />
       </Link>
 
       <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -45,10 +49,17 @@ export const UserCard = ({
               "&:focus *": { textDecoration: "underline" },
             }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", display: "inline-block" }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: "bold", display: "inline-block" }}
+            >
               {display_name}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ display: "block" }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ display: "block" }}
+            >
               @{username}
             </Typography>
           </Box>
