@@ -16,8 +16,7 @@ test.describe("Tags smoke", () => {
     const adminContext = await login(browser, admin.identifier, admin.password);
     const suffix = uniqueSuffix().replace(/[^a-z0-9-]/g, "");
     const slug = `e2e-${suffix}`.slice(0, 40);
-    // Keep the smoke tag name whitespace-free until #101 is fixed.
-    const tagName = `E2E-${suffix}`;
+    const tagName = `E2E ${suffix}`;
 
     const createTagResponse = await adminContext.request.post("/api/tags", {
       data: {
