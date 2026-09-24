@@ -52,7 +52,8 @@ export class ArticlesController {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
       const q = req.query.q as string;
-      res.json(await this.articlesService.getPublishedArticleList(page, limit, q));
+      const tagId = req.query.tagId as string | undefined;
+      res.json(await this.articlesService.getPublishedArticleList(page, limit, q, tagId));
     } catch (error) {
       throw this.mapArticleError(error, "ARTICLE_LIST_FETCH_FAILED", "Failed to fetch articles");
     }
