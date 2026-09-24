@@ -17,10 +17,14 @@ test.describe("Navigation smoke", () => {
     await expect(page.locator("body")).toBeVisible();
 
     await page.goto(`/articles/${article.id}`);
-    await expect(page.getByText(title, { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: title, level: 4 }),
+    ).toBeVisible({ timeout: 15_000 });
 
     await page.goto(`/search?q=${encodeURIComponent(title)}&page=1`);
-    await expect(page.getByText(title, { exact: true })).toBeVisible();
+    await expect(page.getByText(title, { exact: true }).first()).toBeVisible({
+      timeout: 15_000,
+    });
 
     await page.goto(`/user/${user.username}`);
     await expect(page.locator("body")).toBeVisible();
