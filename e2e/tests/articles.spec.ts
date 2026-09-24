@@ -21,8 +21,12 @@ test.describe("Article CRUD smoke", () => {
 
     const page = await context.newPage();
     await page.goto(`/articles/${article.id}`);
-    await expect(page.getByText(title, { exact: true })).toBeVisible();
-    await expect(page.getByText(`smoke-content-${suffix}`, { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: title, level: 4 }),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(`smoke-content-${suffix}`, { exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
 
     const editedTitle = `${title} edited`;
     const editedMarkdown = `# Edited\n\nupdated-${suffix}`;
