@@ -53,10 +53,10 @@ export class ArticlesController {
       const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
       const q = req.query.q as string;
       const tagId = req.query.tagId;
+      if (tagId !== undefined && typeof tagId !== "string") {
+        throw new ValidationError({ tagId: ["ARTICLE_TAG_ID_INVALID"] });
+      }
       if (tagId !== undefined) {
-        if (typeof tagId !== "string") {
-          throw new ValidationError({ tagId: ["ARTICLE_TAG_ID_INVALID"] });
-        }
         try {
           asUUID(tagId);
         } catch {
