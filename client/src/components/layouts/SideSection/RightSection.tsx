@@ -1,4 +1,4 @@
-import { Box, Typography, Divider, Paper } from "@mui/material";
+import { Box, Divider, Paper } from "@mui/material";
 import type { ReactNode } from "react";
 
 interface RightSectionProps {
@@ -24,13 +24,7 @@ const RightSection = ({ children, sticky = false }: RightSectionProps) => {
       }}
     >
       <Paper elevation={0} sx={{ p: 2, mb: 3, mt: 4 }}>
-        {!children ? (
-          <Typography variant="h6" gutterBottom>
-            何か入れる予定
-          </Typography>
-        ) : (
-          children
-        )}
+        {children}
       </Paper>
       <Divider />
     </Box>
