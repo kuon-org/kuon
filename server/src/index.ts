@@ -37,10 +37,6 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distPath = path.resolve(__dirname, "../dist");
-const bundledIdpLogoPath = path.resolve(
-  __dirname,
-  "../public/uploads/idp-logo",
-);
 
 const app = express();
 const trustProxy = process.env.TRUST_PROXY;
@@ -108,15 +104,6 @@ app.get("/api-docs.json", (_req, res) => {
   res.send(swaggerSpec);
 });
 
-// Bundled IdP logos are application assets, not persisted upload data. Keep the
-// legacy URL stable without requiring the configured external storage provider
-// to contain a copy of the packaged asset.
-app.use(
-  "/uploads/idp-logo",
-  runtimeMaintenanceGate,
-  requireSiteAuthentication,
-  express.static(bundledIdpLogoPath),
-);
 app.use(
   "/uploads",
   runtimeMaintenanceGate,
