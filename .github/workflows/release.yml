@@ -86,3 +86,37 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
+
+      - name: Checkout kuon-docker-compose
+        uses: actions/checkout@v5
+        with:
+          repository: kuon-org/kuon-docker-compose
+          ref: main
+          token: ${{ secrets.KUON_COMPOSE_PAT }}
+          path: kuon-docker-compose
+
+      - name: Sync initial database schema
+        run: |
+          mkdir -p kuon-docker-compose/database/migrations/docker-entrypoint-initdb.d
+          cp database/migrations/docker-entrypoint-initdb.d/init_schema.sql \
+            kuon-docker-compose/database/migrations/docker-entrypoint-initdb.d/init_schema.sql
+
+      - name: Commit synchronized schema
+        working-directory: kuon-docker-compose
+        env:
+          SOURCE_TAG: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add database/migrations/docker-entrypoint-initdb.d/init_schema.sql
+
+          if git diff --cached --quiet; then
+            echo "Initial database schema is already up to date."
+            exit 0
+          fi
+
+          git commit \
+            -m "chore: sync initial schema for ${SOURCE_TAG}" \
+            -m "Source: kuon-org/kuon@${SOURCE_SHA}"
+          git push origin HEAD:main
