@@ -103,7 +103,7 @@
 
 // export default LeftSection;
 
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import type { ReactNode } from "react";
 
 interface LeftSectionProps {
@@ -130,13 +130,7 @@ const LeftSection = ({ children, sticky = false }: LeftSectionProps) => {
       }}
     >
       <Box sx={{ width: sticky ? 120 : 250, mx: "auto", p: 2, mt: 4 }}>
-        {!children ? (
-          <Typography variant="h6" gutterBottom>
-            何か入れる予定
-          </Typography>
-        ) : (
-          children
-        )}
+        {children}
       </Box>
     </Box>
   );
