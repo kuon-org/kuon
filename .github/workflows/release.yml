@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/kuon-org/kuon
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v5
+
+      - name: Validate and resolve version
+        id: version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid release tag: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+
+          MINOR="${VERSION%.*}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "minor=${MINOR}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter server exec prisma generate
+
+      - name: Build client
+        run: pnpm --filter client build
+
+      - name: Build server
+        run: pnpm --filter server build
+
+      - name: Copy client build into server runtime
+        run: cp -r client/dist/. server/dist/
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        working-directory: server
+        run: |
+          docker build \
+            -t "${IMAGE_NAME}:${{ steps.version.outputs.version }}" \
+            -t "${IMAGE_NAME}:${{ steps.version.outputs.minor }}" \
+            -t "${IMAGE_NAME}:latest" \
+            .
+
+      - name: Push Docker images
+        run: |
+          docker push "${IMAGE_NAME}:${{ steps.version.outputs.version }}"
+          docker push "${IMAGE_NAME}:${{ steps.version.outputs.minor }}"
+          docker push "${IMAGE_NAME}:latest"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
