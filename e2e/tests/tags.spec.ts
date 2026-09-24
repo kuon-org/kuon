@@ -37,6 +37,14 @@ test.describe("Tags smoke", () => {
     expect(tagDetail.status()).toBe(200);
     expect((await tagDetail.json()).articleCount).toBeGreaterThanOrEqual(1);
 
+    const taggedArticles = await context.request.get("/api/articles", {
+      params: { tagId: tag.id },
+    });
+    expect(taggedArticles.status()).toBe(200);
+    expect((await taggedArticles.json()).articles).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: article.id })]),
+    );
+
     const tagPage = await context.newPage();
     await tagPage.goto(`/tags/${slug}`);
     await expect(tagPage.getByText(article.title, { exact: true })).toBeVisible({
