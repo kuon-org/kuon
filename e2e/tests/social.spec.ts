@@ -15,7 +15,7 @@ test.describe("Stock / Follow smoke", () => {
       data: { articleId: article.id },
     });
     expect(addStock.status()).toBe(200);
-    expect((await addStock.json()).added).toBe(true);
+    expect((await addStock.json()).isStored).toBe(true);
 
     const stockLists = await first.context.request.get(
       `/api/stocks/mylists?articleId=${article.id}`,
@@ -33,7 +33,7 @@ test.describe("Stock / Follow smoke", () => {
       { data: { articleId: article.id } },
     );
     expect(removeStock.status()).toBe(200);
-    expect((await removeStock.json()).added).toBe(false);
+    expect((await removeStock.json()).isStored).toBe(false);
 
     const follow = await first.context.request.post("/api/users/follow", {
       data: { followeeId: second.user.id },
