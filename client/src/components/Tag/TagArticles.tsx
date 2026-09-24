@@ -22,12 +22,11 @@ export const TagArticles = ({ tag }: TagArticlesProps) => {
   const { t } = useTranslation("tags");
   const { page = 1 } = useSearch({ from: tagProfileRoute.id });
   const { slug } = tagProfileRoute.useParams();
-  const q = `tag:${tag.name}`;
   const { data, isLoading } = useQuery({
-    queryKey: ["articles", "tag", q, page],
+    queryKey: ["articles", "tag", tag.id, page],
     queryFn: async () => {
       const res = await apiClient.get("/articles", {
-        params: { q, page, limit: 10 },
+        params: { tagId: tag.id, page, limit: 10 },
       });
       return res.data;
     },
