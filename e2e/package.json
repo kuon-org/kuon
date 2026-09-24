@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "scripts": {
     "test": "playwright test",
+    "test:smoke": "playwright test tests/auth.spec.ts tests/articles.spec.ts tests/comments.spec.ts tests/tags.spec.ts tests/social.spec.ts tests/navigation.spec.ts tests/admin.spec.ts tests/permissions.spec.ts",
+    "test:release": "playwright test tests/auth.spec.ts tests/articles.spec.ts tests/comments.spec.ts tests/tags.spec.ts tests/social.spec.ts tests/navigation.spec.ts tests/admin.spec.ts tests/permissions.spec.ts tests/maintenance.spec.ts tests/backup-restore.spec.ts",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed"
   },
