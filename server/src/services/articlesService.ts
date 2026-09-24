@@ -12,8 +12,8 @@ import prisma from "../prisma/client.js";
 export class ArticlesService {
   constructor(private articlesRepo: ArticlesRepository) {}
 
-  async getPublishedArticleList(page: number, limit: number, q?: string) {
-    return await this.articlesRepo.findAllPublishedArticles(page, limit, q);
+  async getPublishedArticleList(page: number, limit: number, q?: string, tagId?: string) {
+    return await this.articlesRepo.findAllPublishedArticles(page, limit, q, tagId);
   }
   async getTrendingArticleList(page: number, limit: number, weights?: any) {
     const safeWeights = {
