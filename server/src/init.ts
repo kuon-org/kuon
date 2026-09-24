@@ -28,7 +28,7 @@ export const DISCORD_TEMPLATE = {
   display_name: "Discord",
   provider_type: "OAUTH2",
   description: "Discord OAuth2",
-  logo_url: "/uploads/idp-logo/discord.png",
+  logo_url: null,
   button_color: "#5865F2",
   text_color: "#FFFFFF",
   config: {
