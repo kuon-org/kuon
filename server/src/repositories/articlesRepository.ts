@@ -10,9 +10,13 @@ export class ArticlesRepository {
     this.db = prisma;
   }
 
-  async findAllPublishedArticles(page: number, limit: number, q?: string) {
+  async findAllPublishedArticles(page: number, limit: number, q?: string, tagId?: string) {
     const skip = (page - 1) * limit;
     const where = this.buildPrismaWhere(q);
+    if (tagId) {
+      where.AND ??= [];
+      where.AND.push({ article_tags: { some: { tag_id: tagId } } });
+    }
 
     const [totalCount, articles] = await Promise.all([
       this.db.articles.count({ where }),
