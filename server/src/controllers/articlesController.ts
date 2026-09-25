@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import { AppError, ValidationError } from "../errors/AppError.js";
-import { uuidv7 } from "../utils/uuid/index.js";
+import { asUUID, uuidv7 } from "../utils/uuid/index.js";
 import { ArticlesService } from "../services/articlesService.js";
 import { UploadImagesService } from "../services/uploadImagesService.js";
 import { AuthRequest, isAuthenticated } from "../middlewares/auth.js";
@@ -52,7 +52,18 @@ export class ArticlesController {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
       const q = req.query.q as string;
-      res.json(await this.articlesService.getPublishedArticleList(page, limit, q));
+      const tagId = req.query.tagId;
+      if (tagId !== undefined && typeof tagId !== "string") {
+        throw new ValidationError({ tagId: ["ARTICLE_TAG_ID_INVALID"] });
+      }
+      if (tagId !== undefined) {
+        try {
+          asUUID(tagId);
+        } catch {
+          throw new ValidationError({ tagId: ["ARTICLE_TAG_ID_INVALID"] });
+        }
+      }
+      res.json(await this.articlesService.getPublishedArticleList(page, limit, q, tagId));
     } catch (error) {
       throw this.mapArticleError(error, "ARTICLE_LIST_FETCH_FAILED", "Failed to fetch articles");
     }

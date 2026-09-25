@@ -26,6 +26,13 @@ const articlesCtrl = new ArticlesController(
  *     summary: 記事一覧取得
  *     tags:
  *       - Articles
+ *     parameters:
+ *       - in: query
+ *         name: tagId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: 指定したタグの記事に絞り込む
  *     responses:
  *       '200':
  *         description: 取得成功
