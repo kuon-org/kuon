@@ -23,9 +23,9 @@ const RightSection = ({ children, sticky = false }: RightSectionProps) => {
         height: "fit-content",
       }}
     >
-      <Paper elevation={0} sx={{ p: 2, mb: 3, mt: 4 }}>
+      {children && <Paper elevation={0} sx={{ p: 2, mb: 3, mt: 4 }}>
         {children}
-      </Paper>
+      </Paper>}
       <Divider />
     </Box>
   );
